@@ -1,0 +1,25 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+*/build
+*.apk
+*.aab
+.kotlin
+
+# Local helper scripts
+*.command
+.zcode/
+
+# Personal financial data (STRICTLY PRIVATE - NEVER COMMIT)
+*.xlsx
+*.xls
+*.csv
+*Gastos*
+*gastos*
+app/src/main/assets/historical_*.json
+app/src/main/assets/personal_*.json
+*.json.bak
+personal_*.json

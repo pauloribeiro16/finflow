@@ -1,0 +1,96 @@
+package com.financas.app.data.prefs
+
+import android.content.Context
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+interface UserProfileStore {
+    fun getUserName(): String
+    fun setUserName(name: String)
+    fun getProfilePhotoUri(): String?
+    fun setProfilePhotoUri(uri: String?)
+    val profilePhotoFlow: StateFlow<String?>
+    val userNameFlow: StateFlow<String>
+    fun getDefaultCurrency(): String
+    fun setDefaultCurrency(currency: String)
+    fun getMonthlyCycleDay(): Int
+    fun setMonthlyCycleDay(day: Int)
+    fun getThemeMode(): String // "SYSTEM", "LIGHT", "DARK"
+    fun setThemeMode(mode: String)
+    val themeModeFlow: StateFlow<String>
+}
+
+class SharedPrefsUserProfileStore(
+    private val context: Context
+) : UserProfileStore {
+    private val prefs = context.getSharedPreferences("financas_user_profile", Context.MODE_PRIVATE)
+
+    private val _userNameFlow = MutableStateFlow(getUserName())
+    override val userNameFlow: StateFlow<String> = _userNameFlow.asStateFlow()
+
+    private val _profilePhotoFlow = MutableStateFlow(getProfilePhotoUri())
+    override val profilePhotoFlow: StateFlow<String?> = _profilePhotoFlow.asStateFlow()
+
+    private val _themeModeFlow = MutableStateFlow(getThemeMode())
+    override val themeModeFlow: StateFlow<String> = _themeModeFlow.asStateFlow()
+
+    override fun getUserName(): String =
+        prefs.getString("user_name", "") ?: ""
+
+    override fun setUserName(name: String) {
+        val trimmed = name.trim()
+        prefs.edit().putString("user_name", trimmed).apply()
+        _userNameFlow.value = trimmed
+    }
+
+    override fun getProfilePhotoUri(): String? {
+        val localFile = context.filesDir.resolve("profile_photo.png")
+        if (localFile.exists() && localFile.length() > 0) {
+            return localFile.absolutePath
+        }
+        val saved = prefs.getString("profile_photo_uri", null) ?: return null
+        if (saved.startsWith("content://")) {
+            prefs.edit().remove("profile_photo_uri").apply()
+            return null
+        }
+        return saved
+    }
+
+    override fun setProfilePhotoUri(uri: String?) {
+        if (uri == null) {
+            prefs.edit().remove("profile_photo_uri").apply()
+        } else {
+            prefs.edit().putString("profile_photo_uri", uri).apply()
+        }
+        _profilePhotoFlow.value = uri
+    }
+
+    override fun getDefaultCurrency(): String =
+        prefs.getString("default_currency", "EUR (€)") ?: "EUR (€)"
+
+    override fun setDefaultCurrency(currency: String) {
+        prefs.edit().putString("default_currency", currency).apply()
+    }
+
+    override fun getMonthlyCycleDay(): Int =
+        prefs.getInt("monthly_cycle_day", 1)
+
+    override fun setMonthlyCycleDay(day: Int) {
+        prefs.edit().putInt("monthly_cycle_day", day).apply()
+    }
+
+    override fun getThemeMode(): String {
+        val saved = prefs.getString("theme_mode", null)
+        if (saved == null || saved == "SYSTEM") {
+            prefs.edit().putString("theme_mode", "DARK").apply()
+            return "DARK"
+        }
+        return saved
+    }
+
+    override fun setThemeMode(mode: String) {
+        prefs.edit().putString("theme_mode", mode).apply()
+        _themeModeFlow.value = mode
+    }
+}
