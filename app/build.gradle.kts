@@ -29,6 +29,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    flavorDimensions += "edition"
+    productFlavors {
+        create("prod") {
+            dimension = "edition"
+            resValue("string", "app_name", "Finflow")
+            buildConfigField("boolean", "IS_DEMO", "false")
+        }
+        create("demo") {
+            dimension = "edition"
+            applicationIdSuffix = ".demo"
+            versionNameSuffix = "-demo"
+            resValue("string", "app_name", "Finflow Demo")
+            buildConfigField("boolean", "IS_DEMO", "true")
+        }
+    }
+
     signingConfigs {
         create("release") {
             if (keystoreProperties.isNotEmpty()) {

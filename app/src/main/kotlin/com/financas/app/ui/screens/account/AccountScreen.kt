@@ -119,6 +119,7 @@ import com.financas.app.ui.theme.AccentAmber
 import com.financas.app.ui.theme.AccentBlue
 import com.financas.app.ui.theme.AccentCoral
 import com.financas.app.ui.theme.AccentEmerald
+import com.financas.app.ui.theme.AccentPurple
 import com.financas.app.ui.theme.DarkBackground
 import com.financas.app.ui.theme.DarkBorder
 import com.financas.app.ui.theme.DarkSurface
@@ -1175,6 +1176,9 @@ fun AccountScreen(
                 },
                 onResetUpdateState = {
                     viewModel.resetUpdateState()
+                },
+                onResetDemoData = {
+                    viewModel.resetDemoData()
                 },
                 onOpenReleaseNotes = { showReleaseNotesDialog = true }
             )
@@ -2621,11 +2625,63 @@ private fun VersionTabContent(
     onDownloadUpdate: (com.financas.app.domain.model.AppUpdateInfo) -> Unit,
     onInstallApk: (java.io.File) -> Unit,
     onResetUpdateState: () -> Unit,
+    onResetDemoData: () -> Unit = {},
     onOpenReleaseNotes: () -> Unit
 ) {
     val strings = LocalAppStrings.current
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if (com.financas.app.BuildConfig.IS_DEMO) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = AccentPurple.copy(alpha = 0.12f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, AccentPurple.copy(alpha = 0.4f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = "🎭", fontSize = 20.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = "Modo Demonstração (Showcase)",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AccentPurple
+                            )
+                            Text(
+                                text = "Esta aplicação contém dados fictícios para apresentações e testes.",
+                                fontSize = 12.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = onResetDemoData,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentPurple)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            tint = androidx.compose.ui.graphics.Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Repor Dados de Demonstração",
+                            color = androidx.compose.ui.graphics.Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
         // Card 1: Versão do Software & Auto-Updater
         Card(
             modifier = Modifier.fillMaxWidth(),

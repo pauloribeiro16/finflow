@@ -22,6 +22,19 @@ class FinancasApplication : Application() {
 
         applicationScope.launch {
             DefaultSeed.seedIfNeeded(container.categoryDao)
+            if (BuildConfig.IS_DEMO) {
+                if (container.transactionDao.count() == 0) {
+                    com.financas.app.data.seed.DemoDataSeeder.seedDemoData(
+                        categoryDao = container.categoryDao,
+                        transactionDao = container.transactionDao,
+                        budgetDao = container.budgetDao,
+                        goalDao = container.goalDao,
+                        investmentAssetDao = container.investmentAssetDao,
+                        userProfileStore = container.userProfileStore,
+                        clearExisting = false
+                    )
+                }
+            }
         }
     }
 }

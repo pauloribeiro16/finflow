@@ -65,17 +65,19 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Unit Tests
-        run: ./gradlew :app:testDebugUnitTest
+        run: ./gradlew :app:testProdDebugUnitTest
 
       - name: Build Release Bundle and APK
-        run: ./gradlew :app:bundleRelease :app:assembleRelease
+        run: ./gradlew :app:bundleProdRelease :app:assembleProdRelease
 
       - name: Prepare Release Artifacts
         run: |
           TAG="${{ steps.vars.outputs.tag }}"
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/Finflow-${TAG}.apk"
-          cp app/build/outputs/bundle/release/app-release.aab "dist/Finflow-${TAG}.aab"
+          APK_FILE=$(find app/build/outputs/apk -name "*release*.apk" | head -n 1)
+          AAB_FILE=$(find app/build/outputs/bundle -name "*release*.aab" | head -n 1)
+          cp "$APK_FILE" "dist/Finflow-${TAG}.apk"
+          cp "$AAB_FILE" "dist/Finflow-${TAG}.aab"
           cd dist
           shasum -a 256 "Finflow-${TAG}.apk" "Finflow-${TAG}.aab" > SHA256SUMS.txt
           cat SHA256SUMS.txt

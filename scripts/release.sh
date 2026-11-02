@@ -13,32 +13,32 @@ cd "$PROJECT_ROOT"
 
 # Step 1: Run Unit Tests
 echo ""
-echo "▶ Passo 1/3: A executar testes unitários..."
-./gradlew :app:testDebugUnitTest --quiet
+echo "▶ Passo 1/4: A executar testes unitários..."
+./gradlew :app:testProdDebugUnitTest --quiet
 echo "✅ Testes unitários passaram a 100%."
 
 # Step 2: Build Signed App Bundle & APK
 echo ""
 echo "▶ Passo 2/4: A compilar o Android App Bundle assinado (Release)..."
-./gradlew :app:bundleRelease --quiet
+./gradlew :app:bundleProdRelease --quiet
 echo "✅ App Bundle compilado com sucesso."
 
 echo ""
 echo "▶ Passo 3/4: A compilar o APK assinado para distribuição direta..."
-./gradlew :app:assembleRelease --quiet
+./gradlew :app:assembleProdRelease --quiet
 echo "✅ APK compilado com sucesso."
 
 # Step 3: Verify Signatures
-AAB_PATH="app/build/outputs/bundle/release/app-release.aab"
-APK_PATH="app/build/outputs/apk/release/app-release.apk"
+AAB_PATH=$(find app/build/outputs/bundle -name "*prod*release*.aab" -o -name "*release*.aab" | head -n 1)
+APK_PATH=$(find app/build/outputs/apk -name "*prod*release*.apk" -o -name "*release*.apk" | head -n 1)
 
-if [ ! -f "$AAB_PATH" ]; then
-    echo "❌ Erro: Ficheiro $AAB_PATH não encontrado."
+if [ -z "$AAB_PATH" ] || [ ! -f "$AAB_PATH" ]; then
+    echo "❌ Erro: Ficheiro AAB não encontrado."
     exit 1
 fi
 
-if [ ! -f "$APK_PATH" ]; then
-    echo "❌ Erro: Ficheiro $APK_PATH não encontrado."
+if [ -z "$APK_PATH" ] || [ ! -f "$APK_PATH" ]; then
+    echo "❌ Erro: Ficheiro APK não encontrado."
     exit 1
 fi
 

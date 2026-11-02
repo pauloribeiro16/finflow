@@ -427,6 +427,23 @@ class AccountViewModel(
         appUpdateManager?.resetState()
     }
 
+    fun resetDemoData() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            val assetDao = investmentAssetDao ?: return@launch
+            com.financas.app.data.seed.DemoDataSeeder.seedDemoData(
+                categoryDao = categoryDao,
+                transactionDao = transactionDao,
+                budgetDao = budgetDao,
+                goalDao = goalDao,
+                investmentAssetDao = assetDao,
+                userProfileStore = userProfileStore,
+                clearExisting = true
+            )
+            _uiState.update { it.copy(isLoading = false, message = "Dados de demonstração repostos com sucesso.") }
+        }
+    }
+
     companion object {
         fun provideFactory(
             categoryDao: CategoryDao,

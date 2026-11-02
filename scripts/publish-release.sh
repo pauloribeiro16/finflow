@@ -39,8 +39,8 @@ echo ""
 echo "▶ Passo 1/4: A compilar e verificar artefactos de produção..."
 ./scripts/release.sh
 
-APK_PATH="app/build/outputs/apk/release/app-release.apk"
-AAB_PATH="app/build/outputs/bundle/release/app-release.aab"
+APK_PATH=$(find app/build/outputs/apk -name "*prod*release*.apk" -o -name "*release*.apk" | head -n 1)
+AAB_PATH=$(find app/build/outputs/bundle -name "*prod*release*.aab" -o -name "*release*.aab" | head -n 1)
 
 if [ ! -f "$APK_PATH" ] || [ ! -f "$AAB_PATH" ]; then
     echo "❌ Erro: Os ficheiros compilados não foram encontrados."
