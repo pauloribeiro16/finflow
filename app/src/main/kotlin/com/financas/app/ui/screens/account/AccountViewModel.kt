@@ -65,10 +65,14 @@ class AccountViewModel(
     private val pendingTransactionDao: PendingTransactionDao? = null,
     private val investmentAssetDao: InvestmentAssetDao? = null,
     private val userProfileStore: UserProfileStore? = null,
+    private val appUpdateManager: com.financas.app.data.updater.AppUpdateManager? = null,
     private val todayYearMonth: () -> Int = {
         LocalDate.now().let { it.year * 100 + it.monthValue }
     }
 ) : ViewModel() {
+
+    val updateState: StateFlow<com.financas.app.data.updater.UpdateUiState> =
+        appUpdateManager?.state ?: MutableStateFlow(com.financas.app.data.updater.UpdateUiState.Idle)
 
     private val _uiState = MutableStateFlow(
         AccountUiState(
@@ -403,6 +407,26 @@ class AccountViewModel(
         _uiState.update { it.copy(appLanguage = uppercase, message = msg) }
     }
 
+    fun checkForUpdates(currentVersion: String) {
+        viewModelScope.launch {
+            appUpdateManager?.checkForUpdates(currentVersion, notifyIfAvailable = false)
+        }
+    }
+
+    fun downloadUpdate(updateInfo: com.financas.app.domain.model.AppUpdateInfo) {
+        viewModelScope.launch {
+            appUpdateManager?.downloadUpdate(updateInfo)
+        }
+    }
+
+    fun installApk(file: java.io.File) {
+        appUpdateManager?.installApk(file)
+    }
+
+    fun resetUpdateState() {
+        appUpdateManager?.resetState()
+    }
+
     companion object {
         fun provideFactory(
             categoryDao: CategoryDao,
@@ -414,7 +438,8 @@ class AccountViewModel(
             contextTagsStore: ContextTagsStore,
             pendingTransactionDao: PendingTransactionDao? = null,
             investmentAssetDao: InvestmentAssetDao? = null,
-            userProfileStore: UserProfileStore? = null
+            userProfileStore: UserProfileStore? = null,
+            appUpdateManager: com.financas.app.data.updater.AppUpdateManager? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -428,7 +453,8 @@ class AccountViewModel(
                     backupSerializer = backupSerializer,
                     pendingTransactionDao = pendingTransactionDao,
                     investmentAssetDao = investmentAssetDao,
-                    userProfileStore = userProfileStore
+                    userProfileStore = userProfileStore,
+                    appUpdateManager = appUpdateManager
                 ) as T
             }
         }

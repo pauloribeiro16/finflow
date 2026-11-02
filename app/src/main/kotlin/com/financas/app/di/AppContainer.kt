@@ -43,6 +43,7 @@ interface AppContainer {
     val contextTagsStore: ContextTagsStore
     val userProfileStore: UserProfileStore
     val sessionBackgroundClock: SessionBackgroundClock
+    val appUpdateManager: com.financas.app.data.updater.AppUpdateManager
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -121,5 +122,9 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val sessionBackgroundClock: SessionBackgroundClock by lazy {
         SessionBackgroundClock()
+    }
+
+    override val appUpdateManager: com.financas.app.data.updater.AppUpdateManager by lazy {
+        com.financas.app.data.updater.AppUpdateManager(context)
     }
 }

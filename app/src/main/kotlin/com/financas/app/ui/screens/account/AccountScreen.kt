@@ -67,6 +67,8 @@ import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.SystemUpdate
 import com.financas.app.core.version.AppReleaseManager
 import com.financas.app.core.version.ReleaseType
 import androidx.compose.material.icons.filled.Lock
@@ -157,6 +159,7 @@ fun AccountScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val updateState by viewModel.updateState.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val strings = LocalAppStrings.current
@@ -1160,6 +1163,19 @@ fun AccountScreen(
         item {
             VersionTabContent(
                 uiState = uiState,
+                updateState = updateState,
+                onCheckForUpdates = {
+                    viewModel.checkForUpdates(com.financas.app.BuildConfig.VERSION_NAME)
+                },
+                onDownloadUpdate = { info ->
+                    viewModel.downloadUpdate(info)
+                },
+                onInstallApk = { file ->
+                    viewModel.installApk(file)
+                },
+                onResetUpdateState = {
+                    viewModel.resetUpdateState()
+                },
                 onOpenReleaseNotes = { showReleaseNotesDialog = true }
             )
         }
@@ -2600,10 +2616,17 @@ private fun ProfileInfoRow(
 @Composable
 private fun VersionTabContent(
     uiState: AccountUiState,
+    updateState: com.financas.app.data.updater.UpdateUiState,
+    onCheckForUpdates: () -> Unit,
+    onDownloadUpdate: (com.financas.app.domain.model.AppUpdateInfo) -> Unit,
+    onInstallApk: (java.io.File) -> Unit,
+    onResetUpdateState: () -> Unit,
     onOpenReleaseNotes: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
+
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Card 1: Versão do Software
+        // Card 1: Versão do Software & Auto-Updater
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
@@ -2614,7 +2637,7 @@ private fun VersionTabContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -2629,7 +2652,7 @@ private fun VersionTabContent(
                             color = TextPrimary
                         )
                         Text(
-                            text = "Versão ${AppReleaseManager.CURRENT_VERSION} (Build ${AppReleaseManager.CURRENT_BUILD})",
+                            text = "${strings.versionTitle} ${com.financas.app.BuildConfig.VERSION_NAME} (${strings.buildNumber} ${com.financas.app.BuildConfig.VERSION_CODE})",
                             fontSize = 13.sp,
                             color = TextSecondary
                         )
@@ -2642,7 +2665,7 @@ private fun VersionTabContent(
                             .padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
                         Text(
-                            text = "v${AppReleaseManager.CURRENT_VERSION}",
+                            text = "v${com.financas.app.BuildConfig.VERSION_NAME}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = AccentBlue
@@ -2650,20 +2673,256 @@ private fun VersionTabContent(
                     }
                 }
 
-                Text(
-                    text = "Lançamento v${AppReleaseManager.CURRENT_VERSION}: Transições fluidas com spring physics (Material 3 Expressive), novo FAB central em gradiente e gestão completa de perfil e versão.",
-                    fontSize = 12.sp,
-                    color = TextMuted,
-                    lineHeight = 16.sp
-                )
+                // In-App Auto-Updater Status Card
+                when (updateState) {
+                    is com.financas.app.data.updater.UpdateUiState.Idle -> {
+                        Button(
+                            onClick = onCheckForUpdates,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = DarkSurfaceVariant)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = null,
+                                tint = AccentBlue,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = strings.checkForUpdates,
+                                color = TextPrimary,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                    is com.financas.app.data.updater.UpdateUiState.Checking -> {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(DarkSurfaceVariant)
+                                .padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                color = AccentBlue,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = strings.checkingForUpdates,
+                                fontSize = 13.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+
+                    is com.financas.app.data.updater.UpdateUiState.UpToDate -> {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = AccentEmerald.copy(alpha = 0.08f)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AccentEmerald.copy(alpha = 0.3f))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = AccentEmerald,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = strings.updateUpToDate,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = AccentEmerald
+                                        )
+                                        Text(
+                                            text = "v${com.financas.app.BuildConfig.VERSION_NAME}",
+                                            fontSize = 11.sp,
+                                            color = TextMuted
+                                        )
+                                    }
+                                }
+
+                                Text(
+                                    text = strings.checkForUpdates,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AccentBlue,
+                                    modifier = Modifier.clickable { onCheckForUpdates() }
+                                )
+                            }
+                        }
+                    }
+
+                    is com.financas.app.data.updater.UpdateUiState.Available -> {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = AccentBlue.copy(alpha = 0.10f)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AccentBlue.copy(alpha = 0.4f))
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.SystemUpdate,
+                                        contentDescription = null,
+                                        tint = AccentBlue,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "${strings.updateAvailableTitle} (${updateState.info.tagName})",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AccentBlue
+                                    )
+                                }
+
+                                if (updateState.info.releaseNotes.isNotBlank()) {
+                                    Text(
+                                        text = updateState.info.releaseNotes.take(200),
+                                        fontSize = 12.sp,
+                                        color = TextSecondary,
+                                        lineHeight = 16.sp
+                                    )
+                                }
+
+                                Button(
+                                    onClick = { onDownloadUpdate(updateState.info) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.FileDownload,
+                                        contentDescription = null,
+                                        tint = androidx.compose.ui.graphics.Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = strings.updateDownloadButton,
+                                        color = androidx.compose.ui.graphics.Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    is com.financas.app.data.updater.UpdateUiState.Downloading -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(DarkSurfaceVariant)
+                                .padding(14.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = strings.updateDownloading,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = TextPrimary
+                                )
+                                Text(
+                                    text = "${updateState.progressPercent}%",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AccentBlue
+                                )
+                            }
+                            LinearProgressIndicator(
+                                progress = { updateState.progressPercent / 100f },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
+                                color = AccentBlue,
+                                trackColor = DarkBorder
+                            )
+                        }
+                    }
+
+                    is com.financas.app.data.updater.UpdateUiState.ReadyToInstall -> {
+                        Button(
+                            onClick = { onInstallApk(updateState.apkFile) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = AccentEmerald)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = androidx.compose.ui.graphics.Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = strings.updateReadyToInstall,
+                                color = androidx.compose.ui.graphics.Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    is com.financas.app.data.updater.UpdateUiState.Error -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(AccentCoral.copy(alpha = 0.1f))
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = updateState.message,
+                                fontSize = 12.sp,
+                                color = AccentCoral
+                            )
+                            Text(
+                                text = strings.checkForUpdates,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AccentBlue,
+                                modifier = Modifier.clickable { onCheckForUpdates() }
+                            )
+                        }
+                    }
+                }
 
                 Button(
                     onClick = onOpenReleaseNotes,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentBlue.copy(alpha = 0.15f))
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentBlue.copy(alpha = 0.12f))
                 ) {
                     Icon(
                         imageVector = Icons.Default.History,
@@ -2673,7 +2932,7 @@ private fun VersionTabContent(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Histórico de Versões & Patches",
+                        text = strings.versionHistory,
                         color = AccentBlue,
                         fontWeight = FontWeight.SemiBold
                     )

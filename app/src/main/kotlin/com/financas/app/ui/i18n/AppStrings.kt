@@ -153,7 +153,16 @@ data class AppStrings(
     val versionHistory: String,
     val localDatabaseStats: String,
     val activeTransactionsCount: String,
-    val activeCategoriesCount: String
+    val activeCategoriesCount: String,
+    val checkForUpdates: String,
+    val checkingForUpdates: String,
+    val updateAvailableTitle: String,
+    val updateAvailableSubtitle: String,
+    val updateDownloadButton: String,
+    val updateDownloading: String,
+    val updateReadyToInstall: String,
+    val updateUpToDate: String,
+    val updateWhatsNew: String
 )
 
 val EnStrings = AppStrings(
@@ -308,7 +317,16 @@ val EnStrings = AppStrings(
     versionHistory = "Release Notes & History",
     localDatabaseStats = "Local Database",
     activeTransactionsCount = "Stored Transactions",
-    activeCategoriesCount = "Active Categories"
+    activeCategoriesCount = "Active Categories",
+    checkForUpdates = "Check for Updates",
+    checkingForUpdates = "Checking for updates...",
+    updateAvailableTitle = "Update Available",
+    updateAvailableSubtitle = "A newer version of Finflow is ready to install.",
+    updateDownloadButton = "Download & Install",
+    updateDownloading = "Downloading APK...",
+    updateReadyToInstall = "Tap to Install",
+    updateUpToDate = "Finflow is up to date",
+    updateWhatsNew = "Release Notes"
 )
 
 val PtStrings = AppStrings(
@@ -463,5 +481,14 @@ val PtStrings = AppStrings(
     versionHistory = "Notas de Lançamento & Histórico",
     localDatabaseStats = "Base de Dados Local",
     activeTransactionsCount = "Movimentos Guardados",
-    activeCategoriesCount = "Categorias Ativas"
+    activeCategoriesCount = "Categorias Ativas",
+    checkForUpdates = "Procurar Atualizações",
+    checkingForUpdates = "A procurar atualizações...",
+    updateAvailableTitle = "Nova Atualização Disponível",
+    updateAvailableSubtitle = "Está disponível uma nova versão do Finflow.",
+    updateDownloadButton = "Descarregar e Instalar",
+    updateDownloading = "A descarregar APK...",
+    updateReadyToInstall = "Tocar para Instalar",
+    updateUpToDate = "O Finflow está atualizado",
+    updateWhatsNew = "Novidades desta versão"
 )

@@ -125,6 +125,7 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation("org.json:json:20240303")
 
     // Instrumented UI tests (executados no emulador/dispositivo)
     androidTestImplementation(platform(libs.androidx.compose.bom))

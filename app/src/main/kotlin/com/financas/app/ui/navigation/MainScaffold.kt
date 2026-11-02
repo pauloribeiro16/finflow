@@ -43,6 +43,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -191,9 +192,17 @@ fun MainScaffold(
             contextTagsStore = container.contextTagsStore,
             pendingTransactionDao = container.pendingTransactionDao,
             investmentAssetDao = container.investmentAssetDao,
-            userProfileStore = container.userProfileStore
+            userProfileStore = container.userProfileStore,
+            appUpdateManager = container.appUpdateManager
         )
     )
+
+    LaunchedEffect(Unit) {
+        container.appUpdateManager.checkForUpdates(
+            currentVersion = com.financas.app.BuildConfig.VERSION_NAME,
+            notifyIfAvailable = true
+        )
+    }
 
     val userProfileStore = container.userProfileStore
     val profilePhotoUri by userProfileStore.profilePhotoFlow.collectAsState()
