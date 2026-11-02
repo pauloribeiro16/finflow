@@ -366,7 +366,8 @@ class FakeUserProfileStore(
     private var photoUri: String? = null,
     private var currency: String = "EUR (€)",
     private var cycleDay: Int = 1,
-    private var themeMode: String = "SYSTEM"
+    private var themeMode: String = "SYSTEM",
+    private var appLanguage: String = "EN"
 ) : UserProfileStore {
     private val _userNameFlow = MutableStateFlow(userName)
     override val userNameFlow: StateFlow<String> = _userNameFlow.asStateFlow()
@@ -376,6 +377,9 @@ class FakeUserProfileStore(
 
     private val _themeModeFlow = MutableStateFlow(themeMode)
     override val themeModeFlow: StateFlow<String> = _themeModeFlow.asStateFlow()
+
+    private val _appLanguageFlow = MutableStateFlow(appLanguage)
+    override val appLanguageFlow: StateFlow<String> = _appLanguageFlow.asStateFlow()
 
     override fun getUserName(): String = userName
     override fun setUserName(name: String) {
@@ -395,6 +399,11 @@ class FakeUserProfileStore(
     override fun setThemeMode(mode: String) {
         themeMode = mode
         _themeModeFlow.value = mode
+    }
+    override fun getAppLanguage(): String = appLanguage
+    override fun setAppLanguage(lang: String) {
+        appLanguage = lang.uppercase()
+        _appLanguageFlow.value = appLanguage
     }
 }
 

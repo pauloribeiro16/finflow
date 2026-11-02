@@ -39,7 +39,19 @@ import java.util.UUID
 enum class WealthTab(val title: String, val iconLabel: String) {
     INVESTMENTS("Investimentos", "🏛️ Investimentos"),
     GOALS("Metas", "🎯 Metas"),
-    BUDGETS("Orçamentos", "📊 Orçamentos")
+    BUDGETS("Orçamentos", "📊 Orçamentos");
+
+    fun localizedTitle(strings: com.financas.app.ui.i18n.AppStrings): String = when (this) {
+        INVESTMENTS -> strings.tabInvestments
+        GOALS -> strings.tabGoals
+        BUDGETS -> strings.tabBudgets
+    }
+
+    fun localizedIconLabel(strings: com.financas.app.ui.i18n.AppStrings): String = when (this) {
+        INVESTMENTS -> "🏛️ " + strings.tabInvestments
+        GOALS -> "🎯 " + strings.tabGoals
+        BUDGETS -> "📊 " + strings.tabBudgets
+    }
 }
 
 data class BudgetsUiState(

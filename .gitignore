@@ -13,6 +13,12 @@
 *.command
 .zcode/
 
+# Keystores and signing credentials (STRICTLY PRIVATE - NEVER COMMIT)
+*.keystore
+*.jks
+keystore.properties
+key.properties
+
 # Personal financial data (STRICTLY PRIVATE - NEVER COMMIT)
 *.xlsx
 *.xls

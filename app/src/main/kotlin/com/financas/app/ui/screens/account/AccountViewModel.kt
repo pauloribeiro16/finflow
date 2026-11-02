@@ -40,6 +40,7 @@ data class AccountUiState(
     val defaultCurrency: String = "EUR (€)",
     val monthlyCycleDay: Int = 1,
     val themeMode: String = "SYSTEM",
+    val appLanguage: String = "EN",
     val parentCategories: List<CategoryEntity> = emptyList(),
     val subcategoriesByParent: Map<String, List<CategoryEntity>> = emptyMap(),
     val contextTags: List<String> = emptyList(),
@@ -76,6 +77,7 @@ class AccountViewModel(
             defaultCurrency = userProfileStore?.getDefaultCurrency() ?: "EUR (€)",
             monthlyCycleDay = userProfileStore?.getMonthlyCycleDay() ?: 1,
             themeMode = userProfileStore?.getThemeMode() ?: "SYSTEM",
+            appLanguage = userProfileStore?.getAppLanguage() ?: "EN",
             isBiometricsEnabled = biometricLockGate.isBiometricsEnabled()
         )
     )
@@ -392,6 +394,13 @@ class AccountViewModel(
             else -> "Modo automático do sistema ativado."
         }
         _uiState.update { it.copy(themeMode = mode, message = msg) }
+    }
+
+    fun updateAppLanguage(lang: String) {
+        val uppercase = lang.uppercase()
+        userProfileStore?.setAppLanguage(uppercase)
+        val msg = if (uppercase == "EN") "Language set to English." else "Idioma alterado para Português."
+        _uiState.update { it.copy(appLanguage = uppercase, message = msg) }
     }
 
     companion object {

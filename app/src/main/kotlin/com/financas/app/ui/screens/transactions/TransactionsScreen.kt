@@ -62,6 +62,10 @@ import androidx.compose.ui.unit.sp
 import com.financas.app.data.entity.TransactionEntity
 import com.financas.app.data.seed.DefaultSeed
 import com.financas.app.domain.model.MoneyCents
+import com.financas.app.ui.i18n.AppLanguage
+import com.financas.app.ui.i18n.CategoryTranslator
+import com.financas.app.ui.i18n.LocalAppLanguage
+import com.financas.app.ui.i18n.LocalAppStrings
 import com.financas.app.ui.screens.home.TransactionRowItem
 import com.financas.app.ui.theme.AccentBlue
 import com.financas.app.ui.theme.AccentCoral
@@ -86,6 +90,9 @@ fun TransactionsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var pendingDelete by remember { mutableStateOf<TransactionEntity?>(null) }
+    val strings = LocalAppStrings.current
+    val language = LocalAppLanguage.current
+    val isEnglish = language == AppLanguage.EN
 
     Column(
         modifier = modifier
@@ -98,7 +105,7 @@ fun TransactionsScreen(
             onValueChange = { viewModel.onSearchQueryChanged(it) },
             placeholder = {
                 Text(
-                    text = "Pesquisar por estabelecimento, categoria, contexto...",
+                    text = strings.searchPlaceholder,
                     fontSize = 13.sp,
                     color = TextMuted
                 )
@@ -106,7 +113,7 @@ fun TransactionsScreen(
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Search,
-                    contentDescription = "Pesquisar",
+                    contentDescription = strings.search,
                     tint = TextSecondary,
                     modifier = Modifier.size(20.dp)
                 )
@@ -116,7 +123,7 @@ fun TransactionsScreen(
                     IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
                         Icon(
                             imageVector = Icons.Default.Clear,
-                            contentDescription = "Limpar",
+                            contentDescription = strings.clear,
                             tint = TextSecondary,
                             modifier = Modifier.size(18.dp)
                         )
@@ -158,15 +165,20 @@ fun TransactionsScreen(
             ) {
                 Column {
                     Text(
-                        text = "${uiState.filteredCount} movimentos",
+                        text = "${uiState.filteredCount} ${if (isEnglish) "entries" else "movimentos"}",
                         fontSize = 12.sp,
                         color = TextSecondary,
                         fontWeight = FontWeight.Medium
                     )
                     AnimatedContent(
                         targetState = if (uiState.flowFilter == FlowFilter.ALL) {
-                            "Gasto: ${MoneyCents.formatCents(uiState.filteredExpenseCents)} · " +
-                                    "Recebido: ${MoneyCents.formatCents(uiState.filteredIncomeCents)}"
+                            if (isEnglish) {
+                                "Spent: ${MoneyCents.formatCents(uiState.filteredExpenseCents)} · " +
+                                        "Income: ${MoneyCents.formatCents(uiState.filteredIncomeCents)}"
+                            } else {
+                                "Gasto: ${MoneyCents.formatCents(uiState.filteredExpenseCents)} · " +
+                                        "Recebido: ${MoneyCents.formatCents(uiState.filteredIncomeCents)}"
+                            }
                         } else {
                             MoneyCents.formatCents(uiState.filteredTotalCents)
                         },
@@ -193,7 +205,7 @@ fun TransactionsScreen(
                 if (showShare) {
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "Peso no Recebido",
+                            text = if (isEnglish) "Share of Income" else "Peso no Recebido",
                             fontSize = 11.sp,
                             color = TextSecondary
                         )
@@ -227,8 +239,13 @@ fun TransactionsScreen(
                 // Period filters
                 for (period in PeriodFilter.entries) {
                     val isSelected = uiState.periodFilter == period
+                    val label = when (period) {
+                        PeriodFilter.CURRENT_MONTH -> if (isEnglish) "Month" else "Mês"
+                        PeriodFilter.YEAR -> if (isEnglish) "Year" else "Ano"
+                        PeriodFilter.ALL -> if (isEnglish) "All" else "Todos"
+                    }
                     FilterCapsule(
-                        label = period.label,
+                        label = label,
                         isSelected = isSelected,
                         activeColor = AccentBlue,
                         onClick = { viewModel.onPeriodFilterChanged(period) }
@@ -240,8 +257,14 @@ fun TransactionsScreen(
                 // Flow filters
                 for (flow in FlowFilter.entries) {
                     val isSelected = uiState.flowFilter == flow
+                    val label = when (flow) {
+                        FlowFilter.ALL -> if (isEnglish) "All" else "Todos"
+                        FlowFilter.FIXED -> if (isEnglish) "Fixed" else "Fixos"
+                        FlowFilter.VARIABLE -> if (isEnglish) "Variable" else "Variáveis"
+                        FlowFilter.INCOMES -> if (isEnglish) "Income" else "Receitas"
+                    }
                     FilterCapsule(
-                        label = flow.label,
+                        label = label,
                         isSelected = isSelected,
                         activeColor = AccentEmerald,
                         onClick = { viewModel.onFlowFilterChanged(flow) }
@@ -259,7 +282,7 @@ fun TransactionsScreen(
                 for (ctx in DefaultSeed.CONTEXTS) {
                     val isSelected = uiState.contextFilter == ctx.tag
                     FilterCapsule(
-                        label = ctx.label,
+                        label = CategoryTranslator.translateContext(ctx.label, language),
                         isSelected = isSelected,
                         activeColor = AccentBlue,
                         onClick = { viewModel.onContextFilterChanged(ctx.tag) }
@@ -271,7 +294,7 @@ fun TransactionsScreen(
                 for (pm in DefaultSeed.PAYMENT_METHODS) {
                     val isSelected = uiState.methodFilter == pm.code
                     FilterCapsule(
-                        label = pm.label,
+                        label = CategoryTranslator.translatePayment(pm.label, language),
                         isSelected = isSelected,
                         activeColor = AccentEmerald,
                         onClick = { viewModel.onMethodFilterChanged(pm.code) }
@@ -311,7 +334,7 @@ fun TransactionsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Nenhum movimento encontrado para estes filtros.",
+                    text = strings.emptyTransactionsSearch,
                     fontSize = 13.sp,
                     color = TextMuted,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -325,7 +348,7 @@ fun TransactionsScreen(
             ) {
                 for ((epochDay, transactions) in groupedByDate) {
                     val date = LocalDate.ofEpochDay(epochDay)
-                    val dateHeader = formatEpochHeader(date)
+                    val dateHeader = formatEpochHeader(date, language)
 
                     item(key = "header_$epochDay") {
                         Text(
@@ -361,7 +384,7 @@ fun TransactionsScreen(
             containerColor = DarkSurface,
             title = {
                 Text(
-                    "Apagar movimento?",
+                    strings.deleteTransactionTitle,
                     color = TextPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
@@ -369,7 +392,7 @@ fun TransactionsScreen(
             },
             text = {
                 Text(
-                    "Esta ação é definitiva e não pode ser anulada.",
+                    strings.deleteTransactionConfirm,
                     color = TextSecondary,
                     fontSize = 13.sp
                 )
@@ -382,12 +405,12 @@ fun TransactionsScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = AccentCoral)
                 ) {
-                    Text("Apagar", color = Color.White)
+                    Text(strings.delete, color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingDelete = null }) {
-                    Text("Cancelar", color = TextSecondary)
+                    Text(strings.cancel, color = TextSecondary)
                 }
             }
         )
@@ -443,12 +466,25 @@ private fun FilterCapsule(
     }
 }
 
-private fun formatEpochHeader(date: LocalDate): String {
+private fun formatEpochHeader(date: LocalDate, language: AppLanguage): String {
     val today = LocalDate.now()
+    val isEnglish = language == AppLanguage.EN
+    val locale = language.locale
     return when {
-        date == today -> "Hoje · " + date.format(DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("pt", "PT")))
-        date == today.minusDays(1) -> "Ontem · " + date.format(DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("pt", "PT")))
-        else -> date.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM yyyy", Locale("pt", "PT")))
-            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("pt", "PT")) else it.toString() }
+        date == today -> {
+            val prefix = if (isEnglish) "Today · " else "Hoje · "
+            val pat = if (isEnglish) "MMMM d" else "d 'de' MMMM"
+            prefix + date.format(DateTimeFormatter.ofPattern(pat, locale))
+        }
+        date == today.minusDays(1) -> {
+            val prefix = if (isEnglish) "Yesterday · " else "Ontem · "
+            val pat = if (isEnglish) "MMMM d" else "d 'de' MMMM"
+            prefix + date.format(DateTimeFormatter.ofPattern(pat, locale))
+        }
+        else -> {
+            val pat = if (isEnglish) "EEEE, MMMM d, yyyy" else "EEEE, d 'de' MMMM yyyy"
+            date.format(DateTimeFormatter.ofPattern(pat, locale))
+                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
+        }
     }
 }

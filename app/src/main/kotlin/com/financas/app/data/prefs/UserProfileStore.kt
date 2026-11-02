@@ -19,6 +19,9 @@ interface UserProfileStore {
     fun getThemeMode(): String // "SYSTEM", "LIGHT", "DARK"
     fun setThemeMode(mode: String)
     val themeModeFlow: StateFlow<String>
+    fun getAppLanguage(): String // "EN", "PT"
+    fun setAppLanguage(lang: String)
+    val appLanguageFlow: StateFlow<String>
 }
 
 class SharedPrefsUserProfileStore(
@@ -34,6 +37,9 @@ class SharedPrefsUserProfileStore(
 
     private val _themeModeFlow = MutableStateFlow(getThemeMode())
     override val themeModeFlow: StateFlow<String> = _themeModeFlow.asStateFlow()
+
+    private val _appLanguageFlow = MutableStateFlow(getAppLanguage())
+    override val appLanguageFlow: StateFlow<String> = _appLanguageFlow.asStateFlow()
 
     override fun getUserName(): String =
         prefs.getString("user_name", "") ?: ""
@@ -92,5 +98,15 @@ class SharedPrefsUserProfileStore(
     override fun setThemeMode(mode: String) {
         prefs.edit().putString("theme_mode", mode).apply()
         _themeModeFlow.value = mode
+    }
+
+    override fun getAppLanguage(): String {
+        return prefs.getString("app_language", "EN") ?: "EN"
+    }
+
+    override fun setAppLanguage(lang: String) {
+        val uppercaseLang = lang.uppercase()
+        prefs.edit().putString("app_language", uppercaseLang).apply()
+        _appLanguageFlow.value = uppercaseLang
     }
 }

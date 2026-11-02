@@ -113,6 +113,10 @@ import com.financas.app.ui.theme.DarkSurfaceVariant
 import com.financas.app.ui.theme.TextMuted
 import com.financas.app.ui.theme.TextPrimary
 import com.financas.app.ui.theme.TextSecondary
+import com.financas.app.ui.i18n.AppLanguage
+import com.financas.app.ui.i18n.CategoryTranslator
+import com.financas.app.ui.i18n.LocalAppLanguage
+import com.financas.app.ui.i18n.LocalAppStrings
 import com.financas.app.ui.util.shareText
 import kotlin.math.roundToLong
 
@@ -124,6 +128,9 @@ fun AnalyticsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val strings = LocalAppStrings.current
+    val language = LocalAppLanguage.current
+    val isEnglish = language == AppLanguage.EN
 
     Column(
         modifier = modifier
@@ -171,7 +178,7 @@ fun AnalyticsScreen(
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "% do que recebo",
+                            text = strings.displayModeIncomeShare,
                             fontSize = 12.sp,
                             fontWeight = if (uiState.displayMode == DisplayMode.INCOME_PERCENTAGE) FontWeight.Bold else FontWeight.Medium,
                             color = if (uiState.displayMode == DisplayMode.INCOME_PERCENTAGE) Color.White else TextSecondary
@@ -303,6 +310,7 @@ private fun LensSelectorTabs(
     selectedLens: AnalyticsLens,
     onSelectLens: (AnalyticsLens) -> Unit
 ) {
+    val strings = LocalAppStrings.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -352,7 +360,7 @@ private fun LensSelectorTabs(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = lens.label,
+                    text = lens.localizedLabel(strings),
                     fontSize = 13.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     color = textColor

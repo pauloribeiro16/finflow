@@ -121,6 +121,10 @@ import com.financas.app.ui.theme.FinflowSurfaceContainerLow
 import com.financas.app.ui.theme.FinflowTextMuted
 import com.financas.app.ui.theme.FinflowTextPrimary
 import com.financas.app.ui.theme.FinflowTextSecondary
+import com.financas.app.ui.i18n.AppLanguage
+import com.financas.app.ui.i18n.CategoryTranslator
+import com.financas.app.ui.i18n.LocalAppLanguage
+import com.financas.app.ui.i18n.LocalAppStrings
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -130,6 +134,9 @@ fun BudgetsGoalsScreen(
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val strings = LocalAppStrings.current
+    val language = LocalAppLanguage.current
+    val isEnglish = language == AppLanguage.EN
     var showAddBudgetDialog by remember { mutableStateOf(false) }
     var showAddGoalDialog by remember { mutableStateOf(false) }
     var showAddAssetDialog by remember { mutableStateOf(false) }
@@ -229,7 +236,7 @@ fun BudgetsGoalsScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = tab.iconLabel,
+                        text = tab.localizedIconLabel(strings),
                         fontSize = 12.sp,
                         fontWeight = tabFontWeight,
                         color = tabTextColor,

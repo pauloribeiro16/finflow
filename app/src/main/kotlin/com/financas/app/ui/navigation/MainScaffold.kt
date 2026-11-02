@@ -42,6 +42,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +65,12 @@ import com.financas.app.data.entity.TransactionEntity
 import com.financas.app.di.AppContainer
 import com.financas.app.ui.components.FinflowProfileAvatar
 import com.financas.app.ui.components.MonthSelector
+import com.financas.app.ui.i18n.AppLanguage
+import com.financas.app.ui.i18n.AppStrings
+import com.financas.app.ui.i18n.EnStrings
+import com.financas.app.ui.i18n.LocalAppLanguage
+import com.financas.app.ui.i18n.LocalAppStrings
+import com.financas.app.ui.i18n.PtStrings
 import com.financas.app.ui.screens.account.AccountScreen
 import com.financas.app.ui.screens.account.AccountViewModel
 import com.financas.app.ui.screens.addsheet.AddTransactionBottomSheet
@@ -91,12 +98,12 @@ import com.financas.app.ui.theme.FinflowTheme
 import java.time.YearMonth
 import kotlinx.coroutines.launch
 
-enum class NavTab(val label: String, val icon: ImageVector, val visualOrder: Int) {
-    HOME("Início", Icons.Default.GridView, 0),
-    TRANSACTIONS("Movimentos", Icons.AutoMirrored.Filled.ReceiptLong, 1),
-    ANALYTICS("Análise", Icons.Default.PieChart, 2),
-    BUDGETS("Património", Icons.Default.AccountBalanceWallet, 3),
-    ACCOUNT("Conta", Icons.Default.Settings, 4)
+enum class NavTab(val icon: ImageVector, val visualOrder: Int) {
+    HOME(Icons.Default.GridView, 0),
+    TRANSACTIONS(Icons.AutoMirrored.Filled.ReceiptLong, 1),
+    ANALYTICS(Icons.Default.PieChart, 2),
+    BUDGETS(Icons.Default.AccountBalanceWallet, 3),
+    ACCOUNT(Icons.Default.Settings, 4)
 }
 
 private val pagerTabs = listOf(NavTab.HOME, NavTab.TRANSACTIONS, NavTab.ANALYTICS, NavTab.BUDGETS)
@@ -191,6 +198,9 @@ fun MainScaffold(
     val userProfileStore = container.userProfileStore
     val profilePhotoUri by userProfileStore.profilePhotoFlow.collectAsState()
     val userName by userProfileStore.userNameFlow.collectAsState()
+    val appLanguageCode by userProfileStore.appLanguageFlow.collectAsState()
+    val appLanguage = AppLanguage.fromCode(appLanguageCode)
+    val appStrings = if (appLanguage == AppLanguage.PT) PtStrings else EnStrings
 
     val startNewEntry = {
         addTransactionViewModel.startNewEntry()
@@ -220,123 +230,128 @@ fun MainScaffold(
         budgetsViewModel.setYearMonth(ym)
     }
 
-    BackHandler(enabled = showAccount) {
-        showAccount = false
-    }
-
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        containerColor = FinflowBackground,
-        bottomBar = {
-            FinflowBottomNavBar(
-                selectedTab = selectedTab,
-                onSelectTab = { tab ->
-                    showAccount = false
-                    coroutineScope.launch { pagerState.animateScrollToPage(tab.visualOrder) }
-                },
-                onAddClick = startNewEntry
-            )
+    CompositionLocalProvider(
+        LocalAppStrings provides appStrings,
+        LocalAppLanguage provides appLanguage
+    ) {
+        BackHandler(enabled = showAccount) {
+            showAccount = false
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            FinflowFixedHeader(
-                selectedTab = selectedTab,
-                homeViewModel = homeViewModel,
-                transactionsViewModel = transactionsViewModel,
-                analyticsViewModel = analyticsViewModel,
-                budgetsViewModel = budgetsViewModel,
-                onMonthChanged = propagateMonth,
-                isAppDark = isAppDark,
-                onToggleTheme = {
-                    container.userProfileStore.setThemeMode(if (isAppDark) "LIGHT" else "DARK")
-                },
-                onOpenAccount = { showAccount = true },
-                photoUri = profilePhotoUri,
-                userName = userName
-            )
 
-            Box(modifier = Modifier.fillMaxSize()) {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize()
-                ) { page ->
-                    when (pagerTabs[page]) {
-                        NavTab.HOME -> {
-                            HomeScreen(
-                                viewModel = homeViewModel,
-                                onNavigateToTransactions = { ym ->
-                                    transactionsViewModel.setYearMonth(ym)
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(NavTab.TRANSACTIONS.visualOrder)
-                                    }
-                                },
-                                onNavigateToInvestments = {
-                                    budgetsViewModel.selectTab(WealthTab.INVESTMENTS)
-                                    coroutineScope.launch {
-                                        pagerState.animateScrollToPage(NavTab.BUDGETS.visualOrder)
-                                    }
-                                },
-                                onEdit = startEdit,
-                                onEditPending = startPendingEdit
-                            )
+        Scaffold(
+            modifier = modifier.fillMaxSize(),
+            containerColor = FinflowBackground,
+            bottomBar = {
+                FinflowBottomNavBar(
+                    selectedTab = selectedTab,
+                    onSelectTab = { tab ->
+                        showAccount = false
+                        coroutineScope.launch { pagerState.animateScrollToPage(tab.visualOrder) }
+                    },
+                    onAddClick = startNewEntry
+                )
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                FinflowFixedHeader(
+                    selectedTab = selectedTab,
+                    homeViewModel = homeViewModel,
+                    transactionsViewModel = transactionsViewModel,
+                    analyticsViewModel = analyticsViewModel,
+                    budgetsViewModel = budgetsViewModel,
+                    onMonthChanged = propagateMonth,
+                    isAppDark = isAppDark,
+                    onToggleTheme = {
+                        container.userProfileStore.setThemeMode(if (isAppDark) "LIGHT" else "DARK")
+                    },
+                    onOpenAccount = { showAccount = true },
+                    photoUri = profilePhotoUri,
+                    userName = userName
+                )
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        when (pagerTabs[page]) {
+                            NavTab.HOME -> {
+                                HomeScreen(
+                                    viewModel = homeViewModel,
+                                    onNavigateToTransactions = { ym ->
+                                        transactionsViewModel.setYearMonth(ym)
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(NavTab.TRANSACTIONS.visualOrder)
+                                        }
+                                    },
+                                    onNavigateToInvestments = {
+                                        budgetsViewModel.selectTab(WealthTab.INVESTMENTS)
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(NavTab.BUDGETS.visualOrder)
+                                        }
+                                    },
+                                    onEdit = startEdit,
+                                    onEditPending = startPendingEdit
+                                )
+                            }
+                            NavTab.TRANSACTIONS -> {
+                                TransactionsScreen(
+                                    viewModel = transactionsViewModel,
+                                    onEdit = startEdit
+                                )
+                            }
+                            NavTab.ANALYTICS -> {
+                                AnalyticsScreen(
+                                    viewModel = analyticsViewModel,
+                                    onGlobalMonthChanged = propagateMonth
+                                )
+                            }
+                            NavTab.BUDGETS -> {
+                                BudgetsGoalsScreen(
+                                    viewModel = budgetsViewModel
+                                )
+                            }
+                            NavTab.ACCOUNT -> Unit
                         }
-                        NavTab.TRANSACTIONS -> {
-                            TransactionsScreen(
-                                viewModel = transactionsViewModel,
-                                onEdit = startEdit
-                            )
-                        }
-                        NavTab.ANALYTICS -> {
-                            AnalyticsScreen(
-                                viewModel = analyticsViewModel,
-                                onGlobalMonthChanged = propagateMonth
-                            )
-                        }
-                        NavTab.BUDGETS -> {
-                            BudgetsGoalsScreen(
-                                viewModel = budgetsViewModel
-                            )
-                        }
-                        NavTab.ACCOUNT -> Unit
                     }
-                }
 
-                if (showAccount) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(FinflowBackground)
-                    ) {
-                        AccountScreen(
-                            viewModel = accountViewModel
-                        )
+                    if (showAccount) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(FinflowBackground)
+                        ) {
+                            AccountScreen(
+                                viewModel = accountViewModel
+                            )
+                        }
                     }
                 }
             }
         }
-    }
 
-    if (showAddSheet) {
-        AddTransactionBottomSheet(
-            viewModel = addTransactionViewModel,
-            onDismissRequest = {
-                showAddSheet = false
-                editingTransaction = null
-                pendingIdToClearOnSave = null
-            },
-            onSaveSuccess = {
-                showAddSheet = false
-                editingTransaction = null
-                pendingIdToClearOnSave?.let { id ->
-                    homeViewModel.discardPending(id)
+        if (showAddSheet) {
+            AddTransactionBottomSheet(
+                viewModel = addTransactionViewModel,
+                onDismissRequest = {
+                    showAddSheet = false
+                    editingTransaction = null
                     pendingIdToClearOnSave = null
+                },
+                onSaveSuccess = {
+                    showAddSheet = false
+                    editingTransaction = null
+                    pendingIdToClearOnSave?.let { id ->
+                        homeViewModel.discardPending(id)
+                        pendingIdToClearOnSave = null
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
 
@@ -358,6 +373,7 @@ private fun FinflowFixedHeader(
     val transactionsUiState by transactionsViewModel.uiState.collectAsState()
     val analyticsUiState by analyticsViewModel.uiState.collectAsState()
     val budgetsUiState by budgetsViewModel.uiState.collectAsState()
+    val strings = LocalAppStrings.current
 
     Row(
         modifier = Modifier
@@ -375,11 +391,15 @@ private fun FinflowFixedHeader(
             )
             Text(
                 text = when (selectedTab) {
-                    NavTab.HOME -> "Início"
-                    NavTab.TRANSACTIONS -> "Movimentos"
-                    NavTab.ANALYTICS -> "Análise"
-                    NavTab.BUDGETS -> budgetsUiState.selectedTab.title
-                    NavTab.ACCOUNT -> "Conta"
+                    NavTab.HOME -> strings.navHome
+                    NavTab.TRANSACTIONS -> strings.navTransactions
+                    NavTab.ANALYTICS -> strings.navAnalytics
+                    NavTab.BUDGETS -> when (budgetsUiState.selectedTab) {
+                        WealthTab.BUDGETS -> strings.tabBudgets
+                        WealthTab.GOALS -> strings.tabGoals
+                        WealthTab.INVESTMENTS -> strings.tabInvestments
+                    }
+                    NavTab.ACCOUNT -> strings.navAccount
                 },
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
@@ -509,6 +529,7 @@ fun FinflowBottomNavBar(
     onSelectTab: (NavTab) -> Unit,
     onAddClick: () -> Unit
 ) {
+    val strings = LocalAppStrings.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -524,38 +545,38 @@ fun FinflowBottomNavBar(
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Tab 1: Início
+            // Tab 1: Home
             FinflowNavItem(
-                label = "Início",
+                label = strings.navHome,
                 icon = Icons.Default.GridView,
                 isSelected = selectedTab == NavTab.HOME,
                 onClick = { onSelectTab(NavTab.HOME) }
             )
 
-            // Tab 2: Movimentos
+            // Tab 2: Transactions
             FinflowNavItem(
-                label = "Movimentos",
+                label = strings.navTransactions,
                 icon = Icons.AutoMirrored.Filled.ReceiptLong,
                 isSelected = selectedTab == NavTab.TRANSACTIONS,
                 onClick = { onSelectTab(NavTab.TRANSACTIONS) }
             )
 
-            // Tab 3: Nova (FAB Central Elevado & Fluido)
+            // Tab 3: Quick Add
             FinflowCenterActionItem(
                 onClick = onAddClick
             )
 
-            // Tab 4: Análise
+            // Tab 4: Analytics
             FinflowNavItem(
-                label = "Análise",
+                label = strings.navAnalytics,
                 icon = Icons.Default.PieChart,
                 isSelected = selectedTab == NavTab.ANALYTICS,
                 onClick = { onSelectTab(NavTab.ANALYTICS) }
             )
 
-            // Tab 5: Património (Investimentos, Metas, Orçamentos)
+            // Tab 5: Wealth
             FinflowNavItem(
-                label = "Património",
+                label = strings.navWealth,
                 icon = Icons.Default.AccountBalanceWallet,
                 isSelected = selectedTab == NavTab.BUDGETS,
                 onClick = { onSelectTab(NavTab.BUDGETS) }

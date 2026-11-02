@@ -132,11 +132,22 @@ import java.text.DecimalFormatSymbols
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.financas.app.ui.i18n.AppLanguage
+import com.financas.app.ui.i18n.AppStrings
+import com.financas.app.ui.i18n.CategoryTranslator
+import com.financas.app.ui.i18n.LocalAppLanguage
+import com.financas.app.ui.i18n.LocalAppStrings
 
-enum class AccountSection(val label: String, val icon: ImageVector) {
-    PROFILE("Perfil", Icons.Default.Person),
-    SETTINGS("Configurações", Icons.Default.Tune),
-    VERSION("Versão & Sistema", Icons.Default.Info)
+enum class AccountSection(val icon: ImageVector) {
+    PROFILE(Icons.Default.Person),
+    SETTINGS(Icons.Default.Tune),
+    VERSION(Icons.Default.Info);
+
+    fun label(strings: AppStrings): String = when (this) {
+        PROFILE -> strings.sectionProfile
+        SETTINGS -> strings.sectionSettings
+        VERSION -> strings.sectionVersion
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -148,6 +159,8 @@ fun AccountScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val strings = LocalAppStrings.current
+    val language = LocalAppLanguage.current
 
     var selectedAccountSection by remember { mutableStateOf(AccountSection.PROFILE) }
     var showEditProfileDialog by remember { mutableStateOf(false) }
@@ -444,13 +457,13 @@ fun AccountScreen(
                     ) {
                         Icon(
                             imageVector = section.icon,
-                            contentDescription = section.label,
+                            contentDescription = section.label(strings),
                             tint = textColor,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = section.label,
+                            text = section.label(strings),
                             fontSize = 12.sp,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = textColor
@@ -513,7 +526,8 @@ fun AccountScreen(
                         }
                     },
                     onToggleBiometrics = { viewModel.toggleBiometrics(it) },
-                    onSelectThemeMode = { viewModel.updateThemeMode(it) }
+                    onSelectThemeMode = { viewModel.updateThemeMode(it) },
+                    onSelectLanguage = { viewModel.updateAppLanguage(it) }
                 )
             }
         }
@@ -2330,9 +2344,12 @@ private fun ProfileTabContent(
     onEditProfile: () -> Unit,
     onEditPhoto: () -> Unit,
     onToggleBiometrics: (Boolean) -> Unit,
-    onSelectThemeMode: (String) -> Unit
+    onSelectThemeMode: (String) -> Unit,
+    onSelectLanguage: (String) -> Unit
 ) {
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+    val strings = LocalAppStrings.current
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         // Card 1: Preferências Pessoais & Moeda
@@ -2354,7 +2371,7 @@ private fun ProfileTabContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Preferências da Conta",
+                        text = strings.sectionProfile,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -2367,12 +2384,12 @@ private fun ProfileTabContent(
                             modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Editar", color = AccentBlue, fontSize = 12.sp)
+                        Text(strings.edit, color = AccentBlue, fontSize = 12.sp)
                     }
                 }
 
                 ProfileInfoRow(
-                    label = "Nome Completo",
+                    label = "Nome / Name",
                     value = uiState.userName,
                     subtext = "Nome exibido no topo e nas mensagens da app"
                 )
@@ -2380,7 +2397,7 @@ private fun ProfileTabContent(
                 HorizontalDivider(color = DarkBorder, thickness = 1.dp)
 
                 ProfileInfoRow(
-                    label = "Foto de Perfil",
+                    label = "Foto / Photo",
                     value = if (profileBitmap != null) "Foto personalizada ativa" else "Foto padrão ($initials)",
                     subtext = "Toca para alterar ou carregar foto da galeria",
                     onClick = onEditPhoto
@@ -2389,7 +2406,7 @@ private fun ProfileTabContent(
                 HorizontalDivider(color = DarkBorder, thickness = 1.dp)
 
                 ProfileInfoRow(
-                    label = "Moeda Principal",
+                    label = strings.currency,
                     value = uiState.defaultCurrency,
                     subtext = "Formato numérico com precisão em cêntimos"
                 )
@@ -2397,7 +2414,7 @@ private fun ProfileTabContent(
                 HorizontalDivider(color = DarkBorder, thickness = 1.dp)
 
                 ProfileInfoRow(
-                    label = "Início do Ciclo Mensal",
+                    label = "Ciclo / Cycle",
                     value = "Dia ${uiState.monthlyCycleDay} de cada mês",
                     subtext = "Data de renovação de metas e orçamentos"
                 )
@@ -2405,16 +2422,26 @@ private fun ProfileTabContent(
                 HorizontalDivider(color = DarkBorder, thickness = 1.dp)
 
                 val themeLabel = when (uiState.themeMode) {
-                    "DARK" -> "Modo Noturno (Escuro)"
-                    "LIGHT" -> "Modo Diurno (Claro)"
-                    else -> "Seguir o Sistema (Automático)"
+                    "DARK" -> strings.themeDark
+                    "LIGHT" -> strings.themeLight
+                    else -> strings.themeSystem
                 }
 
                 ProfileInfoRow(
-                    label = "Modo de Visualização",
+                    label = strings.themeMode,
                     value = themeLabel,
                     subtext = "Alternar entre modo diurno, noturno ou seguir o sistema",
                     onClick = { showThemeDialog = true }
+                )
+
+                HorizontalDivider(color = DarkBorder, thickness = 1.dp)
+
+                val languageLabel = if (uiState.appLanguage.equals("PT", ignoreCase = true)) "🇵🇹 Português" else "🇬🇧 English"
+                ProfileInfoRow(
+                    label = strings.languageSetting,
+                    value = languageLabel,
+                    subtext = strings.languageSelect,
+                    onClick = { showLanguageDialog = true }
                 )
             }
         }
@@ -2427,6 +2454,17 @@ private fun ProfileTabContent(
                     showThemeDialog = false
                 },
                 onDismiss = { showThemeDialog = false }
+            )
+        }
+
+        if (showLanguageDialog) {
+            LanguageSelectionDialog(
+                currentLanguage = uiState.appLanguage,
+                onSelectLanguage = { lang ->
+                    onSelectLanguage(lang)
+                    showLanguageDialog = false
+                },
+                onDismiss = { showLanguageDialog = false }
             )
         }
 
@@ -2694,6 +2732,45 @@ private fun VersionTabContent(
                     Text("Modo Operacional", fontSize = 13.sp, color = TextSecondary)
                     Text("100% Offline (Sem Servidor)", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AccentEmerald)
                 }
+            }
+        }
+
+        // Card 3: Aviso Legal & Disclaimer Financeiro
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = AccentAmber,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "Aviso Legal & Isenção",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                }
+                Text(
+                    text = "O Finflow é uma ferramenta de gestão e organização pessoal offline. Os cálculos, estimativas de poupança, taxas de esforço e benefícios fiscais de PPR (art. 21º do EBF) têm finalidade meramente pedagógica e indicativa, não constituindo consultoria financeira, jurídica ou fiscal.",
+                    fontSize = 12.sp,
+                    color = TextMuted,
+                    lineHeight = 16.sp
+                )
             }
         }
     }
@@ -2985,6 +3062,88 @@ private fun ThemeSelectionDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text("Fechar", color = AccentBlue)
+            }
+        },
+        containerColor = DarkSurface,
+        shape = RoundedCornerShape(16.dp)
+    )
+}
+
+@Composable
+private fun LanguageSelectionDialog(
+    currentLanguage: String,
+    onSelectLanguage: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val strings = LocalAppStrings.current
+    val options = listOf(
+        Triple("EN", "English (Global)", "Default English version for global international use 🇬🇧"),
+        Triple("PT", "Português", "Versão em Português com terminologia adaptada a Portugal 🇵🇹")
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = strings.languageSelect,
+                fontWeight = FontWeight.Bold,
+                fontSize = 17.sp,
+                color = TextPrimary
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                options.forEach { (code, label, description) ->
+                    val isSelected = currentLanguage.equals(code, ignoreCase = true)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(if (isSelected) AccentBlue.copy(alpha = 0.2f) else DarkSurfaceHighlight)
+                            .border(1.dp, if (isSelected) AccentBlue else DarkBorder, RoundedCornerShape(12.dp))
+                            .clickable { onSelectLanguage(code) }
+                            .padding(horizontal = 14.dp, vertical = 12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = label,
+                                    fontSize = 14.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) AccentBlue else TextPrimary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = description,
+                                    fontSize = 11.sp,
+                                    color = TextMuted,
+                                    lineHeight = 15.sp
+                                )
+                            }
+                            if (isSelected) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = AccentBlue,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(strings.close, color = AccentBlue)
             }
         },
         containerColor = DarkSurface,

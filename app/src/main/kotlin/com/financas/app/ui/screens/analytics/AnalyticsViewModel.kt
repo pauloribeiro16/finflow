@@ -55,7 +55,17 @@ enum class AnalyticsLens(val label: String) {
     COMO("Como"),
     EVOLUCAO("Evolução"),
     COMPARAR("Comparar"),
-    CALENDARIO("Calendário")
+    CALENDARIO("Calendário");
+
+    fun localizedLabel(strings: com.financas.app.ui.i18n.AppStrings): String = when (this) {
+        ANUAL -> strings.lensAnnual
+        NO_QUE -> strings.lensCategory
+        ONDE -> strings.lensContext
+        COMO -> strings.lensPayment
+        EVOLUCAO -> strings.lensEvolution
+        COMPARAR -> strings.lensCompare
+        CALENDARIO -> strings.lensCalendar
+    }
 }
 
 data class AnnualMonthSummary(

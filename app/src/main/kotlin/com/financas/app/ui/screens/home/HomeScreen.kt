@@ -97,6 +97,10 @@ import com.financas.app.ui.theme.FinflowSurfaceContainerLow
 import com.financas.app.ui.theme.FinflowTextMuted
 import com.financas.app.ui.theme.FinflowTextPrimary
 import com.financas.app.ui.theme.FinflowTextSecondary
+import com.financas.app.ui.i18n.AppLanguage
+import com.financas.app.ui.i18n.CategoryTranslator
+import com.financas.app.ui.i18n.LocalAppLanguage
+import com.financas.app.ui.i18n.LocalAppStrings
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -114,9 +118,12 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val summary = uiState.monthlySummary
+    val strings = LocalAppStrings.current
+    val language = LocalAppLanguage.current
+    val isEnglish = language == AppLanguage.EN
     var pendingDelete by remember { mutableStateOf<TransactionEntity?>(null) }
     var showPendingSheet by remember { mutableStateOf(false) }
-    var selectedFilter by remember { mutableStateOf("Todas") }
+    var selectedFilter by remember { mutableStateOf(if (isEnglish) "All" else "Todas") }
     var showAllTransactions by remember { mutableStateOf(false) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -1035,13 +1042,15 @@ fun FinflowTransactionRow(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val language = LocalAppLanguage.current
+    val isEnglish = language == AppLanguage.EN
     val isExpense = transaction.type.equals("EXPENSE", ignoreCase = true)
     val date = LocalDate.ofEpochDay(transaction.epochDay)
     val now = LocalDate.now()
     val dateLabel = when {
-        date == now -> "Hoje"
-        date == now.minusDays(1) -> "Ontem"
-        else -> date.format(DateTimeFormatter.ofPattern("dd MMM", Locale("pt", "PT")))
+        date == now -> if (isEnglish) "Today" else "Hoje"
+        date == now.minusDays(1) -> if (isEnglish) "Yesterday" else "Ontem"
+        else -> date.format(DateTimeFormatter.ofPattern(if (isEnglish) "MMM dd" else "dd MMM", language.locale))
     }
 
     val iconVector: ImageVector = when {
@@ -1070,6 +1079,9 @@ fun FinflowTransactionRow(
         category?.name?.contains("Saúde", ignoreCase = true) == true -> FinflowCoral
         else -> FinflowPrimary
     }
+
+    val rawCategoryName = category?.name ?: if (isEnglish) "Other" else "Outros"
+    val localizedCategoryName = CategoryTranslator.translateCategory(rawCategoryName, language)
 
     Row(
         modifier = Modifier
@@ -1102,7 +1114,7 @@ fun FinflowTransactionRow(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = transaction.merchant.ifEmpty { category?.name ?: "Sem nota" },
+                    text = transaction.merchant.ifEmpty { localizedCategoryName },
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = FinflowTextPrimary,
@@ -1110,7 +1122,7 @@ fun FinflowTransactionRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${category?.name ?: "Outros"} • $dateLabel",
+                    text = "$localizedCategoryName • $dateLabel",
                     fontSize = 12.sp,
                     color = FinflowTextSecondary
                 )
@@ -1124,8 +1136,9 @@ fun FinflowTransactionRow(
                 fontWeight = FontWeight.Bold,
                 color = if (isExpense) FinflowTextPrimary else FinflowSecondary
             )
+            val localizedContext = CategoryTranslator.translateContext(transaction.contextTag, language)
             Text(
-                text = transaction.contextTag.ifEmpty { "Geral" },
+                text = localizedContext.ifEmpty { if (isEnglish) "General" else "Geral" },
                 fontSize = 11.sp,
                 color = FinflowTextMuted
             )

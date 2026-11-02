@@ -46,6 +46,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.financas.app.ui.i18n.AppLanguage
+import com.financas.app.ui.i18n.LocalAppLanguage
+import com.financas.app.ui.i18n.LocalAppStrings
 import com.financas.app.ui.theme.AccentBlue
 import com.financas.app.ui.theme.DarkBorder
 import com.financas.app.ui.theme.DarkSurface
@@ -67,6 +70,18 @@ fun MonthSelector(
     modifier: Modifier = Modifier,
     compact: Boolean = false
 ) {
+    val language = LocalAppLanguage.current
+    val localizedTitle = remember(selectedYearMonth, monthTitle, language) {
+        if (selectedYearMonth > 0) {
+            val year = selectedYearMonth / 100
+            val month = selectedYearMonth % 100
+            val ym = java.time.YearMonth.of(year, month)
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("MMMM yyyy", language.locale)
+            ym.format(formatter).replaceFirstChar { if (it.isLowerCase()) it.titlecase(language.locale) else it.toString() }
+        } else {
+            monthTitle
+        }
+    }
     var showDialog by remember { mutableStateOf(false) }
 
     if (compact) {
@@ -81,7 +96,7 @@ fun MonthSelector(
             ) {
                 Icon(
                     imageVector = Icons.Default.ChevronLeft,
-                    contentDescription = "Mês Anterior",
+                    contentDescription = "Previous Month",
                     tint = TextSecondary,
                     modifier = Modifier.size(20.dp)
                 )
@@ -96,7 +111,7 @@ fun MonthSelector(
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 AnimatedContent(
-                    targetState = monthTitle,
+                    targetState = localizedTitle,
                     transitionSpec = {
                         (slideInVertically(
                             animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy)
@@ -163,7 +178,7 @@ fun MonthSelector(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 AnimatedContent(
-                    targetState = monthTitle,
+                    targetState = localizedTitle,
                     transitionSpec = {
                         (slideInVertically(
                             animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy)
@@ -223,6 +238,9 @@ fun MonthPickerDialog(
     val initialYear = currentYearMonth / 100
     val initialMonth = currentYearMonth % 100
     var activeYear by remember { mutableIntStateOf(initialYear) }
+    val strings = LocalAppStrings.current
+    val language = LocalAppLanguage.current
+    val isEnglish = language == AppLanguage.EN
 
     BasicAlertDialog(
         onDismissRequest = onDismiss
@@ -236,7 +254,7 @@ fun MonthPickerDialog(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Selecionar Mês e Ano",
+                text = if (isEnglish) "Select Month and Year" else "Selecionar Mês e Ano",
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
@@ -269,7 +287,7 @@ fun MonthPickerDialog(
             }
 
             // 12 Months in 4x3 Grid
-            val months = DateDropdownUtils.MONTH_SHORT_NAMES_PT
+            val months = DateDropdownUtils.getMonthShortNames(isEnglish)
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -317,7 +335,7 @@ fun MonthPickerDialog(
                 }
             }
 
-            // Footer actions: "Mês Atual" and "Cancelar"
+            // Footer actions: "Current Month" and "Cancel"
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -329,11 +347,11 @@ fun MonthPickerDialog(
                         onMonthSelected(now.year * 100 + now.monthValue)
                     }
                 ) {
-                    Text("Mês Atual", color = AccentBlue, fontSize = 13.sp)
+                    Text(if (isEnglish) "Current Month" else "Mês Atual", color = AccentBlue, fontSize = 13.sp)
                 }
 
                 TextButton(onClick = onDismiss) {
-                    Text("Cancelar", color = TextSecondary, fontSize = 13.sp)
+                    Text(strings.cancel, color = TextSecondary, fontSize = 13.sp)
                 }
             }
         }

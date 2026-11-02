@@ -99,6 +99,10 @@ import com.financas.app.ui.theme.FinflowTealLight
 import com.financas.app.ui.theme.FinflowTextMuted
 import com.financas.app.ui.theme.FinflowTextPrimary
 import com.financas.app.ui.theme.FinflowTextSecondary
+import com.financas.app.ui.i18n.AppLanguage
+import com.financas.app.ui.i18n.CategoryTranslator
+import com.financas.app.ui.i18n.LocalAppLanguage
+import com.financas.app.ui.i18n.LocalAppStrings
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -120,6 +124,9 @@ fun AddTransactionBottomSheet(
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val strings = LocalAppStrings.current
+    val language = LocalAppLanguage.current
+    val isEnglish = language == AppLanguage.EN
     var showDateDropdownDialog by remember { mutableStateOf(false) }
     var showAddCategoryDialog by remember { mutableStateOf(false) }
     var showAllCategoriesSheet by remember { mutableStateOf(false) }
@@ -156,7 +163,7 @@ fun AddTransactionBottomSheet(
                         color = FinflowPrimary
                     )
                     Text(
-                        text = if (uiState.editingTransactionId != null) "Editar Despesa" else "Nova Despesa",
+                        text = if (uiState.editingTransactionId != null) strings.editTransaction else strings.newTransaction,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = FinflowTextPrimary
@@ -172,14 +179,14 @@ fun AddTransactionBottomSheet(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Fechar",
+                        contentDescription = strings.close,
                         tint = FinflowTextSecondary,
                         modifier = Modifier.size(18.dp)
                     )
                 }
             }
 
-            // Segmented Type Selector [ ● Despesa | ● Receita | ● Transferência ]
+            // Segmented Type Selector [ ● Expense | ● Income | ● Transfer ]
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -194,7 +201,7 @@ fun AddTransactionBottomSheet(
                 val isTransfer = uiState.type == "TRANSFER"
 
                 TypeSegmentChip(
-                    label = "Despesa",
+                    label = strings.expense,
                     dotColor = FinflowCoral,
                     isSelected = isExpense,
                     modifier = Modifier.weight(1f),
@@ -202,7 +209,7 @@ fun AddTransactionBottomSheet(
                 )
 
                 TypeSegmentChip(
-                    label = "Receita",
+                    label = strings.income,
                     dotColor = FinflowSecondary,
                     isSelected = isIncome,
                     modifier = Modifier.weight(1f),
@@ -210,7 +217,7 @@ fun AddTransactionBottomSheet(
                 )
 
                 TypeSegmentChip(
-                    label = "Transferência",
+                    label = if (isEnglish) "Transfer" else "Transferência",
                     dotColor = FinflowTextMuted,
                     isSelected = isTransfer,
                     modifier = Modifier.weight(1f),
@@ -731,9 +738,9 @@ fun AddTransactionBottomSheet(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = when {
-                            isEditing -> "Atualizar Despesa"
-                            uiState.type == "INCOME" -> "Guardar Receita"
-                            else -> "Guardar Despesa"
+                            isEditing -> if (isEnglish) "Update Transaction" else "Atualizar Despesa"
+                            uiState.type == "INCOME" -> if (isEnglish) "Save Income" else "Guardar Receita"
+                            else -> if (isEnglish) "Save Expense" else "Guardar Despesa"
                         },
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
