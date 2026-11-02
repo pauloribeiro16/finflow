@@ -41,7 +41,7 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Setup Keystore (if configured in Secrets)
+      - name: Setup Keystore (Production Secret or CI Fallback)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -50,15 +50,22 @@ jobs:
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 --decode > finflow-release.keystore
-            cat <<EOF > keystore.properties
-          storeFile=finflow-release.keystore
-          storePassword=$KEYSTORE_PASSWORD
-          keyAlias=$KEY_ALIAS
-          keyPassword=$KEY_PASSWORD
-          EOF
+            printf "storeFile=finflow-release.keystore\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n" \
+              "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
             echo "Production keystore configured from GitHub Secrets."
           else
-            echo "No production keystore in Secrets; using fallback release signing."
+            echo "No production keystore in Secrets; generating CI signing keystore with keytool."
+            keytool -genkeypair -v \
+              -keystore finflow-release.keystore \
+              -alias finflow \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass android \
+              -keypass android \
+              -dname "CN=Finflow, OU=Mobile, O=Finflow, L=Lisbon, ST=Lisbon, C=PT"
+            printf "storeFile=finflow-release.keystore\nstorePassword=android\nkeyAlias=finflow\nkeyPassword=android\n" > keystore.properties
+            echo "CI fallback release keystore created successfully."
           fi
 
       - name: Grant execute permission for gradlew
@@ -74,8 +81,16 @@ jobs:
         run: |
           TAG="${{ steps.vars.outputs.tag }}"
           mkdir -p dist
-          APK_FILE=$(find app/build/outputs/apk -name "*release*.apk" | head -n 1)
-          AAB_FILE=$(find app/build/outputs/bundle -name "*release*.aab" | head -n 1)
+          APK_FILE=$(find app/build/outputs/apk -name "*prod*release*.apk" -o -name "*release*.apk" | head -n 1)
+          AAB_FILE=$(find app/build/outputs/bundle -name "*prod*release*.aab" -o -name "*release*.aab" | head -n 1)
+          if [ -z "$APK_FILE" ] || [ ! -f "$APK_FILE" ]; then
+            echo "❌ Erro: APK de Release não encontrado."
+            exit 1
+          fi
+          if [ -z "$AAB_FILE" ] || [ ! -f "$AAB_FILE" ]; then
+            echo "❌ Erro: AAB de Release não encontrado."
+            exit 1
+          fi
           cp "$APK_FILE" "dist/Finflow-${TAG}.apk"
           cp "$AAB_FILE" "dist/Finflow-${TAG}.aab"
           cd dist
