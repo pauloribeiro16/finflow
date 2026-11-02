@@ -438,6 +438,7 @@ class AccountViewModel(
                 goalDao = goalDao,
                 investmentAssetDao = assetDao,
                 userProfileStore = userProfileStore,
+                pendingTransactionDao = pendingTransactionDao,
                 clearExisting = true
             )
             _uiState.update { it.copy(isLoading = false, message = "Dados de demonstração repostos com sucesso.") }

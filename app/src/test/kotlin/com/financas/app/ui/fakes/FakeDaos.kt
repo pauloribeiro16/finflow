@@ -265,6 +265,10 @@ class FakeBudgetDao(initialBudgets: List<BudgetEntity> = emptyList()) : BudgetDa
         budgets.value = budgets.value.filterNot { it.id == id }
     }
 
+    override suspend fun deleteAll() {
+        budgets.value = emptyList()
+    }
+
     override suspend fun count(): Int = budgets.value.size
 }
 
@@ -295,6 +299,10 @@ class FakeGoalDao(initialGoals: List<GoalEntity> = emptyList()) : GoalDao {
 
     override suspend fun deleteById(id: String) {
         goals.value = goals.value.filterNot { it.id == id }
+    }
+
+    override suspend fun deleteAll() {
+        goals.value = emptyList()
     }
 
     override suspend fun count(): Int = goals.value.size
@@ -453,6 +461,10 @@ class FakeInvestmentAssetDao(
 
     override suspend fun deleteById(id: String) {
         assets.value = assets.value.filterNot { it.id == id }
+    }
+
+    override suspend fun deleteAll() {
+        assets.value = emptyList()
     }
 
     override suspend fun count(): Int = assets.value.size

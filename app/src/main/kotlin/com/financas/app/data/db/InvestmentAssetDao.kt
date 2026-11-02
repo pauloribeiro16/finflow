@@ -35,6 +35,9 @@ interface InvestmentAssetDao {
     @Query("DELETE FROM investment_assets WHERE id = :id")
     suspend fun deleteById(id: String)
 
+    @Query("DELETE FROM investment_assets")
+    suspend fun deleteAll()
+
     @Query("SELECT COUNT(*) FROM investment_assets")
     suspend fun count(): Int
 }

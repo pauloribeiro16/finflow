@@ -31,6 +31,7 @@ class FinancasApplication : Application() {
                         goalDao = container.goalDao,
                         investmentAssetDao = container.investmentAssetDao,
                         userProfileStore = container.userProfileStore,
+                        pendingTransactionDao = container.pendingTransactionDao,
                         clearExisting = false
                     )
                 }

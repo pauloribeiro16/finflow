@@ -88,6 +88,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.financas.app.data.entity.CategoryEntity
@@ -126,6 +127,7 @@ import com.financas.app.ui.i18n.CategoryTranslator
 import com.financas.app.ui.i18n.LocalAppLanguage
 import com.financas.app.ui.i18n.LocalAppStrings
 import java.util.Locale
+import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -994,21 +996,15 @@ fun GoalsTabContent(
             )
         }
     } else {
-        val chunkedGoals = uiState.goals.chunked(2)
-        chunkedGoals.forEach { rowGoals ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                rowGoals.forEach { goal ->
-                    GoalMiniCard(
-                        goal = goal,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                if (rowGoals.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            uiState.goals.forEach { goal ->
+                GoalMiniCard(
+                    goal = goal,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
@@ -1455,54 +1451,202 @@ fun GoalMiniCard(
     goal: GoalProgress,
     modifier: Modifier = Modifier
 ) {
+    val isComplete = goal.percentComplete >= 100.0
+    val badgeBg = if (isComplete) FinflowSecondaryLight else FinflowPrimaryContainer.copy(alpha = 0.35f)
+    val badgeColor = if (isComplete) FinflowSecondary else FinflowPrimary
+
     Card(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = FinflowSurface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, FinflowBorderSubtle)
+        border = BorderStroke(1.dp, FinflowBorderSubtle)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header Row: Icon + Title/Deadline + Percentage Pill Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = goal.name,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = FinflowTextPrimary,
-                    maxLines = 1
-                )
-                Text(
-                    text = "${String.format(Locale.US, "%.0f", goal.percentComplete)}%",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = FinflowSecondary
-                )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(FinflowSecondaryLight),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = "🎯", fontSize = 18.sp)
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = goal.name,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = FinflowTextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        val deadlineText = if (goal.deadlineYearMonth != null) {
+                            val ym = YearMonth.of(goal.deadlineYearMonth / 100, goal.deadlineYearMonth % 100)
+                            "Prazo: ${ym.monthValue.toString().padStart(2, '0')}/${ym.year}"
+                        } else {
+                            "Sem data limite"
+                        }
+                        Text(
+                            text = deadlineText,
+                            fontSize = 11.sp,
+                            color = FinflowTextSecondary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Percentage Badge Pill
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(badgeBg)
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (isComplete) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = badgeColor,
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
+                        Text(
+                            text = "${String.format(Locale.US, "%.0f", goal.percentComplete)}%",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = badgeColor,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                }
             }
 
-            Text(
-                text = "${MoneyCents(goal.accumulatedSavingsCents).formatPt()} / ${MoneyCents(goal.targetCents).formatPt()}",
-                fontSize = 11.sp,
-                color = FinflowTextSecondary
-            )
+            // Values & Remaining Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column {
+                    Text(
+                        text = MoneyCents(goal.accumulatedSavingsCents).formatPt(),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = FinflowTextPrimary
+                    )
+                    Text(
+                        text = "de ${MoneyCents(goal.targetCents).formatPt()}",
+                        fontSize = 12.sp,
+                        color = FinflowTextSecondary
+                    )
+                }
 
+                Column(horizontalAlignment = Alignment.End) {
+                    val remainingCents = (goal.targetCents - goal.accumulatedSavingsCents).coerceAtLeast(0L)
+                    if (isComplete) {
+                        Text(
+                            text = "Concluída!",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = FinflowSecondary
+                        )
+                        Text(
+                            text = "Objetivo atingido",
+                            fontSize = 11.sp,
+                            color = FinflowTextMuted
+                        )
+                    } else {
+                        Text(
+                            text = "Faltam ${MoneyCents(remainingCents).formatPt()}",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = FinflowTextPrimary
+                        )
+                        if (goal.monthsRemaining != null) {
+                            Text(
+                                text = "${goal.monthsRemaining} meses restantes",
+                                fontSize = 11.sp,
+                                color = if (goal.onTrack == false) FinflowAmber else FinflowTextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Progress Bar
             val progress = (goal.percentComplete / 100.0).toFloat().coerceIn(0f, 1f)
             LinearProgressIndicator(
                 progress = { progress },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp)),
-                color = FinflowSecondary,
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                color = if (isComplete) FinflowSecondary else FinflowPrimary,
                 trackColor = FinflowSurfaceContainerLow
             )
+
+            // Optional Footer: Monthly Pace
+            if (goal.averageMonthlySavingsCents > 0L || goal.onTrack != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (goal.averageMonthlySavingsCents > 0L) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.TrendingUp,
+                                contentDescription = null,
+                                tint = FinflowTextMuted,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = "Ritmo médio: +${MoneyCents(goal.averageMonthlySavingsCents).formatPt()}/mês",
+                                fontSize = 11.sp,
+                                color = FinflowTextMuted
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
+
+                    if (goal.onTrack != null && !isComplete) {
+                        val trackText = if (goal.onTrack == true) "No ritmo planeado" else "Abaixo do ritmo"
+                        val trackColor = if (goal.onTrack == true) FinflowSecondary else FinflowAmber
+                        Text(
+                            text = trackText,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = trackColor
+                        )
+                    }
+                }
+            }
         }
     }
 }
