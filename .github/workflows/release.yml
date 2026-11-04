@@ -41,7 +41,7 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Setup Keystore (Production Secret or CI Fallback)
+      - name: Setup Release Keystore (GitHub Secrets)
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -54,18 +54,8 @@ jobs:
               "$KEYSTORE_PASSWORD" "$KEY_ALIAS" "$KEY_PASSWORD" > keystore.properties
             echo "Production keystore configured from GitHub Secrets."
           else
-            echo "No production keystore in Secrets; generating CI signing keystore with keytool."
-            keytool -genkeypair -v \
-              -keystore finflow-release.keystore \
-              -alias finflow \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass android \
-              -keypass android \
-              -dname "CN=Finflow, OU=Mobile, O=Finflow, L=Lisbon, ST=Lisbon, C=PT"
-            printf "storeFile=finflow-release.keystore\nstorePassword=android\nkeyAlias=finflow\nkeyPassword=android\n" > keystore.properties
-            echo "CI fallback release keystore created successfully."
+            echo "::error::Missing signing secrets (KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD). Refusing to publish a release signed with a throwaway key: users could not update from one release to the next."
+            exit 1
           fi
 
       - name: Grant execute permission for gradlew
