@@ -9,6 +9,17 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.3.0] — 2026-11-04 (Minor Release)
+### Adicionado
+- **Transferências para XTB & Optimize**: movimentos pendentes da XTB ou Optimize deixam de contar como despesa e passam a transferências ligadas a um ativo da Carteira.
+  - Optimize: pergunta sempre para que ativo foi o dinheiro.
+  - XTB: vai por omissão para o ativo 'XTB – por alocar', criado automaticamente; o botão **Alocar** na Carteira passa o saldo para os ativos reais.
+  - Apagar ou editar uma transferência ajusta o valor do ativo; o backup (JSON) inclui o novo campo `investmentAssetId`.
+### Alterado
+- Base de dados migrada para a versão 7 (nova coluna `investmentAssetId` em `transactions`), sem perda de dados.
+
+---
+
 ## [2.2.2] — 2026-11-04 (Patch & Fix)
 ### Alterado
 - **Assinatura fixa das releases**: o pipeline passa a assinar sempre com a mesma chave (segredos do GitHub) e recusa publicar sem ela, permitindo que cada release atualize a anterior.

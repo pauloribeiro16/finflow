@@ -17,11 +17,25 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.2.2"
-    const val CURRENT_BUILD = 18
+    const val CURRENT_VERSION = "2.3.0"
+    const val CURRENT_BUILD = 19
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.3.0",
+            buildCode = 19,
+            date = "04 Nov 2026",
+            type = ReleaseType.MINOR,
+            title = "Transferências para XTB & Optimize",
+            description = "Os envios para corretoras e plataformas de investimento passam a ser tratados como investimento, e não como despesa.",
+            changes = listOf(
+                "Movimentos pendentes da XTB ou Optimize perguntam para que ativo foi o dinheiro e deixam de contar como despesa.",
+                "XTB: ativo 'XTB – por alocar' criado automaticamente; botão 'Alocar' na Carteira para passar o saldo para os ativos reais.",
+                "Apagar ou editar uma transferência ajusta automaticamente o valor do ativo; o backup inclui a ligação ao ativo.",
+                "Base de dados migrada para a versão 7 sem perda de dados."
+            )
+        ),
         AppRelease(
             version = "2.2.2",
             buildCode = 18,
