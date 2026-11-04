@@ -17,11 +17,23 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.2.1"
-    const val CURRENT_BUILD = 17
+    const val CURRENT_VERSION = "2.2.2"
+    const val CURRENT_BUILD = 18
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.2.2",
+            buildCode = 18,
+            date = "04 Nov 2026",
+            type = ReleaseType.PATCH,
+            title = "Assinatura Fixa & Atualizações Simples",
+            description = "A partir desta versão todas as releases são assinadas com a mesma chave, permitindo atualizar diretamente por cima da anterior.",
+            changes = listOf(
+                "Releases assinadas sempre com a mesma chave: o botão 'Tap to Install' atualiza a app sem perder dados.",
+                "Quem tem a v2.2.0 ou v2.2.1 deve exportar um backup (Conta → Sistema), instalar esta versão e importar o backup."
+            )
+        ),
         AppRelease(
             version = "2.2.1",
             buildCode = 17,

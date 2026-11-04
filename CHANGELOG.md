@@ -9,6 +9,14 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.2.2] — 2026-11-04 (Patch & Fix)
+### Alterado
+- **Assinatura fixa das releases**: o pipeline passa a assinar sempre com a mesma chave (segredos do GitHub) e recusa publicar sem ela, permitindo que cada release atualize a anterior.
+### Nota de migração
+- Quem tem a v2.2.0 ou v2.2.1 (assinadas com chaves diferentes) deve exportar um backup (Conta → Sistema), instalar a v2.2.2 e importar o backup. As atualizações seguintes funcionam diretamente.
+
+---
+
 ## [2.2.1] — 2026-11-04 (Patch & Fix)
 ### Corrigido
 - **Botão de tema** (diurno/noturno) passa a estar disponível em todos os separadores e na Conta.
