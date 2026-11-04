@@ -333,7 +333,7 @@ class AccountViewModelTest {
         )
 
         val exportedJson = viewModel.exportJson()
-        assertTrue(exportedJson.startsWith("{\n  \"version\": 2,\n"))
+        assertTrue(exportedJson.startsWith("{\n  \"version\": 3,\n"))
         assertTrue(exportedJson.contains("\"Habitação\""))
         assertTrue(exportedJson.contains("EDP"))
 
@@ -501,7 +501,7 @@ class AccountViewModelTest {
         assertEquals(1, goalDao.count())
 
         val exported = vm.exportJson()
-        assertTrue(exported.startsWith("{\n  \"version\": 2,\n"))
+        assertTrue(exported.startsWith("{\n  \"version\": 3,\n"))
         assertTrue(exported.contains("\"budgets\": ["))
         assertTrue(exported.contains("\"goals\": ["))
         assertTrue(exported.contains("budget_exp_housing"))

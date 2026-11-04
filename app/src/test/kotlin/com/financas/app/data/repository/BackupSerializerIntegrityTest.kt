@@ -363,13 +363,13 @@ class BackupSerializerIntegrityTest {
     fun test8_roundTripJsonV2_preservesEveryFieldOnBudgetsAndGoals() {
         val json = serializer.exportToJson(categories, transactions, budgets, goals)
 
-        assertTrue(json.startsWith("{\n  \"version\": 2,\n"))
+        assertTrue(json.startsWith("{\n  \"version\": 3,\n"))
         assertTrue(json.contains("\"budgets\": ["))
         assertTrue(json.contains("\"goals\": ["))
 
         val restored = serializer.importFromJson(json)
 
-        assertEquals(2, restored.version)
+        assertEquals(3, restored.version)
         assertEquals(budgets, restored.budgets)
         assertEquals(goals, restored.goals)
         assertEquals(categories, restored.categories)

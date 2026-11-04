@@ -66,6 +66,7 @@ class AccountViewModel(
     private val investmentAssetDao: InvestmentAssetDao? = null,
     private val userProfileStore: UserProfileStore? = null,
     private val appUpdateManager: com.financas.app.data.updater.AppUpdateManager? = null,
+    private val settingsBackupManager: com.financas.app.data.repository.SettingsBackupManager? = null,
     private val todayYearMonth: () -> Int = {
         LocalDate.now().let { it.year * 100 + it.monthValue }
     }
@@ -311,7 +312,10 @@ class AccountViewModel(
         val budgets = budgetDao.getAllSync()
         val goals = goalDao.getAllSync()
         val investments = investmentAssetDao?.getAllSync() ?: emptyList()
-        return backupSerializer.exportToJson(categories, transactions, budgets, goals, investments)
+        return backupSerializer.exportToJson(
+            categories, transactions, budgets, goals, investments,
+            settings = settingsBackupManager?.snapshot()
+        )
     }
 
     suspend fun exportCsv(): String {
@@ -325,6 +329,20 @@ class AccountViewModel(
         return try {
             val backupData = backupSerializer.importFromJson(jsonString)
             val result = backupSerializer.restoreBackup(backupData, categoryDao, transactionDao, budgetDao, goalDao, investmentAssetDao)
+            backupData.settings?.let { settings ->
+                settingsBackupManager?.apply(settings)
+                _uiState.update {
+                    it.copy(
+                        userName = settings.userName,
+                        defaultCurrency = settings.defaultCurrency,
+                        monthlyCycleDay = settings.monthlyCycleDay,
+                        themeMode = settings.themeMode,
+                        appLanguage = settings.appLanguage,
+                        isBiometricsEnabled = biometricLockGate.isBiometricsEnabled(),
+                        profilePhotoUri = userProfileStore?.getProfilePhotoUri()
+                    )
+                }
+            }
             _uiState.update {
                 it.copy(
                     isLoading = false,
@@ -474,7 +492,8 @@ class AccountViewModel(
             pendingTransactionDao: PendingTransactionDao? = null,
             investmentAssetDao: InvestmentAssetDao? = null,
             userProfileStore: UserProfileStore? = null,
-            appUpdateManager: com.financas.app.data.updater.AppUpdateManager? = null
+            appUpdateManager: com.financas.app.data.updater.AppUpdateManager? = null,
+            settingsBackupManager: com.financas.app.data.repository.SettingsBackupManager? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -489,7 +508,8 @@ class AccountViewModel(
                     pendingTransactionDao = pendingTransactionDao,
                     investmentAssetDao = investmentAssetDao,
                     userProfileStore = userProfileStore,
-                    appUpdateManager = appUpdateManager
+                    appUpdateManager = appUpdateManager,
+                    settingsBackupManager = settingsBackupManager
                 ) as T
             }
         }

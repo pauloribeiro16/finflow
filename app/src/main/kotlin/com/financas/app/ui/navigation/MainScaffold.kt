@@ -195,7 +195,8 @@ fun MainScaffold(
             pendingTransactionDao = container.pendingTransactionDao,
             investmentAssetDao = container.investmentAssetDao,
             userProfileStore = container.userProfileStore,
-            appUpdateManager = container.appUpdateManager
+            appUpdateManager = container.appUpdateManager,
+            settingsBackupManager = container.settingsBackupManager
         )
     )
 

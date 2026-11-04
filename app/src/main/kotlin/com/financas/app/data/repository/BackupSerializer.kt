@@ -11,6 +11,7 @@ import com.financas.app.data.entity.GoalEntity
 import com.financas.app.data.entity.InvestmentAssetEntity
 import com.financas.app.data.entity.TransactionEntity
 import java.time.LocalDate
+import com.financas.app.domain.model.AppSettingsBackup
 import java.util.Locale
 
 data class BackupData(
@@ -19,7 +20,8 @@ data class BackupData(
     val transactions: List<TransactionEntity>,
     val budgets: List<BudgetEntity> = emptyList(),
     val goals: List<GoalEntity> = emptyList(),
-    val investments: List<InvestmentAssetEntity> = emptyList()
+    val investments: List<InvestmentAssetEntity> = emptyList(),
+    val settings: AppSettingsBackup? = null
 )
 
 data class RestoreResult(
@@ -34,7 +36,7 @@ data class RestoreResult(
 class BackupSerializer {
 
     companion object {
-        const val CURRENT_SCHEMA_VERSION = 2
+        const val CURRENT_SCHEMA_VERSION = 3
         const val LEGACY_SCHEMA_VERSION = 1
         val CSV_HEADER = "Data;Mês;Tipo;Valor €;Categoria;Subcategoria;Onde (Contexto);Estabelecimento/Nota;Como (Método);Fixo"
     }
@@ -45,7 +47,8 @@ class BackupSerializer {
         budgets: List<BudgetEntity> = emptyList(),
         goals: List<GoalEntity> = emptyList(),
         investments: List<InvestmentAssetEntity> = emptyList(),
-        version: Int = CURRENT_SCHEMA_VERSION
+        version: Int = CURRENT_SCHEMA_VERSION,
+        settings: AppSettingsBackup? = null
     ): String {
         val sb = StringBuilder()
         sb.append("{\n")
@@ -124,8 +127,24 @@ class BackupSerializer {
             sb.append("      \"archived\": ").append(asset.archived).append("\n")
             sb.append("    }").append(if (index < investments.size - 1) "," else "").append("\n")
         }
-        sb.append("  ]\n")
-        sb.append("}")
+        sb.append("  ]")
+        if (settings != null) {
+            sb.append(",\n  \"settings\": {\n")
+            sb.append("    \"userName\": ").append(escapeJsonString(settings.userName)).append(",\n")
+            sb.append("    \"defaultCurrency\": ").append(escapeJsonString(settings.defaultCurrency)).append(",\n")
+            sb.append("    \"monthlyCycleDay\": ").append(settings.monthlyCycleDay).append(",\n")
+            sb.append("    \"themeMode\": ").append(escapeJsonString(settings.themeMode)).append(",\n")
+            sb.append("    \"appLanguage\": ").append(escapeJsonString(settings.appLanguage)).append(",\n")
+            sb.append("    \"biometricsEnabled\": ").append(settings.biometricsEnabled).append(",\n")
+            sb.append("    \"notificationCaptureEnabled\": ").append(settings.notificationCaptureEnabled).append(",\n")
+            sb.append("    \"customContextTags\": [")
+                .append(settings.customContextTags.joinToString(", ") { escapeJsonString(it) }).append("]")
+            if (settings.profilePhotoBase64 != null) {
+                sb.append(",\n    \"profilePhotoBase64\": ").append(escapeJsonString(settings.profilePhotoBase64))
+            }
+            sb.append("\n  }")
+        }
+        sb.append("\n}")
         return sb.toString()
     }
 
@@ -256,13 +275,31 @@ class BackupSerializer {
             )
         }
 
+        val settingsObj = root["settings"]?.asObject()
+        val settings = if (settingsObj != null && settingsObj.isNotEmpty()) {
+            AppSettingsBackup(
+                userName = settingsObj["userName"]?.asString() ?: "",
+                defaultCurrency = settingsObj["defaultCurrency"]?.asString() ?: "EUR (€)",
+                monthlyCycleDay = settingsObj["monthlyCycleDay"]?.asInt(1) ?: 1,
+                themeMode = settingsObj["themeMode"]?.asString() ?: "SYSTEM",
+                appLanguage = settingsObj["appLanguage"]?.asString() ?: "EN",
+                biometricsEnabled = settingsObj["biometricsEnabled"]?.asBoolean(false) ?: false,
+                notificationCaptureEnabled = settingsObj["notificationCaptureEnabled"]?.asBoolean(true) ?: true,
+                customContextTags = settingsObj["customContextTags"]?.asArray()?.mapNotNull { it.asString() } ?: emptyList(),
+                profilePhotoBase64 = settingsObj["profilePhotoBase64"]?.asString()?.takeIf { it.isNotBlank() }
+            )
+        } else {
+            null
+        }
+
         return BackupData(
             version = version,
             categories = categories,
             transactions = transactions,
             budgets = budgets,
             goals = goals,
-            investments = investments
+            investments = investments,
+            settings = settings
         )
     }
 

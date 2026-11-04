@@ -44,6 +44,7 @@ interface AppContainer {
     val userProfileStore: UserProfileStore
     val sessionBackgroundClock: SessionBackgroundClock
     val appUpdateManager: com.financas.app.data.updater.AppUpdateManager
+    val settingsBackupManager: com.financas.app.data.repository.SettingsBackupManager
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -124,6 +125,15 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
         SessionBackgroundClock()
     }
 
+    override val settingsBackupManager: com.financas.app.data.repository.SettingsBackupManager by lazy {
+        com.financas.app.data.repository.SettingsBackupManager(
+            context = context,
+            userProfileStore = userProfileStore,
+            biometricPreferenceStore = biometricPreferenceStore,
+            contextTagsStore = contextTagsStore
+        )
+    }
+
     override val appUpdateManager: com.financas.app.data.updater.AppUpdateManager by lazy {
         com.financas.app.data.updater.AppUpdateManager(
             context = context,
@@ -133,7 +143,8 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
                     transactionDao.getAllSync(),
                     budgetDao.getAllSync(),
                     goalDao.getAllSync(),
-                    investmentAssetDao.getAllSync()
+                    investmentAssetDao.getAllSync(),
+                    settings = settingsBackupManager.snapshot()
                 )
             }
         )

@@ -204,7 +204,7 @@ class BackupSerializerTest {
 
         val json = serializer.exportToJson(sampleCategories, sampleTransactions, budgets, goals)
 
-        assertTrue(json.startsWith("{\n  \"version\": 2,\n"))
+        assertTrue(json.startsWith("{\n  \"version\": 3,\n"))
         assertTrue(json.contains("\"budgets\": ["))
         assertTrue(json.contains("\"id\": \"budget_exp_food_super\""))
         assertTrue(json.contains("\"limitCents\": 25000"))

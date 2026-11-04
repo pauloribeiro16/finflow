@@ -17,11 +17,24 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.3.2"
-    const val CURRENT_BUILD = 21
+    const val CURRENT_VERSION = "2.3.3"
+    const val CURRENT_BUILD = 22
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.3.3",
+            buildCode = 22,
+            date = "04 Nov 2026",
+            type = ReleaseType.PATCH,
+            title = "Backup com Definições e Foto",
+            description = "O backup passa a guardar também as definições da app e a foto de perfil, que voltam como estavam ao restaurar.",
+            changes = listOf(
+                "Backup inclui nome, foto de perfil, moeda, ciclo mensal, tema, idioma, biometria, captura de notificações e etiquetas de contexto.",
+                "Ao restaurar, as definições e a foto são aplicadas automaticamente; a biometria só se o telemóvel tiver bloqueio de ecrã.",
+                "O backup automático antes de atualizar também inclui as definições."
+            )
+        ),
         AppRelease(
             version = "2.3.2",
             buildCode = 21,

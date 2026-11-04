@@ -134,7 +134,7 @@ class Phase8And9IntegrityTest {
     fun test3_exportJsonV2_ContainsVersionAndBudgetsAndGoalsWithEveryField() {
         val json = serializer.exportToJson(categories, transactions, budgets, goals)
 
-        assertTrue(json.startsWith("{\n  \"version\": 2,\n"))
+        assertTrue(json.startsWith("{\n  \"version\": 3,\n"))
         assertTrue(json.contains("\"budgets\": ["))
         assertTrue(json.contains("\"goals\": ["))
 
@@ -151,7 +151,7 @@ class Phase8And9IntegrityTest {
         assertTrue(json.contains("\"archived\": false"))
 
         val restored = serializer.importFromJson(json)
-        assertEquals(2, restored.version)
+        assertEquals(3, restored.version)
         assertEquals(budgets, restored.budgets)
         assertEquals(goals, restored.goals)
     }

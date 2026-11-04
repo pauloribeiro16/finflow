@@ -9,6 +9,12 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.3.3] — 2026-11-04 (Patch & Fix)
+### Alterado
+- **Backup completo**: o ficheiro (esquema v3) passa a incluir as definições da app (nome, moeda, ciclo, tema, idioma, biometria, captura de notificações, etiquetas) e a foto de perfil (reduzida); ao restaurar são aplicadas automaticamente. Backups antigos continuam a importar-se.
+
+---
+
 ## [2.3.2] — 2026-11-04 (Patch & Fix)
 ### Alterado
 - **Atualizador mais seguro**: guarda um backup automático em `Downloads` antes de instalar e verifica a assinatura do APK, mostrando uma mensagem clara em vez do erro genérico do Android quando não é compatível.
