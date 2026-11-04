@@ -17,11 +17,26 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.2.0"
-    const val CURRENT_BUILD = 16
+    const val CURRENT_VERSION = "2.2.1"
+    const val CURRENT_BUILD = 17
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.2.1",
+            buildCode = 17,
+            date = "04 Nov 2026",
+            type = ReleaseType.PATCH,
+            title = "Consistência Visual & Modo Claro/Escuro",
+            description = "Correções de UI, formatação PT-PT e botão de tema disponível em todos os ecrãs.",
+            changes = listOf(
+                "Botão de modo diurno/noturno disponível em todos os separadores e na Conta.",
+                "Percentagens com vírgula decimal em todo o lado e sem '-0,0%'; variação face ao mês anterior calculada a partir dos dados reais.",
+                "Conta: nome, foto, idioma e aparência sempre atualizados; cabeçalho e barra inferior coerentes com o ecrã aberto.",
+                "Ícones e etiquetas de contexto dos movimentos corretos por categoria; splash com o fundo escuro da app.",
+                "Média diária correta em meses passados e correção do erro de lint na lista de movimentos do Início."
+            )
+        ),
         AppRelease(
             version = "2.2.0",
             buildCode = 16,

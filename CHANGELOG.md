@@ -9,6 +9,17 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.2.1] — 2026-11-04 (Patch & Fix)
+### Corrigido
+- **Botão de tema** (diurno/noturno) passa a estar disponível em todos os separadores e na Conta.
+- **Formatação PT-PT**: percentagens com vírgula decimal em todos os ecrãs e sem `-0,0%`; variação face ao mês anterior no Início calculada com dados reais.
+- **Conta**: nome, foto, idioma e aparência refletem sempre o valor guardado; cabeçalho e barra inferior coerentes; iniciais do avatar sem caracteres inválidos.
+- **Movimentos**: ícones por categoria-mãe e etiquetas de contexto traduzidas.
+- **Início**: média diária correta em meses passados; lista animada usa o estado alvo (erro de lint).
+- **Splash** com o fundo `#0B0E14`; sobreposição do texto "Despesa Fixa" com o interruptor.
+
+---
+
 ## [2.2.0] — 2026-10-29 (Minor Release)
 ### Adicionado
 - **Transições Direcionais Entre Ecrãs (Material 3 Expressive)**: Transições dinâmicas com deslize horizontal direcional (`slideInHorizontally` + `fadeIn` + `scaleIn` e `slideOutHorizontally` + `fadeOut` + `scaleOut`) entre `Início`, `Movimentos`, `Análise` e `Orçamentos`, além de transição modal suave para o ecrã de `Conta`.

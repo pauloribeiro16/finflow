@@ -13,7 +13,7 @@ class AppReleaseManagerTest {
         val latest = AppReleaseManager.latestRelease()
         assertEquals(AppReleaseManager.CURRENT_VERSION, latest.version)
         assertEquals(AppReleaseManager.CURRENT_BUILD, latest.buildCode)
-        assertEquals(ReleaseType.MINOR, latest.type)
+        assertEquals(ReleaseType.PATCH, latest.type)
     }
 
     @Test
