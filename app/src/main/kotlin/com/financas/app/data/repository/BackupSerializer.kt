@@ -80,6 +80,9 @@ class BackupSerializer {
             if (tx.linkedTransactionId != null) {
                 sb.append(",\n      \"linkedTransactionId\": ").append(tx.linkedTransactionId)
             }
+            if (tx.investmentAssetId != null) {
+                sb.append(",\n      \"investmentAssetId\": ").append(escapeJsonString(tx.investmentAssetId))
+            }
             sb.append("\n    }").append(if (index < transactions.size - 1) "," else "").append("\n")
         }
         sb.append("  ],\n")
@@ -167,6 +170,7 @@ class BackupSerializer {
             val paymentMethod = obj["paymentMethod"]?.asString() ?: ""
             val isFixed = obj["isFixed"]?.asBoolean(false) ?: false
             val linkedTransactionId = obj["linkedTransactionId"]?.asLongOrNull()
+            val investmentAssetId = obj["investmentAssetId"]?.asString()?.takeIf { it.isNotBlank() }
             TransactionEntity(
                 id = id,
                 type = type,
@@ -178,7 +182,8 @@ class BackupSerializer {
                 merchant = merchant,
                 paymentMethod = paymentMethod,
                 isFixed = isFixed,
-                linkedTransactionId = linkedTransactionId
+                linkedTransactionId = linkedTransactionId,
+                investmentAssetId = investmentAssetId
             )
         }
 
@@ -396,7 +401,8 @@ class BackupSerializer {
                 a.merchant == b.merchant &&
                 a.paymentMethod == b.paymentMethod &&
                 a.isFixed == b.isFixed &&
-                a.linkedTransactionId == b.linkedTransactionId
+                a.linkedTransactionId == b.linkedTransactionId &&
+                a.investmentAssetId == b.investmentAssetId
     }
 
     private fun formatAmountPt(cents: Long): String {

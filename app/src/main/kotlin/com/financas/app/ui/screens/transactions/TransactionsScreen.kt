@@ -401,7 +401,7 @@ fun TransactionsScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.deleteTransaction(tx.id)
+                        viewModel.deleteTransaction(tx)
                         pendingDelete = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = AccentCoral)

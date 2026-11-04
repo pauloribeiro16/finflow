@@ -147,7 +147,8 @@ fun MainScaffold(
     val transactionsViewModel: TransactionsViewModel = viewModel(
         factory = TransactionsViewModel.provideFactory(
             transactionDao = container.transactionDao,
-            categoryDao = container.categoryDao
+            categoryDao = container.categoryDao,
+            investmentAssetDao = container.investmentAssetDao
         )
     )
 
@@ -156,7 +157,8 @@ fun MainScaffold(
             transactionDao = container.transactionDao,
             categoryDao = container.categoryDao,
             smartPrefillEngine = container.smartPrefillEngine,
-            contextTagsStore = container.contextTagsStore
+            contextTagsStore = container.contextTagsStore,
+            investmentAssetDao = container.investmentAssetDao
         )
     )
 

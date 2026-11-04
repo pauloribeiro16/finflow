@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.financas.app.data.db.CategoryDao
+import com.financas.app.data.db.InvestmentAssetDao
+import com.financas.app.data.repository.InvestmentTransferService
 import com.financas.app.data.db.TransactionDao
 import com.financas.app.data.entity.CategoryEntity
 import com.financas.app.data.entity.TransactionEntity
@@ -76,6 +78,7 @@ data class TransactionsUiState(
 class TransactionsViewModel(
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
+    investmentAssetDao: InvestmentAssetDao? = null,
     initialYearMonth: Int = run {
         val now = LocalDate.now()
         now.year * 100 + now.monthValue
@@ -171,9 +174,23 @@ class TransactionsViewModel(
         applyFilters()
     }
 
+    private val transferService: InvestmentTransferService? =
+        investmentAssetDao?.let { InvestmentTransferService(transactionDao, it) }
+
     fun deleteTransaction(id: Long) {
         viewModelScope.launch {
             transactionDao.deleteById(id)
+        }
+    }
+
+    fun deleteTransaction(transaction: TransactionEntity) {
+        viewModelScope.launch {
+            val service = transferService
+            if (transaction.investmentAssetId != null && service != null) {
+                service.deleteTransaction(transaction)
+            } else {
+                transactionDao.deleteById(transaction.id)
+            }
         }
     }
 
@@ -299,14 +316,15 @@ class TransactionsViewModel(
         fun provideFactory(
             transactionDao: TransactionDao,
             categoryDao: CategoryDao,
+            investmentAssetDao: InvestmentAssetDao? = null,
             initialYearMonth: Int? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return if (initialYearMonth != null) {
-                    TransactionsViewModel(transactionDao, categoryDao, initialYearMonth) as T
+                    TransactionsViewModel(transactionDao, categoryDao, investmentAssetDao, initialYearMonth) as T
                 } else {
-                    TransactionsViewModel(transactionDao, categoryDao) as T
+                    TransactionsViewModel(transactionDao, categoryDao, investmentAssetDao) as T
                 }
             }
         }

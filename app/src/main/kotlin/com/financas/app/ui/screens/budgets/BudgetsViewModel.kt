@@ -7,6 +7,7 @@ import com.financas.app.data.db.BudgetDao
 import com.financas.app.data.db.CategoryDao
 import com.financas.app.data.db.GoalDao
 import com.financas.app.data.db.InvestmentAssetDao
+import com.financas.app.data.repository.InvestmentTransferService
 import com.financas.app.data.db.TransactionDao
 import com.financas.app.data.entity.BudgetEntity
 import com.financas.app.data.entity.CategoryEntity
@@ -279,6 +280,13 @@ class BudgetsViewModel(
                 archived = false
             )
             investmentAssetDao?.insert(asset)
+        }
+    }
+
+    fun allocateAsset(fromAssetId: String, toAssetId: String, amountCents: Long) {
+        val dao = investmentAssetDao ?: return
+        viewModelScope.launch {
+            InvestmentTransferService(transactionDao, dao).allocate(fromAssetId, toAssetId, amountCents)
         }
     }
 

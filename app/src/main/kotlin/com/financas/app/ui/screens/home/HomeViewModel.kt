@@ -7,6 +7,9 @@ import com.financas.app.data.db.BudgetDao
 import com.financas.app.data.db.CategoryDao
 import com.financas.app.data.db.GoalDao
 import com.financas.app.data.db.InvestmentAssetDao
+import com.financas.app.data.repository.InvestmentTransferService
+import com.financas.app.domain.usecase.InvestmentPlatform
+import com.financas.app.domain.usecase.InvestmentTransferRules
 import com.financas.app.data.db.PendingTransactionDao
 import com.financas.app.data.db.TransactionDao
 import com.financas.app.data.entity.BudgetEntity
@@ -82,6 +85,7 @@ data class HomeUiState(
     val profilePhotoUri: String? = null,
     val userName: String = "",
     val portfolioSummary: PortfolioSummary = PortfolioSummary(),
+    val investmentAssets: List<InvestmentAssetEntity> = emptyList(),
     val isLoading: Boolean = false
 )
 
@@ -155,7 +159,7 @@ class HomeViewModel(
         viewModelScope.launch {
             dao.getAll().collect { assets ->
                 val summary = investmentPortfolioCalculator.calculate(assets)
-                _uiState.update { it.copy(portfolioSummary = summary) }
+                _uiState.update { it.copy(portfolioSummary = summary, investmentAssets = assets.filter { a -> !a.archived }) }
             }
         }
     }
@@ -264,10 +268,25 @@ class HomeViewModel(
         }
     }
 
+    fun deleteTransaction(transaction: TransactionEntity) {
+        viewModelScope.launch {
+            val service = transferService
+            if (transaction.investmentAssetId != null && service != null) {
+                service.deleteTransaction(transaction)
+            } else {
+                transactionDao.deleteById(transaction.id)
+            }
+        }
+    }
+
+    private val transferService: InvestmentTransferService? =
+        investmentAssetDao?.let { InvestmentTransferService(transactionDao, it) }
+
     fun confirmPending(
         pending: PendingTransactionEntity,
         chosenCategoryId: String? = null,
-        chosenContextTag: String? = null
+        chosenContextTag: String? = null,
+        investmentAssetId: String? = null
     ) {
         viewModelScope.launch {
             val epochDay = pending.detectedEpochDay
@@ -285,7 +304,12 @@ class HomeViewModel(
                 paymentMethod = pending.suggestedPaymentMethod,
                 isFixed = pending.isFixed
             )
-            transactionDao.insert(newTx)
+            val service = transferService
+            if (investmentAssetId != null && service != null) {
+                service.recordTransfer(newTx, investmentAssetId)
+            } else {
+                transactionDao.insert(newTx)
+            }
             pendingTransactionDao?.deleteById(pending.id)
             if (txYearMonth == _uiState.value.selectedYearMonth) {
                 loadMonthData(txYearMonth)
@@ -323,7 +347,15 @@ class HomeViewModel(
                     paymentMethod = pending.suggestedPaymentMethod,
                     isFixed = pending.isFixed
                 )
-                transactionDao.insert(newTx)
+                val platform = InvestmentTransferRules.detectPlatform(pending.rawMerchant)
+                val service = transferService
+                if (platform == InvestmentPlatform.OPTIMIZE) {
+                    continue
+                } else if (platform == InvestmentPlatform.XTB && service != null) {
+                    service.recordTransfer(newTx, InvestmentTransferRules.XTB_HOLDING_ASSET_ID)
+                } else {
+                    transactionDao.insert(newTx)
+                }
                 pendingTransactionDao?.deleteById(pending.id)
             }
             loadMonthData(_uiState.value.selectedYearMonth)

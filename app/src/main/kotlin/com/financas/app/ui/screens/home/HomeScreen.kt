@@ -987,8 +987,12 @@ fun HomeScreen(
             pendingList = uiState.pendingTransactions,
             categories = uiState.categoryMap,
             onDismiss = { showPendingSheet = false },
+            investmentAssets = uiState.investmentAssets,
             onConfirm = { pending, cat, ctx ->
                 viewModel.confirmPending(pending, cat, ctx)
+            },
+            onConfirmInvestment = { pending, assetId ->
+                viewModel.confirmPending(pending, investmentAssetId = assetId)
             },
             onEditFull = { pending ->
                 showPendingSheet = false
@@ -1015,7 +1019,7 @@ fun HomeScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.deleteTransaction(tx.id)
+                        viewModel.deleteTransaction(tx)
                         pendingDelete = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = FinflowCoral)

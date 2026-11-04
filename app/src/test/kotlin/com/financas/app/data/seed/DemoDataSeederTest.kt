@@ -79,9 +79,9 @@ class DemoDataSeederTest {
         val typesRepresented = assets.map { InvestmentType.fromKey(it.type) }.toSet()
         assertEquals("All 6 investment types must be represented in demo data", 6, typesRepresented.size)
 
-        // 6. Verify pending transactions (2 items)
+        // 6. Verify pending transactions (4 items, incl. XTB and Optimize transfers)
         val pending = pendingTransactionDao.getAll().first()
-        assertEquals(2, pending.size)
+        assertEquals(4, pending.size)
 
         // 7. Verify user profile
         assertEquals("Paulo (Demonstração)", userProfileStore.getUserName())

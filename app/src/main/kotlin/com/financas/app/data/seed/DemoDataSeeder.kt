@@ -899,6 +899,32 @@ object DemoDataSeeder {
                     detectedEpochDay = now.toEpochDay(),
                     receivedTimestamp = System.currentTimeMillis() - 7200000L,
                     notes = "Divisão de conta de jantar"
+                ),
+                PendingTransactionEntity(
+                    amountCents = 15000L,
+                    rawMerchant = "Transferência para XTB",
+                    suggestedType = "EXPENSE",
+                    suggestedCategoryId = "exp_financial_other",
+                    suggestedContextTag = "SAIDA",
+                    suggestedPaymentMethod = "TRANSFERENCIA",
+                    isFixed = false,
+                    sourceApp = "com.bancocgd.app",
+                    detectedEpochDay = now.toEpochDay(),
+                    receivedTimestamp = System.currentTimeMillis() - 10800000L,
+                    notes = "Envio para corretora detetado por notificação bancária"
+                ),
+                PendingTransactionEntity(
+                    amountCents = 10000L,
+                    rawMerchant = "Transferência para Optimize",
+                    suggestedType = "EXPENSE",
+                    suggestedCategoryId = "exp_financial_other",
+                    suggestedContextTag = "SAIDA",
+                    suggestedPaymentMethod = "TRANSFERENCIA",
+                    isFixed = false,
+                    sourceApp = "com.bancocgd.app",
+                    detectedEpochDay = now.toEpochDay(),
+                    receivedTimestamp = System.currentTimeMillis() - 14400000L,
+                    notes = "Envio para plataforma de investimento detetado por notificação bancária"
                 )
             )
         )

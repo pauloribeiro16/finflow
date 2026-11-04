@@ -8,6 +8,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -95,6 +96,7 @@ import com.financas.app.data.entity.CategoryEntity
 import com.financas.app.data.entity.InvestmentAssetEntity
 import com.financas.app.domain.model.AssetAllocationItem
 import com.financas.app.domain.model.InvestmentType
+import com.financas.app.domain.usecase.InvestmentTransferRules
 import com.financas.app.domain.model.MoneyCents
 import com.financas.app.domain.model.XtbParsedReport
 import com.financas.app.domain.model.XtbSyncResult
@@ -144,6 +146,7 @@ fun BudgetsGoalsScreen(
     var showAddAssetDialog by remember { mutableStateOf(false) }
     var editingAsset by remember { mutableStateOf<InvestmentAssetEntity?>(null) }
     var quickUpdateAsset by remember { mutableStateOf<InvestmentAssetEntity?>(null) }
+    var allocatingAsset by remember { mutableStateOf<InvestmentAssetEntity?>(null) }
     var showXtbChooserSheet by remember { mutableStateOf(false) }
     var pendingXtbReport by remember { mutableStateOf<XtbParsedReport?>(null) }
     var xtbStatusMessage by remember { mutableStateOf<String?>(null) }
@@ -265,6 +268,7 @@ fun BudgetsGoalsScreen(
                         onImportXtb = { showXtbChooserSheet = true },
                         onEditAsset = { editingAsset = it },
                         onQuickUpdate = { quickUpdateAsset = it },
+                        onAllocate = { allocatingAsset = it },
                         onDeleteAsset = { viewModel.deleteInvestmentAsset(it.id) }
                     )
                 }
@@ -309,6 +313,18 @@ fun BudgetsGoalsScreen(
                 )
                 showAddAssetDialog = false
                 editingAsset = null
+            }
+        )
+    }
+
+    allocatingAsset?.let { source ->
+        AllocateAssetDialog(
+            source = source,
+            targets = uiState.investmentAssets.filter { it.id != source.id && !it.archived },
+            onDismiss = { allocatingAsset = null },
+            onConfirm = { targetId, cents ->
+                viewModel.allocateAsset(source.id, targetId, cents)
+                allocatingAsset = null
             }
         )
     }
@@ -396,6 +412,7 @@ fun InvestmentsTabContent(
     onImportXtb: () -> Unit = {},
     onEditAsset: (InvestmentAssetEntity) -> Unit,
     onQuickUpdate: (InvestmentAssetEntity) -> Unit,
+    onAllocate: (InvestmentAssetEntity) -> Unit = {},
     onDeleteAsset: (InvestmentAssetEntity) -> Unit
 ) {
     val portfolio = uiState.portfolioSummary
@@ -666,6 +683,11 @@ fun InvestmentsTabContent(
                 asset = asset,
                 onEdit = { onEditAsset(asset) },
                 onQuickUpdate = { onQuickUpdate(asset) },
+                onAllocate = if (InvestmentTransferRules.isHoldingAsset(asset) && asset.currentValueCents > 0L) {
+                    { onAllocate(asset) }
+                } else {
+                    null
+                },
                 onDelete = { onDeleteAsset(asset) }
             )
         }
@@ -677,7 +699,8 @@ fun InvestmentAssetCard(
     asset: InvestmentAssetEntity,
     onEdit: () -> Unit,
     onQuickUpdate: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onAllocate: (() -> Unit)? = null
 ) {
     val type = InvestmentType.fromKey(asset.type)
     val isProfitPositive = asset.profitLossCents >= 0
@@ -810,19 +833,41 @@ fun InvestmentAssetCard(
                         text = "Reforço: +${MoneyCents(asset.monthlyContributionCents).formatPt()}/mês",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = FinflowPrimary
+                        color = FinflowPrimary,
+                        modifier = Modifier.weight(1f)
                     )
                 } else if (asset.notes.isNotBlank()) {
                     Text(
                         text = asset.notes,
                         fontSize = 11.sp,
                         color = FinflowTextMuted,
-                        maxLines = 1
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f).padding(end = 8.dp)
                     )
                 } else {
-                    Spacer(modifier = Modifier.width(1.dp))
+                    Spacer(modifier = Modifier.weight(1f))
                 }
 
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (onAllocate != null) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(FinflowPrimary)
+                            .clickable { onAllocate() }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "Alocar",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
@@ -844,13 +889,109 @@ fun InvestmentAssetCard(
                             text = "Atualizar Saldo",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = FinflowPrimary
+                            color = FinflowPrimary,
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
+                }
                 }
             }
         }
     }
+}
+
+@Composable
+fun AllocateAssetDialog(
+    source: InvestmentAssetEntity,
+    targets: List<InvestmentAssetEntity>,
+    onDismiss: () -> Unit,
+    onConfirm: (String, Long) -> Unit
+) {
+    var selectedTargetId by remember { mutableStateOf<String?>(null) }
+    var amountText by remember {
+        mutableStateOf(MoneyCents(source.currentValueCents).formatPt().replace("€", "").trim())
+    }
+    val amountCents = parseEuroToCents(amountText)
+    val isValid = selectedTargetId != null && amountCents > 0L && amountCents <= source.currentValueCents
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text("Alocar saldo", fontWeight = FontWeight.Bold, color = FinflowTextPrimary)
+                Text(
+                    text = "${source.name} · disponível ${MoneyCents(source.currentValueCents).formatPt()}",
+                    fontSize = 12.sp,
+                    color = FinflowPrimary
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth().imePadding(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "Em que ativo aplicaste este dinheiro?",
+                    fontSize = 12.sp,
+                    color = FinflowTextSecondary
+                )
+                if (targets.isEmpty()) {
+                    Text(
+                        text = "Ainda não tens outros ativos. Cria primeiro o ativo (ex.: um ETF) em \"Nova Aplicação\".",
+                        fontSize = 12.sp,
+                        color = FinflowTextMuted
+                    )
+                }
+                Column(
+                    modifier = Modifier.heightIn(max = 220.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    targets.forEach { target ->
+                        val isSelected = selectedTargetId == target.id
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSelected) FinflowPrimary else FinflowSurfaceContainer)
+                                .clickable { selectedTargetId = target.id }
+                                .padding(horizontal = 12.dp, vertical = 10.dp)
+                        ) {
+                            Text(
+                                text = target.name,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = if (isSelected) Color.Black else FinflowTextPrimary
+                            )
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = { amountText = it },
+                    label = { Text("Valor a alocar (€)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { selectedTargetId?.let { onConfirm(it, amountCents) } },
+                enabled = isValid,
+                colors = ButtonDefaults.buttonColors(containerColor = FinflowPrimary)
+            ) {
+                Text("Alocar", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = FinflowTextSecondary)
+            }
+        }
+    )
 }
 
 @Composable

@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.financas.app.data.db.CategoryDao
+import com.financas.app.data.db.InvestmentAssetDao
+import com.financas.app.data.repository.InvestmentTransferService
+import com.financas.app.domain.usecase.InvestmentTransferRules
 import com.financas.app.data.db.TransactionDao
 import com.financas.app.data.entity.CategoryEntity
 import com.financas.app.data.entity.PendingTransactionEntity
@@ -33,6 +36,7 @@ data class AddTransactionUiState(
     val isRefund: Boolean = false,
     val linkedTransactionId: Long? = null,
     val hasLinkedRefunds: Boolean = false,
+    val investmentAssetId: String? = null,
     val recentExpenses: List<TransactionEntity> = emptyList(),
     val recentMerchants: List<String> = emptyList(),
     val customContextTags: Set<String> = emptySet(),
@@ -46,8 +50,12 @@ class AddTransactionViewModel(
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
     private val smartPrefillEngine: SmartPrefillEngine = SmartPrefillEngine(transactionDao),
-    private val contextTagsStore: ContextTagsStore
+    private val contextTagsStore: ContextTagsStore,
+    private val investmentAssetDao: InvestmentAssetDao? = null
 ) : ViewModel() {
+
+    private val transferService: InvestmentTransferService? =
+        investmentAssetDao?.let { InvestmentTransferService(transactionDao, it) }
 
     private val evaluator = CalculatorNumpadEvaluator()
     private val _uiState = MutableStateFlow(AddTransactionUiState())
@@ -338,6 +346,7 @@ class AddTransactionViewModel(
                 editingTransactionId = tx.id,
                 isRefund = isRefund,
                 linkedTransactionId = tx.linkedTransactionId,
+                investmentAssetId = tx.investmentAssetId,
                 hasLinkedRefunds = hasRefunds,
                 parentCategories = parents,
                 subcategories = subs
@@ -365,7 +374,8 @@ class AddTransactionViewModel(
                 selectedParentCategoryId = firstParent,
                 selectedCategoryId = defaultCat,
                 isRefund = false,
-                linkedTransactionId = null
+                linkedTransactionId = null,
+                investmentAssetId = null
             )
         }
     }
@@ -398,6 +408,7 @@ class AddTransactionViewModel(
                 editingTransactionId = null,
                 isRefund = false,
                 linkedTransactionId = null,
+                investmentAssetId = null,
                 hasLinkedRefunds = false,
                 parentCategories = parents,
                 subcategories = subs
@@ -430,12 +441,24 @@ class AddTransactionViewModel(
             merchant = state.merchant.trim(),
             paymentMethod = state.selectedPaymentMethod,
             isFixed = state.isFixed,
-            linkedTransactionId = linkedId
+            linkedTransactionId = linkedId,
+            investmentAssetId = state.investmentAssetId
         )
 
         viewModelScope.launch {
             if (editingId != null) {
-                transactionDao.update(entity)
+                val linkedAssetId = state.investmentAssetId
+                val original = allTransactionsHistory.find { it.id == editingId }
+                var toSave = entity
+                if (linkedAssetId != null && original != null) {
+                    if (state.type == InvestmentTransferRules.TRANSFER_TYPE) {
+                        transferService?.adjustContribution(linkedAssetId, cents - original.amountCents)
+                    } else {
+                        transferService?.adjustContribution(linkedAssetId, -original.amountCents)
+                        toSave = entity.copy(investmentAssetId = null)
+                    }
+                }
+                transactionDao.update(toSave)
             } else {
                 transactionDao.insert(entity)
             }
@@ -454,7 +477,11 @@ class AddTransactionViewModel(
                     transactionDao.update(refund.copy(linkedTransactionId = null))
                 }
             }
-            transactionDao.deleteById(editingId)
+            if (target.investmentAssetId != null && transferService != null) {
+                transferService.deleteTransaction(target)
+            } else {
+                transactionDao.deleteById(editingId)
+            }
             startNewEntry()
             onSuccess()
         }
@@ -471,11 +498,12 @@ class AddTransactionViewModel(
             transactionDao: TransactionDao,
             categoryDao: CategoryDao,
             smartPrefillEngine: SmartPrefillEngine,
-            contextTagsStore: ContextTagsStore
+            contextTagsStore: ContextTagsStore,
+            investmentAssetDao: InvestmentAssetDao? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return AddTransactionViewModel(transactionDao, categoryDao, smartPrefillEngine, contextTagsStore) as T
+                return AddTransactionViewModel(transactionDao, categoryDao, smartPrefillEngine, contextTagsStore, investmentAssetDao) as T
             }
         }
     }

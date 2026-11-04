@@ -26,5 +26,6 @@ data class TransactionEntity(
     val merchant: String,
     val paymentMethod: String,
     val isFixed: Boolean = false,
-    val linkedTransactionId: Long? = null
+    val linkedTransactionId: Long? = null,
+    val investmentAssetId: String? = null
 )

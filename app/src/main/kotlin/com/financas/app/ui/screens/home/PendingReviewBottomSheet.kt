@@ -60,6 +60,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.financas.app.data.entity.CategoryEntity
+import com.financas.app.data.entity.InvestmentAssetEntity
+import com.financas.app.domain.usecase.InvestmentPlatform
+import com.financas.app.domain.usecase.InvestmentTransferRules
 import com.financas.app.data.entity.PendingTransactionEntity
 import com.financas.app.data.seed.DefaultSeed
 import com.financas.app.domain.model.MoneyCents
@@ -83,6 +86,8 @@ fun PendingReviewBottomSheet(
     pendingList: List<PendingTransactionEntity>,
     categories: Map<String, CategoryEntity>,
     onDismiss: () -> Unit,
+    investmentAssets: List<InvestmentAssetEntity> = emptyList(),
+    onConfirmInvestment: (PendingTransactionEntity, String) -> Unit = { _, _ -> },
     onConfirm: (PendingTransactionEntity, String, String) -> Unit,
     onEditFull: (PendingTransactionEntity) -> Unit,
     onDiscard: (Long) -> Unit,
@@ -93,6 +98,7 @@ fun PendingReviewBottomSheet(
     var itemPickingContext by remember { mutableStateOf<PendingTransactionEntity?>(null) }
     var selectedCategories by remember { mutableStateOf(mapOf<Long, String>()) }
     var selectedContexts by remember { mutableStateOf(mapOf<Long, String>()) }
+    var selectedAssets by remember { mutableStateOf(mapOf<Long, String>()) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -335,6 +341,55 @@ fun PendingReviewBottomSheet(
                                     }
                                 }
 
+                                val platform = InvestmentTransferRules.detectPlatform(item.rawMerchant)
+                                val chosenAssetId = if (platform != null) {
+                                    selectedAssets[item.id]
+                                        ?: InvestmentTransferRules.suggestAssetId(platform, investmentAssets)
+                                } else {
+                                    null
+                                }
+
+                                if (platform != null) {
+                                    Text(
+                                        text = "Transferência para investimento — para onde foi este dinheiro?",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = TextSecondary
+                                    )
+                                    val options = buildList {
+                                        if (platform == InvestmentPlatform.XTB) {
+                                            add(InvestmentTransferRules.XTB_HOLDING_ASSET_ID to InvestmentTransferRules.XTB_HOLDING_NAME)
+                                        }
+                                        investmentAssets
+                                            .filter { !InvestmentTransferRules.isHoldingAsset(it) }
+                                            .forEach { add(it.id to it.name) }
+                                    }
+                                    Row(
+                                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        options.forEach { (assetId, assetName) ->
+                                            val isSelected = chosenAssetId == assetId
+                                            Box(
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(if (isSelected) AccentEmerald else Color.Transparent)
+                                                    .border(1.dp, if (isSelected) AccentEmerald else DarkBorder, RoundedCornerShape(10.dp))
+                                                    .clickable { selectedAssets = selectedAssets + (item.id to assetId) }
+                                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                                            ) {
+                                                Text(
+                                                    text = assetName,
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = if (isSelected) Color.White else TextPrimary,
+                                                    maxLines = 1
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
                                 // Action Buttons
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -343,7 +398,14 @@ fun PendingReviewBottomSheet(
                                 ) {
                                     // Confirm button (1-touch)
                                     Button(
-                                        onClick = { onConfirm(item, currentCategoryId, currentContextTag) },
+                                        onClick = {
+                                            if (platform != null && chosenAssetId != null) {
+                                                onConfirmInvestment(item, chosenAssetId)
+                                            } else {
+                                                onConfirm(item, currentCategoryId, currentContextTag)
+                                            }
+                                        },
+                                        enabled = platform == null || chosenAssetId != null,
                                         modifier = Modifier.weight(1f),
                                         colors = ButtonDefaults.buttonColors(containerColor = AccentEmerald),
                                         shape = RoundedCornerShape(8.dp)
@@ -354,7 +416,11 @@ fun PendingReviewBottomSheet(
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Confirmar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        Text(
+                                            if (platform != null && chosenAssetId == null) "Escolhe o ativo" else "Confirmar",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
                                     }
 
                                     // Edit Full button
