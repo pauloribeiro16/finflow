@@ -9,6 +9,12 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.3.1] — 2026-11-04 (Patch & Fix)
+### Alterado
+- **Backup em ficheiro**: `Exportar Backup (JSON)` e `Exportar CSV` guardam o ficheiro em `Downloads` (fallback para partilha); o restauro lê o ficheiro pelo seletor.
+
+---
+
 ## [2.3.0] — 2026-11-04 (Minor Release)
 ### Adicionado
 - **Transferências para XTB & Optimize**: movimentos pendentes da XTB ou Optimize deixam de contar como despesa e passam a transferências ligadas a um ativo da Carteira.

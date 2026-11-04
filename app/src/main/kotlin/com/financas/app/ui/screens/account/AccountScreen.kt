@@ -128,6 +128,7 @@ import com.financas.app.ui.theme.DarkSurfaceVariant
 import com.financas.app.ui.theme.TextMuted
 import com.financas.app.ui.theme.TextPrimary
 import com.financas.app.ui.theme.TextSecondary
+import com.financas.app.ui.util.exportTextFile
 import com.financas.app.ui.util.shareText
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -805,7 +806,7 @@ fun AccountScreen(
                         onClick = {
                             coroutineScope.launch {
                                 val json = viewModel.exportJson()
-                                shareText(context, json, "backup_financas_${System.currentTimeMillis()}.json", "application/json")
+                                exportTextFile(context, json, "backup_financas_${System.currentTimeMillis()}.json", "application/json")
                             }
                         }
                     )
@@ -821,7 +822,7 @@ fun AccountScreen(
                         onClick = {
                             coroutineScope.launch {
                                 val csv = viewModel.exportCsv()
-                                shareText(context, csv, "movimentos_financas_${System.currentTimeMillis()}.csv", "text/csv")
+                                exportTextFile(context, csv, "movimentos_financas_${System.currentTimeMillis()}.csv", "text/csv")
                             }
                         }
                     )

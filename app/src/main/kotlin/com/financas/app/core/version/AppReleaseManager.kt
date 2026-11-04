@@ -17,11 +17,23 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.3.0"
-    const val CURRENT_BUILD = 19
+    const val CURRENT_VERSION = "2.3.1"
+    const val CURRENT_BUILD = 20
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.3.1",
+            buildCode = 20,
+            date = "04 Nov 2026",
+            type = ReleaseType.PATCH,
+            title = "Backup em Ficheiro",
+            description = "O backup completo passa a ser guardado como ficheiro na pasta Downloads, mais fiável do que partilhar o texto.",
+            changes = listOf(
+                "Exportar Backup (JSON) e CSV guardam o ficheiro em Downloads e só recorrem à partilha se não for possível.",
+                "Restaurar Backup aceita o ficheiro guardado diretamente pelo seletor de ficheiros."
+            )
+        ),
         AppRelease(
             version = "2.3.0",
             buildCode = 19,
