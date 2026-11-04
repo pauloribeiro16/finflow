@@ -2,12 +2,17 @@ package com.financas.app.data.updater
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.pm.SigningInfo
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
 import com.financas.app.domain.model.AppUpdateInfo
 import com.financas.app.domain.usecase.AppUpdateChecker
+import com.financas.app.domain.usecase.UpdateSignatureCheck
+import com.financas.app.ui.util.saveToDownloads
 import com.financas.app.ui.util.AppNotificationHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +23,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
 
 sealed interface UpdateUiState {
     data object Idle : UpdateUiState
@@ -32,7 +38,8 @@ sealed interface UpdateUiState {
 class AppUpdateManager(
     private val context: Context,
     private val checker: AppUpdateChecker = AppUpdateChecker(),
-    private val notificationHelper: AppNotificationHelper = AppNotificationHelper(context)
+    private val notificationHelper: AppNotificationHelper = AppNotificationHelper(context),
+    private val backupProvider: (suspend () -> String)? = null
 ) {
 
     private val _state = MutableStateFlow<UpdateUiState>(UpdateUiState.Idle)
@@ -65,6 +72,17 @@ class AppUpdateManager(
     suspend fun downloadUpdate(updateInfo: AppUpdateInfo) = withContext(Dispatchers.IO) {
         try {
             _state.value = UpdateUiState.Downloading(0, 0L, updateInfo.apkSize)
+
+            backupProvider?.let { provider ->
+                runCatching {
+                    saveToDownloads(
+                        context,
+                        provider(),
+                        "Finflow_backup_antes_de_atualizar_${updateInfo.tagName}.json",
+                        "application/json"
+                    )
+                }
+            }
 
             val updatesDir = File(context.cacheDir, "updates").apply { mkdirs() }
             val apkFile = File(updatesDir, "Finflow-${updateInfo.tagName}.apk")
@@ -112,6 +130,11 @@ class AppUpdateManager(
             return
         }
 
+        if (!isSignatureCompatible(apkFile)) {
+            _state.value = UpdateUiState.Error(UpdateSignatureCheck.MISMATCH_MESSAGE)
+            return
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (!context.packageManager.canRequestPackageInstalls()) {
                 val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
@@ -136,6 +159,31 @@ class AppUpdateManager(
         }
 
         context.startActivity(installIntent)
+    }
+
+    private fun isSignatureCompatible(apkFile: File): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return true
+        return try {
+            val pm = context.packageManager
+            val installed = pm.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+            val candidate = pm.getPackageArchiveInfo(apkFile.absolutePath, PackageManager.GET_SIGNING_CERTIFICATES)
+            UpdateSignatureCheck.isCompatible(
+                signerDigests(installed?.signingInfo),
+                signerDigests(candidate?.signingInfo)
+            )
+        } catch (e: Exception) {
+            true
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.P)
+    private fun signerDigests(info: SigningInfo?): Set<String> {
+        if (info == null) return emptySet()
+        val signers = if (info.hasMultipleSigners()) info.apkContentsSigners else info.signingCertificateHistory
+        return signers.orEmpty().map { signature ->
+            MessageDigest.getInstance("SHA-256").digest(signature.toByteArray())
+                .joinToString("") { "%02x".format(it) }
+        }.toSet()
     }
 
     fun resetState() {

@@ -9,6 +9,12 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.3.2] — 2026-11-04 (Patch & Fix)
+### Alterado
+- **Atualizador mais seguro**: guarda um backup automático em `Downloads` antes de instalar e verifica a assinatura do APK, mostrando uma mensagem clara em vez do erro genérico do Android quando não é compatível.
+
+---
+
 ## [2.3.1] — 2026-11-04 (Patch & Fix)
 ### Alterado
 - **Backup em ficheiro**: `Exportar Backup (JSON)` e `Exportar CSV` guardam o ficheiro em `Downloads` (fallback para partilha); o restauro lê o ficheiro pelo seletor.

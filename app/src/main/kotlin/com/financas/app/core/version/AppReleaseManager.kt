@@ -17,11 +17,24 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.3.1"
-    const val CURRENT_BUILD = 20
+    const val CURRENT_VERSION = "2.3.2"
+    const val CURRENT_BUILD = 21
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.3.2",
+            buildCode = 21,
+            date = "04 Nov 2026",
+            type = ReleaseType.PATCH,
+            title = "Atualizações Seguras",
+            description = "O atualizador guarda um backup automático antes de instalar e avisa com clareza se a assinatura não for compatível.",
+            changes = listOf(
+                "Antes de instalar uma atualização, é guardado automaticamente um backup em Downloads.",
+                "Se o APK tiver outra assinatura, a app explica o que fazer em vez de mostrar o erro genérico do Android.",
+                "Atualizações a partir desta versão instalam por cima, sem desinstalar e sem perder dados."
+            )
+        ),
         AppRelease(
             version = "2.3.1",
             buildCode = 20,

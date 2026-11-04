@@ -125,6 +125,17 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     }
 
     override val appUpdateManager: com.financas.app.data.updater.AppUpdateManager by lazy {
-        com.financas.app.data.updater.AppUpdateManager(context)
+        com.financas.app.data.updater.AppUpdateManager(
+            context = context,
+            backupProvider = {
+                backupSerializer.exportToJson(
+                    categoryDao.getAllSync(),
+                    transactionDao.getAllSync(),
+                    budgetDao.getAllSync(),
+                    goalDao.getAllSync(),
+                    investmentAssetDao.getAllSync()
+                )
+            }
+        )
     }
 }
