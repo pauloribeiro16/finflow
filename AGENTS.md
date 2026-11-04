@@ -7,29 +7,29 @@
 
 ```bash
 # Correr um único ficheiro de teste unitário (PREFERIDO — < 5s)
-./gradlew :app:testDebugUnitTest --tests "com.financas.app.domain.MonthlyAnalyticsCalculatorTest"
+./gradlew :app:testProdDebugUnitTest --tests "com.financas.app.domain.MonthlyAnalyticsCalculatorTest"
 
 # Correr testes de um pacote específico
-./gradlew :app:testDebugUnitTest --tests "com.financas.app.data.*"
+./gradlew :app:testProdDebugUnitTest --tests "com.financas.app.data.*"
 
 # Suite completa de testes unitários (fallback)
-./gradlew :app:testDebugUnitTest
+./gradlew :app:testProdDebugUnitTest
 
 # Compilar APK de Debug e verificar erros de compilação Kotlin/Compose
-./gradlew :app:assembleDebug
+./gradlew :app:assembleProdDebug
 
 # Lint estático
-./gradlew :app:lintDebug
+./gradlew :app:lintProdDebug
 
 # Instalar no emulador/dispositivo ligado via ADB
-./gradlew :app:installDebug
+./gradlew :app:installProdDebug
 ```
 
 ## 2. Testing
 
 - **Framework:** JUnit 4 + `kotlinx-coroutines-test` (testes rápidos em JVM, sem emulador para lógica de negócio).
 - **Regra de Ouro:** Toda a matemática financeira (`Recebido`, `Gasto`, `% do Rendimento`, `Poupança`, `Média Mensal`, `Gerador de Fixos`) vive em classes Kotlin puras em `domain/` com **100% de cobertura unitária**.
-- **Validação de Contratos:** Cada fase exige validação **Tier 3 (Behavioral)** via `./gradlew :app:testDebugUnitTest --tests "..."`.
+- **Validação de Contratos:** Cada fase exige validação **Tier 3 (Behavioral)** via `./gradlew :app:testProdDebugUnitTest --tests "..."`.
 
 ## 3. Project Structure
 
@@ -82,7 +82,7 @@ val pct = (amount / totalIncome) * 100 // Crash/Infinity quando totalIncome == 0
 - **Always:**
   - Ler [`PLANO_ARQUITETURA.md`](./PLANO_ARQUITETURA.md) e o contrato ativo em [`contracts/`](./contracts/) antes de alterar código.
   - Seguir o contrato de 3 papéis (**Planeador → Executor → Validador**).
-  - Validar alterações com testes file-scoped (`./gradlew :app:testDebugUnitTest --tests "..."`).
+  - Validar alterações com testes file-scoped (`./gradlew :app:testProdDebugUnitTest --tests "..."`).
 - **Ask first:**
   - Antes de adicionar qualquer dependência externa ao `build.gradle.kts`.
   - Antes de alterar o esquema de tabelas (`CategoryEntity`, `TransactionEntity`).

@@ -1045,7 +1045,11 @@ private fun NoQueView(
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = if (isIncreased) "↗ +$absDeltaText" else "↘ -$absDeltaText",
+                            text = when {
+                                absDeltaText == "0,0%" -> "→ 0,0%"
+                                isIncreased -> "↗ +$absDeltaText"
+                                else -> "↘ -$absDeltaText"
+                            },
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (isIncreased) FinflowCoral else FinflowSecondary
@@ -3204,6 +3208,7 @@ private fun CalendarioView(
                             TransactionRowItem(
                                 transaction = transaction,
                                 category = uiState.categoryMap[transaction.categoryId],
+                                parentCategory = uiState.categoryMap[transaction.categoryId]?.parentId?.let { uiState.categoryMap[it] },
                                 onDelete = {},
                                 onEdit = {},
                                 showActions = false

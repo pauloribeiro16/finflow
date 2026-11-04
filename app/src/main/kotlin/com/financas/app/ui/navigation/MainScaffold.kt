@@ -252,7 +252,7 @@ fun MainScaffold(
             containerColor = FinflowBackground,
             bottomBar = {
                 FinflowBottomNavBar(
-                    selectedTab = selectedTab,
+                    selectedTab = if (showAccount) NavTab.ACCOUNT else selectedTab,
                     onSelectTab = { tab ->
                         showAccount = false
                         coroutineScope.launch { pagerState.animateScrollToPage(tab.visualOrder) }
@@ -267,7 +267,7 @@ fun MainScaffold(
                     .padding(paddingValues)
             ) {
                 FinflowFixedHeader(
-                    selectedTab = selectedTab,
+                    selectedTab = if (showAccount) NavTab.ACCOUNT else selectedTab,
                     homeViewModel = homeViewModel,
                     transactionsViewModel = transactionsViewModel,
                     analyticsViewModel = analyticsViewModel,
@@ -430,23 +430,6 @@ private fun FinflowFixedHeader(
                         onSelectYearMonth = { onMonthChanged(it) },
                         compact = true
                     )
-
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(FinflowSurface)
-                            .border(1.dp, FinflowBorderSubtle, CircleShape)
-                            .clickable(onClick = onToggleTheme),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (isAppDark) Icons.Default.DarkMode else Icons.Default.LightMode,
-                            contentDescription = if (isAppDark) "Alternar para Modo Diurno" else "Alternar para Modo Noturno",
-                            tint = if (isAppDark) FinflowAmber else FinflowTextSecondary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
                 }
                 NavTab.TRANSACTIONS -> {
                     MonthSelector(
@@ -520,6 +503,23 @@ private fun FinflowFixedHeader(
                     }
                 }
                 NavTab.ACCOUNT -> Unit
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(FinflowSurface)
+                    .border(1.dp, FinflowBorderSubtle, CircleShape)
+                    .clickable(onClick = onToggleTheme),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isAppDark) Icons.Default.DarkMode else Icons.Default.LightMode,
+                    contentDescription = if (isAppDark) "Alternar para Modo Diurno" else "Alternar para Modo Noturno",
+                    tint = if (isAppDark) FinflowAmber else FinflowTextSecondary,
+                    modifier = Modifier.size(18.dp)
+                )
             }
 
             FinflowProfileAvatar(

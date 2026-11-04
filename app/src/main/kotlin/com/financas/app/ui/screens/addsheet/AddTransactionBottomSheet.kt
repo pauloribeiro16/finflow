@@ -657,6 +657,7 @@ fun AddTransactionBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
@@ -666,7 +667,7 @@ fun AddTransactionBottomSheet(
                         tint = if (uiState.isFixed) FinflowPrimary else FinflowTextMuted,
                         modifier = Modifier.size(20.dp)
                     )
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Despesa Fixa",
                             fontSize = 13.sp,
@@ -680,6 +681,8 @@ fun AddTransactionBottomSheet(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Switch(
                     checked = uiState.isFixed,

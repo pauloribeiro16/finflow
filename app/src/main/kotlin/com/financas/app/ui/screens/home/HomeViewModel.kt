@@ -55,6 +55,7 @@ data class GoalProgressUi(
 data class HomeUiState(
     val selectedYearMonth: Int,
     val monthTitle: String = "",
+    val previousMonthExpenseCents: Long = 0L,
     val monthlySummary: MonthlySummary = MonthlySummary(
         yearMonth = 0,
         totalIncomeCents = 0L,
@@ -234,9 +235,16 @@ class HomeViewModel(
                     null
                 }
 
+                val previousYm = YearMonth.of(yearMonth / 100, yearMonth % 100).minusMonths(1)
+                val previousExpenseCents = transactionDao
+                    .getByMonthSync(previousYm.year * 100 + previousYm.monthValue)
+                    .filter { it.type.equals("EXPENSE", ignoreCase = true) }
+                    .sumOf { it.amountCents }
+
                 cachedMonthTxs = txs
                 _uiState.update {
                     it.copy(
+                        previousMonthExpenseCents = previousExpenseCents,
                         monthlySummary = summary,
                         recentTransactions = recent,
                         allMonthTransactions = txs,

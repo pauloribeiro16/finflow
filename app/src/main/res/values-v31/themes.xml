@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Finflow" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/finflow_background</item>
+        <item name="android:statusBarColor">@color/finflow_background</item>
+        <item name="android:navigationBarColor">@color/finflow_background</item>
+        <item name="android:windowSplashScreenBackground">@color/finflow_background</item>
+    </style>
+</resources>

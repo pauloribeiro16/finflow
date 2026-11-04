@@ -451,7 +451,7 @@ fun InvestmentsTabContent(
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "$sign${MoneyCents(portfolio.totalProfitLossCents).formatPt()} ($sign${String.format(Locale.US, "%.1f", portfolio.totalProfitLossPercentage)}%)",
+                        text = "$sign${MoneyCents(portfolio.totalProfitLossCents).formatPt()} ($sign${MoneyCents.formatPercent(portfolio.totalProfitLossPercentage)})",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = profitColor
@@ -791,7 +791,7 @@ fun InvestmentAssetCard(
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "$sign${MoneyCents(asset.profitLossCents).formatPt()} ($sign${String.format(Locale.US, "%.1f", asset.profitLossPercentage)}%)",
+                        text = "$sign${MoneyCents(asset.profitLossCents).formatPt()} ($sign${MoneyCents.formatPercent(asset.profitLossPercentage)})",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = profitColor
@@ -907,7 +907,7 @@ fun AssetAllocationCanvasBar(
                             .background(colorForInvestmentType(item.type))
                     )
                     Text(
-                        text = "${item.type.label}: ${String.format(Locale.US, "%.1f", item.percentage)}%",
+                        text = "${item.type.label}: ${MoneyCents.formatPercent(item.percentage)}",
                         fontSize = 11.sp,
                         color = FinflowTextSecondary,
                         fontWeight = FontWeight.Medium
@@ -1074,7 +1074,7 @@ fun BudgetsTabContent(
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "• ${String.format(Locale.US, "%.1f", uiState.percentUsed)}% Usado",
+                        text = "• ${MoneyCents.formatPercent(uiState.percentUsed)} Usado",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (uiState.percentUsed > 100.0) FinflowCoral else FinflowSecondary
@@ -1425,7 +1425,7 @@ fun CategoryBudgetCard(budgetItem: BudgetProgress) {
                     color = FinflowTextSecondary
                 )
                 Text(
-                    text = "${String.format(Locale.US, "%.1f", budgetItem.percentUsed)}%",
+                    text = "${MoneyCents.formatPercent(budgetItem.percentUsed)}",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = statusColor
@@ -1532,7 +1532,7 @@ fun GoalMiniCard(
                             )
                         }
                         Text(
-                            text = "${String.format(Locale.US, "%.0f", goal.percentComplete)}%",
+                            text = "${MoneyCents.formatPercent(goal.percentComplete, 0)}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = badgeColor,
@@ -2383,7 +2383,7 @@ fun XtbImportPreviewSheet(
                             val isPos = pos.profitLossCents >= 0
                             val pColor = if (isPos) FinflowSecondary else FinflowCoral
                             val pSign = if (isPos) "+" else ""
-                            Text("$pSign${MoneyCents.formatCents(pos.profitLossCents)} ($pSign${pos.profitLossPercentage}%)", fontSize = 11.sp, color = pColor)
+                            Text("$pSign${MoneyCents.formatCents(pos.profitLossCents)} ($pSign${MoneyCents.formatPercent(pos.profitLossPercentage)})", fontSize = 11.sp, color = pColor)
                         }
                     }
                 }

@@ -408,15 +408,22 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "↘ -4.2% em relação ao mês anterior",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = FinflowSecondary
-                    )
+                    val previousExpense = uiState.previousMonthExpenseCents
+                    if (previousExpense > 0L) {
+                        val deltaPercent = (summary.totalExpenseCents - previousExpense).toDouble() / previousExpense.toDouble() * 100.0
+                        val isDown = deltaPercent <= 0.0
+                        Text(
+                            text = "${if (isDown) "↘" else "↗"} ${MoneyCents.formatPercent(deltaPercent)} em relação ao mês anterior",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (isDown) FinflowSecondary else FinflowCoral
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.width(1.dp))
+                    }
 
                     Text(
-                        text = "${String.format(Locale.US, "%.1f", budgetPercent)}% do teto",
+                        text = "${MoneyCents.formatPercent(budgetPercent)} do teto",
                         fontSize = 11.sp,
                         color = FinflowTextMuted
                     )
@@ -527,7 +534,7 @@ fun HomeScreen(
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "$sign${MoneyCents(portfolio.totalProfitLossCents).formatPt()} ($sign${String.format(Locale.US, "%.1f", portfolio.totalProfitLossPercentage)}%)",
+                                text = "$sign${MoneyCents(portfolio.totalProfitLossCents).formatPt()} ($sign${MoneyCents.formatPercent(portfolio.totalProfitLossPercentage)})",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = profitColor
@@ -539,7 +546,8 @@ fun HomeScreen(
         }
 
         // Grid 2 Cards: Média Diária & Maior Categoria
-        val daysElapsed = LocalDate.now().dayOfMonth.coerceAtLeast(1)
+        val selectedYm = java.time.YearMonth.of(uiState.selectedYearMonth / 100, uiState.selectedYearMonth % 100)
+        val daysElapsed = (if (selectedYm == java.time.YearMonth.now()) LocalDate.now().dayOfMonth else selectedYm.lengthOfMonth()).coerceAtLeast(1)
         val dailyAverageCents = summary.totalExpenseCents / daysElapsed
         val topCategory = summary.categoryShares.firstOrNull()
 
@@ -649,7 +657,7 @@ fun HomeScreen(
                     )
 
                     Text(
-                        text = topCategory?.let { "${it.categoryName} (${String.format(Locale.US, "%.0f", it.percentageOfExpense)}%)" }
+                        text = topCategory?.let { "${it.categoryName} (${MoneyCents.formatPercent(it.percentageOfExpense, 0)})" }
                             ?: "Sem despesas",
                         fontSize = 11.sp,
                         color = FinflowTextSecondary,
@@ -888,7 +896,6 @@ fun HomeScreen(
                     "Ontem" -> allTxs.filter { it.epochDay == yesterdayEpoch }
                     else -> allTxs
                 }
-                val displayedTxs = if (showAllTransactions) filteredByPill else filteredByPill.take(5)
 
                 AnimatedContent(
                     targetState = Pair(selectedFilter, showAllTransactions),
@@ -896,15 +903,21 @@ fun HomeScreen(
                         fadeIn(tween(180)) togetherWith fadeOut(tween(130))
                     },
                     label = "HomeTransactionsListTransition"
-                ) {
+                ) { (filterState, showAllState) ->
+                    val stateTxs = when (filterState) {
+                        "Hoje" -> allTxs.filter { it.epochDay == todayEpoch }
+                        "Ontem" -> allTxs.filter { it.epochDay == yesterdayEpoch }
+                        else -> allTxs
+                    }
+                    val displayedTxs = if (showAllState) stateTxs else stateTxs.take(5)
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         if (displayedTxs.isEmpty()) {
                             Text(
-                                text = if (selectedFilter == "Todas") "Sem transações registadas em ${uiState.monthTitle}."
-                                       else "Sem transações para o filtro selecionado ($selectedFilter).",
+                                text = if (filterState == "Todas") "Sem transações registadas em ${uiState.monthTitle}."
+                                       else "Sem transações para o filtro selecionado ($filterState).",
                                 fontSize = 13.sp,
                                 color = FinflowTextSecondary,
                                 modifier = Modifier.padding(vertical = 12.dp)
@@ -914,6 +927,7 @@ fun HomeScreen(
                                 FinflowTransactionRow(
                                     transaction = tx,
                                     category = uiState.categoryMap[tx.categoryId],
+                                    parentCategory = uiState.categoryMap[tx.categoryId]?.parentId?.let { uiState.categoryMap[it] },
                                     onEdit = { onEdit(tx) },
                                     onDelete = { pendingDelete = tx }
                                 )
@@ -1025,13 +1039,15 @@ fun TransactionRowItem(
     refundAmountCents: Long = 0L,
     onDelete: () -> Unit,
     onEdit: () -> Unit = {},
-    showActions: Boolean = true
+    showActions: Boolean = true,
+    parentCategory: CategoryEntity? = null
 ) {
     FinflowTransactionRow(
         transaction = transaction,
         category = category,
         onEdit = onEdit,
-        onDelete = onDelete
+        onDelete = onDelete,
+        parentCategory = parentCategory
     )
 }
 
@@ -1040,8 +1056,10 @@ fun FinflowTransactionRow(
     transaction: TransactionEntity,
     category: CategoryEntity?,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    parentCategory: CategoryEntity? = null
 ) {
+    val rootCategoryName = (parentCategory ?: category)?.name
     val language = LocalAppLanguage.current
     val isEnglish = language == AppLanguage.EN
     val isExpense = transaction.type.equals("EXPENSE", ignoreCase = true)
@@ -1054,29 +1072,29 @@ fun FinflowTransactionRow(
     }
 
     val iconVector: ImageVector = when {
-        category?.name?.contains("Aliment", ignoreCase = true) == true ||
-                category?.name?.contains("Mercado", ignoreCase = true) == true -> Icons.Default.Restaurant
-        category?.name?.contains("Transp", ignoreCase = true) == true -> Icons.Default.DirectionsCar
-        category?.name?.contains("Habita", ignoreCase = true) == true -> Icons.Default.Home
-        category?.name?.contains("Saúde", ignoreCase = true) == true -> Icons.Default.LocalHospital
+        rootCategoryName?.contains("Aliment", ignoreCase = true) == true ||
+                rootCategoryName?.contains("Mercado", ignoreCase = true) == true -> Icons.Default.Restaurant
+        rootCategoryName?.contains("Transp", ignoreCase = true) == true -> Icons.Default.DirectionsCar
+        rootCategoryName?.contains("Habita", ignoreCase = true) == true -> Icons.Default.Home
+        rootCategoryName?.contains("Saúde", ignoreCase = true) == true -> Icons.Default.LocalHospital
         else -> Icons.Default.ShoppingBag
     }
 
     val iconBgColor = when {
         !isExpense -> FinflowSecondaryLight
-        category?.name?.contains("Aliment", ignoreCase = true) == true -> FinflowAmberLight
-        category?.name?.contains("Transp", ignoreCase = true) == true -> FinflowSkyLight
-        category?.name?.contains("Habita", ignoreCase = true) == true -> FinflowPurpleLight
-        category?.name?.contains("Saúde", ignoreCase = true) == true -> FinflowCoralLight
+        rootCategoryName?.contains("Aliment", ignoreCase = true) == true -> FinflowAmberLight
+        rootCategoryName?.contains("Transp", ignoreCase = true) == true -> FinflowSkyLight
+        rootCategoryName?.contains("Habita", ignoreCase = true) == true -> FinflowPurpleLight
+        rootCategoryName?.contains("Saúde", ignoreCase = true) == true -> FinflowCoralLight
         else -> FinflowSurfaceContainerLow
     }
 
     val iconTintColor = when {
         !isExpense -> FinflowSecondary
-        category?.name?.contains("Aliment", ignoreCase = true) == true -> FinflowAmber
-        category?.name?.contains("Transp", ignoreCase = true) == true -> FinflowSky
-        category?.name?.contains("Habita", ignoreCase = true) == true -> FinflowPurple
-        category?.name?.contains("Saúde", ignoreCase = true) == true -> FinflowCoral
+        rootCategoryName?.contains("Aliment", ignoreCase = true) == true -> FinflowAmber
+        rootCategoryName?.contains("Transp", ignoreCase = true) == true -> FinflowSky
+        rootCategoryName?.contains("Habita", ignoreCase = true) == true -> FinflowPurple
+        rootCategoryName?.contains("Saúde", ignoreCase = true) == true -> FinflowCoral
         else -> FinflowPrimary
     }
 

@@ -905,6 +905,7 @@ object DemoDataSeeder {
 
         // === 6. PERFIL DE UTILIZADOR DEMO ===
         userProfileStore?.setUserName("Paulo (Demonstração)")
+        userProfileStore?.setAppLanguage("PT")
         userProfileStore?.setDefaultCurrency("EUR (€)")
         userProfileStore?.setMonthlyCycleDay(1)
         userProfileStore?.setThemeMode("DARK")

@@ -27,12 +27,15 @@ value class MoneyCents(val cents: Long) {
             return df.format(cents / 100.0)
         }
 
-        fun formatPercent(percent: Double): String {
+        fun formatPercent(percent: Double, decimals: Int = 1): String {
             val symbols = DecimalFormatSymbols(Locale("pt", "PT")).apply {
                 decimalSeparator = ','
             }
-            val df = DecimalFormat("0.0'%'", symbols)
-            return df.format(percent)
+            val pattern = if (decimals > 0) "0.${"0".repeat(decimals)}'%'" else "0'%'"
+            val df = DecimalFormat(pattern, symbols)
+            val halfUnit = 0.5 / Math.pow(10.0, decimals.toDouble())
+            val normalized = if (kotlin.math.abs(percent) < halfUnit) 0.0 else percent
+            return df.format(normalized)
         }
     }
 }

@@ -56,4 +56,12 @@ class MoneyCentsTest {
         assertEquals("100,0%", MoneyCents.formatPercent(100.0))
         assertEquals("33,3%", MoneyCents.formatPercent(100.0 / 3.0))
     }
+
+    @Test
+    fun testFormatPercent_tinyNegativeDoesNotShowMinusZero() {
+        assertEquals("0,0%", MoneyCents.formatPercent(-0.01))
+        assertEquals("0,0%", MoneyCents.formatPercent(-0.0))
+        assertEquals("-0,1%", MoneyCents.formatPercent(-0.1))
+        assertEquals("44%", MoneyCents.formatPercent(44.2, 0))
+    }
 }

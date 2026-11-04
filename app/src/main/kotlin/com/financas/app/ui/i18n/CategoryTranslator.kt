@@ -83,8 +83,11 @@ object CategoryTranslator {
     fun translateCategory(name: String, language: AppLanguage): String =
         if (language == AppLanguage.EN) PT_TO_EN[name] ?: name else name
 
-    fun translateContext(label: String, language: AppLanguage): String =
-        if (language == AppLanguage.EN) CONTEXT_PT_TO_EN[label] ?: label else label
+    fun translateContext(label: String, language: AppLanguage): String {
+        val resolved = com.financas.app.data.seed.DefaultSeed.CONTEXTS
+            .firstOrNull { it.tag.equals(label, ignoreCase = true) }?.label ?: label
+        return if (language == AppLanguage.EN) CONTEXT_PT_TO_EN[resolved] ?: resolved else resolved
+    }
 
     fun translatePayment(label: String, language: AppLanguage): String =
         if (language == AppLanguage.EN) PAYMENT_PT_TO_EN[label] ?: label else label

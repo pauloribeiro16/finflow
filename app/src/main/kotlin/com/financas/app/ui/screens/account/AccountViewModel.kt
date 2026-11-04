@@ -90,6 +90,23 @@ class AccountViewModel(
     private val customContextTags = MutableStateFlow(contextTagsStore.getCustomTags())
 
     init {
+        userProfileStore?.let { store ->
+            viewModelScope.launch {
+                store.userNameFlow.collect { name ->
+                    _uiState.update { it.copy(userName = name) }
+                }
+            }
+            viewModelScope.launch {
+                store.themeModeFlow.collect { mode ->
+                    _uiState.update { it.copy(themeMode = mode) }
+                }
+            }
+            viewModelScope.launch {
+                store.appLanguageFlow.collect { lang ->
+                    _uiState.update { it.copy(appLanguage = lang) }
+                }
+            }
+        }
         loadData()
     }
 

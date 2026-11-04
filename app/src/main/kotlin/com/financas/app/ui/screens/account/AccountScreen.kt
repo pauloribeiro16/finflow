@@ -245,13 +245,7 @@ fun AccountScreen(
 
     val hasCustomPhoto = profileBitmap != null || (context.filesDir.resolve("profile_photo.png").let { it.exists() && it.length() > 0 })
 
-    val initials = remember(uiState.userName) {
-        uiState.userName.trim().split(" ")
-            .filter { it.isNotBlank() }
-            .take(2)
-            .map { it.first().uppercase() }
-            .joinToString("")
-    }
+    val initials = remember(uiState.userName) { com.financas.app.ui.components.profileInitials(uiState.userName) }
 
     val categoriesById = uiState.parentCategories.associateBy { it.id } +
         uiState.subcategoriesByParent.values.flatten().associateBy { it.id }
@@ -2408,8 +2402,9 @@ private fun ProfileTabContent(
                     }
                 }
 
+                val language = LocalAppLanguage.current
                 ProfileInfoRow(
-                    label = "Nome / Name",
+                    label = if (language == AppLanguage.EN) "Name" else "Nome",
                     value = uiState.userName,
                     subtext = "Nome exibido no topo e nas mensagens da app"
                 )
@@ -2417,7 +2412,7 @@ private fun ProfileTabContent(
                 HorizontalDivider(color = DarkBorder, thickness = 1.dp)
 
                 ProfileInfoRow(
-                    label = "Foto / Photo",
+                    label = if (language == AppLanguage.EN) "Photo" else "Foto",
                     value = if (profileBitmap != null) "Foto personalizada ativa" else "Foto padrão ($initials)",
                     subtext = "Toca para alterar ou carregar foto da galeria",
                     onClick = onEditPhoto
@@ -2434,7 +2429,7 @@ private fun ProfileTabContent(
                 HorizontalDivider(color = DarkBorder, thickness = 1.dp)
 
                 ProfileInfoRow(
-                    label = "Ciclo / Cycle",
+                    label = if (language == AppLanguage.EN) "Cycle" else "Ciclo",
                     value = "Dia ${uiState.monthlyCycleDay} de cada mês",
                     subtext = "Data de renovação de metas e orçamentos"
                 )

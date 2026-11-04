@@ -364,6 +364,7 @@ fun TransactionsScreen(
                         TransactionRowItem(
                             transaction = tx,
                             category = uiState.categoryMap[tx.categoryId],
+                            parentCategory = uiState.categoryMap[tx.categoryId]?.parentId?.let { uiState.categoryMap[it] },
                             refundAmountCents = uiState.refundsMap[tx.id] ?: 0L,
                             onDelete = { pendingDelete = tx },
                             onEdit = { onEdit(tx) }

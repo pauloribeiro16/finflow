@@ -97,13 +97,7 @@ fun FinflowProfileAvatar(
         }
     }
 
-    val initials = remember(userName) {
-        userName.trim().split(" ")
-            .filter { it.isNotBlank() }
-            .take(2)
-            .map { it.first().uppercase() }
-            .joinToString("")
-    }
+    val initials = remember(userName) { profileInitials(userName) }
 
     Box(
         modifier = modifier
@@ -131,3 +125,9 @@ fun FinflowProfileAvatar(
         }
     }
 }
+
+fun profileInitials(name: String): String =
+    name.trim().split(" ")
+        .filter { token -> token.isNotBlank() && token.first().isLetter() }
+        .take(2)
+        .joinToString("") { it.first().uppercase() }
