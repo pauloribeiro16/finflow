@@ -75,4 +75,24 @@ class AppUpdateCheckerTest {
         val parsed = AppUpdateChecker.parseReleaseJson(sampleJson)
         assertNull(parsed)
     }
+
+    @Test
+    fun parseReleaseJson_picksTheApkMatchingTheFlavor() {
+        val json = """
+            {"tag_name": "v2.4.1", "body": "", "assets": [
+              {"name": "Finflow-Demo-v2.4.1.apk", "browser_download_url": "https://x/demo.apk", "size": 10},
+              {"name": "Finflow-v2.4.1.apk", "browser_download_url": "https://x/prod.apk", "size": 20},
+              {"name": "SHA256SUMS.txt", "browser_download_url": "https://x/sums", "size": 1}
+            ]}
+        """.trimIndent()
+
+        assertEquals("https://x/prod.apk", AppUpdateChecker.parseReleaseJson(json, isDemo = false)?.apkDownloadUrl)
+        assertEquals("https://x/demo.apk", AppUpdateChecker.parseReleaseJson(json, isDemo = true)?.apkDownloadUrl)
+    }
+
+    @Test
+    fun parseReleaseJson_returnsNullWhenNoApkForTheFlavor() {
+        val json = """{"tag_name": "v2.4.0", "assets": [{"name": "Finflow-v2.4.0.apk", "browser_download_url": "https://x/prod.apk", "size": 20}]}"""
+        org.junit.Assert.assertNull(AppUpdateChecker.parseReleaseJson(json, isDemo = true))
+    }
 }

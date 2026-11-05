@@ -17,11 +17,23 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.4.0"
-    const val CURRENT_BUILD = 23
+    const val CURRENT_VERSION = "2.4.1"
+    const val CURRENT_BUILD = 24
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.4.1",
+            buildCode = 24,
+            date = "05 Nov 2026",
+            type = ReleaseType.PATCH,
+            title = "Atualizações da Demo",
+            description = "A app demo passa a atualizar-se com o seu próprio APK em vez de tentar instalar o da app real.",
+            changes = listOf(
+                "Cada release inclui agora o APK da demo (Finflow-Demo-<versão>.apk), assinado com a mesma chave.",
+                "A demo descarrega o APK da demo e a app real o da app real; já não se confundem."
+            )
+        ),
         AppRelease(
             version = "2.4.0",
             buildCode = 23,

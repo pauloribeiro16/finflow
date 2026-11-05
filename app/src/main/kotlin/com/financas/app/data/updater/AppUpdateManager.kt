@@ -37,7 +37,7 @@ sealed interface UpdateUiState {
 
 class AppUpdateManager(
     private val context: Context,
-    private val checker: AppUpdateChecker = AppUpdateChecker(),
+    private val checker: AppUpdateChecker = AppUpdateChecker(isDemo = com.financas.app.BuildConfig.IS_DEMO),
     private val notificationHelper: AppNotificationHelper = AppNotificationHelper(context),
     private val backupProvider: (suspend () -> String)? = null
 ) {

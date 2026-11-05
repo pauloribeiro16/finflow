@@ -10,7 +10,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 class AppUpdateChecker(
-    private val releaseApiUrl: String = DEFAULT_GITHUB_API_URL
+    private val releaseApiUrl: String = DEFAULT_GITHUB_API_URL,
+    private val isDemo: Boolean = false
 ) {
 
     companion object {
@@ -42,7 +43,7 @@ class AppUpdateChecker(
             return 0
         }
 
-        fun parseReleaseJson(jsonString: String): AppUpdateInfo? {
+        fun parseReleaseJson(jsonString: String, isDemo: Boolean = false): AppUpdateInfo? {
             val json = JSONObject(jsonString)
             val tagName = json.optString("tag_name", "").trim()
             if (tagName.isEmpty()) return null
@@ -60,7 +61,8 @@ class AppUpdateChecker(
                 for (i in 0 until assets.length()) {
                     val asset = assets.optJSONObject(i) ?: continue
                     val name = asset.optString("name", "")
-                    if (name.endsWith(".apk", ignoreCase = true)) {
+                    val isDemoApk = name.contains("demo", ignoreCase = true)
+                    if (name.endsWith(".apk", ignoreCase = true) && isDemoApk == isDemo) {
                         apkUrl = asset.optString("browser_download_url", "")
                         apkSize = asset.optLong("size", 0L)
                         break
@@ -104,7 +106,7 @@ class AppUpdateChecker(
             }
             connection.disconnect()
 
-            val latestRelease = parseReleaseJson(responseText) ?: return@runCatching null
+            val latestRelease = parseReleaseJson(responseText, isDemo) ?: return@runCatching null
 
             if (compareVersions(latestRelease.versionName, currentVersion) > 0) {
                 latestRelease

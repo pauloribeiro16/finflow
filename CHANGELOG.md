@@ -9,6 +9,12 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.4.1] — 2026-11-05 (Patch & Fix)
+### Corrigido
+- **Atualização da app demo**: a demo oferecia o APK da app real (outro pacote e outra assinatura), que nunca instalava por cima. As releases passam a incluir `Finflow-Demo-<versão>.apk` e o atualizador escolhe o APK do seu flavor. O APK de produção deixa de poder ser confundido com o da demo no pipeline.
+
+---
+
 ## [2.4.0] — 2026-11-05 (Minor Release)
 ### Adicionado
 - **Investimentos em dois toques**: categorizar um movimento pendente como `Poupança / Investimento` mostra a escolha do destino sem nada pré-selecionado (um ativo ou `Decidir depois (XTB)`, que envia para `XTB – por alocar`) e regista a transferência, sem contar como despesa. Se um ativo tiver `Reforço mensal` definido (ex.: 200 €/mês), esse ativo vem sugerido quando o valor coincide; `Confirmar Todos` só envia automaticamente esses casos, os restantes ficam pendentes.

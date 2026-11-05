@@ -65,13 +65,13 @@ jobs:
         run: ./gradlew :app:testProdDebugUnitTest
 
       - name: Build Release Bundle and APK
-        run: ./gradlew :app:bundleProdRelease :app:assembleProdRelease
+        run: ./gradlew :app:bundleProdRelease :app:assembleProdRelease :app:assembleDemoRelease
 
       - name: Prepare Release Artifacts
         run: |
           TAG="${{ steps.vars.outputs.tag }}"
           mkdir -p dist
-          APK_FILE=$(find app/build/outputs/apk -name "*prod*release*.apk" -o -name "*release*.apk" | head -n 1)
+          APK_FILE=$(find app/build/outputs/apk -path "*prod/release*" -name "*.apk" | head -n 1)
           AAB_FILE=$(find app/build/outputs/bundle -name "*prod*release*.aab" -o -name "*release*.aab" | head -n 1)
           if [ -z "$APK_FILE" ] || [ ! -f "$APK_FILE" ]; then
             echo "❌ Erro: APK de Release não encontrado."
@@ -81,10 +81,16 @@ jobs:
             echo "❌ Erro: AAB de Release não encontrado."
             exit 1
           fi
+          DEMO_APK=$(find app/build/outputs/apk -path "*demo/release*" -name "*.apk" | head -n 1)
+          if [ -z "$DEMO_APK" ] || [ ! -f "$DEMO_APK" ]; then
+            echo "❌ Erro: APK Demo de Release não encontrado."
+            exit 1
+          fi
+          cp "$DEMO_APK" "dist/Finflow-Demo-${TAG}.apk"
           cp "$APK_FILE" "dist/Finflow-${TAG}.apk"
           cp "$AAB_FILE" "dist/Finflow-${TAG}.aab"
           cd dist
-          shasum -a 256 "Finflow-${TAG}.apk" "Finflow-${TAG}.aab" > SHA256SUMS.txt
+          shasum -a 256 "Finflow-${TAG}.apk" "Finflow-Demo-${TAG}.apk" "Finflow-${TAG}.aab" > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: Create GitHub Release
