@@ -9,6 +9,7 @@ object InvestmentTransferRules {
     const val TRANSFER_TYPE = "TRANSFER"
     const val XTB_HOLDING_ASSET_ID = "xtb-holding"
     const val XTB_HOLDING_NAME = "XTB – por alocar"
+    const val INVESTMENT_CATEGORY_ID = "exp_financial_savings"
 
     private val xtbRegex = Regex("""\bxtb\b""", RegexOption.IGNORE_CASE)
     private val optimizeRegex = Regex("""\boptimize\b""", RegexOption.IGNORE_CASE)
@@ -17,6 +18,23 @@ object InvestmentTransferRules {
         xtbRegex.containsMatchIn(merchant) -> InvestmentPlatform.XTB
         optimizeRegex.containsMatchIn(merchant) -> InvestmentPlatform.OPTIMIZE
         else -> null
+    }
+
+    fun isInvestmentCategory(categoryId: String?, categoryName: String?): Boolean =
+        categoryId == INVESTMENT_CATEGORY_ID || categoryName?.contains("investiment", ignoreCase = true) == true
+
+    fun isInvestmentTransfer(merchant: String, categoryId: String?, categoryName: String?): Boolean =
+        detectPlatform(merchant) != null || isInvestmentCategory(categoryId, categoryName)
+
+    fun resolveDefaultAssetId(
+        platform: InvestmentPlatform?,
+        assets: List<InvestmentAssetEntity>,
+        lastAssetByPlatform: Map<InvestmentPlatform, String>
+    ): String? = when (platform) {
+        InvestmentPlatform.OPTIMIZE -> lastAssetByPlatform[platform]
+            ?.takeIf { id -> assets.any { it.id == id && !it.archived } }
+            ?: suggestAssetId(platform, assets)
+        else -> XTB_HOLDING_ASSET_ID
     }
 
     fun isHoldingAsset(asset: InvestmentAssetEntity): Boolean = asset.id == XTB_HOLDING_ASSET_ID

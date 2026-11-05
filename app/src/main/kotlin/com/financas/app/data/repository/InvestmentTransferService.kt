@@ -4,6 +4,7 @@ import com.financas.app.data.db.InvestmentAssetDao
 import com.financas.app.data.db.TransactionDao
 import com.financas.app.data.entity.InvestmentAssetEntity
 import com.financas.app.data.entity.TransactionEntity
+import com.financas.app.domain.usecase.InvestmentPlatform
 import com.financas.app.domain.usecase.InvestmentTransferRules
 import java.time.LocalDate
 
@@ -36,6 +37,43 @@ class InvestmentTransferService(
         )
         assetDao.update(InvestmentTransferRules.contribute(asset, transaction.amountCents, todayEpochDay()))
         return true
+    }
+
+    suspend fun addContribution(
+        assetId: String,
+        amountCents: Long,
+        epochDay: Long = todayEpochDay(),
+        label: String? = null
+    ): Boolean {
+        if (amountCents <= 0L) return false
+        val asset = if (assetId == InvestmentTransferRules.XTB_HOLDING_ASSET_ID) {
+            ensureHoldingAsset()
+        } else {
+            assetDao.getById(assetId)
+        } ?: return false
+        val date = LocalDate.ofEpochDay(epochDay)
+        val transaction = TransactionEntity(
+            type = InvestmentTransferRules.TRANSFER_TYPE,
+            amountCents = amountCents,
+            yearMonth = date.year * 100 + date.monthValue,
+            epochDay = epochDay,
+            categoryId = InvestmentTransferRules.INVESTMENT_CATEGORY_ID,
+            contextTag = "",
+            merchant = label ?: "Aporte – ${asset.name}",
+            paymentMethod = "TRANSFERENCIA"
+        )
+        return recordTransfer(transaction, asset.id)
+    }
+
+    suspend fun lastAssetByPlatform(): Map<InvestmentPlatform, String> {
+        val result = mutableMapOf<InvestmentPlatform, String>()
+        transactionDao.getAllSync()
+            .filter { it.investmentAssetId != null }
+            .sortedBy { it.epochDay }
+            .forEach { tx ->
+                InvestmentTransferRules.detectPlatform(tx.merchant)?.let { result[it] = tx.investmentAssetId!! }
+            }
+        return result
     }
 
     suspend fun deleteTransaction(transaction: TransactionEntity) {

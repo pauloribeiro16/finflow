@@ -17,11 +17,25 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.3.3"
-    const val CURRENT_BUILD = 22
+    const val CURRENT_VERSION = "2.4.0"
+    const val CURRENT_BUILD = 23
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.4.0",
+            buildCode = 23,
+            date = "05 Nov 2026",
+            type = ReleaseType.MINOR,
+            title = "Investimentos em Dois Toques",
+            description = "Categorizar um movimento como investimento passa a mostrar logo para onde foi o dinheiro, e dá para somar dinheiro diretamente a um ativo.",
+            changes = listOf(
+                "Ao categorizar um pendente como 'Poupança / Investimento' escolhes o ativo (por omissão 'XTB – por alocar') e confirmas; deixa de contar como despesa.",
+                "Optimize lembra o último ativo usado; 'Confirmar Todos' envia os investimentos para o ativo habitual.",
+                "Novo botão '+ Aporte' em cada ativo da Carteira para somar dinheiro diretamente (fica como transferência).",
+                "A folha 'Novo Movimento' também pergunta o ativo quando a categoria é investimento."
+            )
+        ),
         AppRelease(
             version = "2.3.3",
             buildCode = 22,

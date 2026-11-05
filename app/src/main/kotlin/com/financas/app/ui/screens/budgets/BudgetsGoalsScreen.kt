@@ -147,6 +147,7 @@ fun BudgetsGoalsScreen(
     var editingAsset by remember { mutableStateOf<InvestmentAssetEntity?>(null) }
     var quickUpdateAsset by remember { mutableStateOf<InvestmentAssetEntity?>(null) }
     var allocatingAsset by remember { mutableStateOf<InvestmentAssetEntity?>(null) }
+    var addingMoneyAsset by remember { mutableStateOf<InvestmentAssetEntity?>(null) }
     var showXtbChooserSheet by remember { mutableStateOf(false) }
     var pendingXtbReport by remember { mutableStateOf<XtbParsedReport?>(null) }
     var xtbStatusMessage by remember { mutableStateOf<String?>(null) }
@@ -269,6 +270,7 @@ fun BudgetsGoalsScreen(
                         onEditAsset = { editingAsset = it },
                         onQuickUpdate = { quickUpdateAsset = it },
                         onAllocate = { allocatingAsset = it },
+                        onAddMoney = { addingMoneyAsset = it },
                         onDeleteAsset = { viewModel.deleteInvestmentAsset(it.id) }
                     )
                 }
@@ -313,6 +315,17 @@ fun BudgetsGoalsScreen(
                 )
                 showAddAssetDialog = false
                 editingAsset = null
+            }
+        )
+    }
+
+    addingMoneyAsset?.let { target ->
+        AddMoneyDialog(
+            asset = target,
+            onDismiss = { addingMoneyAsset = null },
+            onConfirm = { cents ->
+                viewModel.addMoneyToAsset(target.id, cents)
+                addingMoneyAsset = null
             }
         )
     }
@@ -413,6 +426,7 @@ fun InvestmentsTabContent(
     onEditAsset: (InvestmentAssetEntity) -> Unit,
     onQuickUpdate: (InvestmentAssetEntity) -> Unit,
     onAllocate: (InvestmentAssetEntity) -> Unit = {},
+    onAddMoney: (InvestmentAssetEntity) -> Unit = {},
     onDeleteAsset: (InvestmentAssetEntity) -> Unit
 ) {
     val portfolio = uiState.portfolioSummary
@@ -683,6 +697,7 @@ fun InvestmentsTabContent(
                 asset = asset,
                 onEdit = { onEditAsset(asset) },
                 onQuickUpdate = { onQuickUpdate(asset) },
+                onAddMoney = { onAddMoney(asset) },
                 onAllocate = if (InvestmentTransferRules.isHoldingAsset(asset) && asset.currentValueCents > 0L) {
                     { onAllocate(asset) }
                 } else {
@@ -700,7 +715,8 @@ fun InvestmentAssetCard(
     onEdit: () -> Unit,
     onQuickUpdate: () -> Unit,
     onDelete: () -> Unit,
-    onAllocate: (() -> Unit)? = null
+    onAllocate: (() -> Unit)? = null,
+    onAddMoney: (() -> Unit)? = null
 ) {
     val type = InvestmentType.fromKey(asset.type)
     val isProfitPositive = asset.profitLossCents >= 0
@@ -822,19 +838,17 @@ fun InvestmentAssetCard(
                 }
             }
 
-            // Footer Row: Monthly Contribution + Quick Update Button
-            Row(
+            // Footer: Monthly Contribution text, then action buttons
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (asset.monthlyContributionCents > 0L) {
                     Text(
                         text = "Reforço: +${MoneyCents(asset.monthlyContributionCents).formatPt()}/mês",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = FinflowPrimary,
-                        modifier = Modifier.weight(1f)
+                        color = FinflowPrimary
                     )
                 } else if (asset.notes.isNotBlank()) {
                     Text(
@@ -842,14 +856,32 @@ fun InvestmentAssetCard(
                         fontSize = 11.sp,
                         color = FinflowTextMuted,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f).padding(end = 8.dp)
+                        overflow = TextOverflow.Ellipsis
                     )
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.End)
+                ) {
+                if (onAddMoney != null) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(FinflowSecondaryLight)
+                            .clickable { onAddMoney() }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "+ Aporte",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = FinflowSecondary,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+                }
                 if (onAllocate != null) {
                     Box(
                         modifier = Modifier
@@ -899,6 +931,60 @@ fun InvestmentAssetCard(
             }
         }
     }
+}
+
+@Composable
+fun AddMoneyDialog(
+    asset: InvestmentAssetEntity,
+    onDismiss: () -> Unit,
+    onConfirm: (Long) -> Unit
+) {
+    var amountText by remember { mutableStateOf("") }
+    val amountCents = parseEuroToCents(amountText)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text("Adicionar dinheiro", fontWeight = FontWeight.Bold, color = FinflowTextPrimary)
+                Text(text = asset.name, fontSize = 12.sp, color = FinflowPrimary)
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth().imePadding(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "Soma ao capital investido e ao valor atual, e fica registado como transferência (não conta como despesa).",
+                    fontSize = 12.sp,
+                    color = FinflowTextSecondary
+                )
+                OutlinedTextField(
+                    value = amountText,
+                    onValueChange = { amountText = it },
+                    label = { Text("Valor a adicionar (€)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(amountCents) },
+                enabled = amountCents > 0L,
+                colors = ButtonDefaults.buttonColors(containerColor = FinflowPrimary)
+            ) {
+                Text("Adicionar", color = Color.Black, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = FinflowTextSecondary)
+            }
+        }
+    )
 }
 
 @Composable

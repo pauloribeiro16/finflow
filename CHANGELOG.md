@@ -9,6 +9,14 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.4.0] — 2026-11-05 (Minor Release)
+### Adicionado
+- **Investimentos em dois toques**: categorizar um movimento pendente como `Poupança / Investimento` mostra a escolha do ativo (por omissão `XTB – por alocar`) e regista a transferência, sem contar como despesa. Optimize lembra o último ativo; `Confirmar Todos` usa o ativo habitual.
+- **`+ Aporte`** em cada ativo da Carteira para somar dinheiro diretamente (registado como transferência).
+- A folha `Novo Movimento` pergunta o ativo quando a categoria é investimento.
+
+---
+
 ## [2.3.3] — 2026-11-04 (Patch & Fix)
 ### Alterado
 - **Backup completo**: o ficheiro (esquema v3) passa a incluir as definições da app (nome, moeda, ciclo, tema, idioma, biometria, captura de notificações, etiquetas) e a foto de perfil (reduzida); ao restaurar são aplicadas automaticamente. Backups antigos continuam a importar-se.

@@ -86,6 +86,7 @@ data class HomeUiState(
     val userName: String = "",
     val portfolioSummary: PortfolioSummary = PortfolioSummary(),
     val investmentAssets: List<InvestmentAssetEntity> = emptyList(),
+    val lastAssetByPlatform: Map<InvestmentPlatform, String> = emptyMap(),
     val isLoading: Boolean = false
 )
 
@@ -160,7 +161,16 @@ class HomeViewModel(
             dao.getAll().collect { assets ->
                 val summary = investmentPortfolioCalculator.calculate(assets)
                 _uiState.update { it.copy(portfolioSummary = summary, investmentAssets = assets.filter { a -> !a.archived }) }
+                refreshLastAssets()
             }
+        }
+    }
+
+    private fun refreshLastAssets() {
+        val service = transferService ?: return
+        viewModelScope.launch {
+            val last = service.lastAssetByPlatform()
+            _uiState.update { it.copy(lastAssetByPlatform = last) }
         }
     }
 
@@ -311,6 +321,7 @@ class HomeViewModel(
                 transactionDao.insert(newTx)
             }
             pendingTransactionDao?.deleteById(pending.id)
+            if (investmentAssetId != null) refreshLastAssets()
             if (txYearMonth == _uiState.value.selectedYearMonth) {
                 loadMonthData(txYearMonth)
             }
@@ -348,11 +359,16 @@ class HomeViewModel(
                     isFixed = pending.isFixed
                 )
                 val platform = InvestmentTransferRules.detectPlatform(pending.rawMerchant)
+                val category = cachedCategories.firstOrNull { it.id == pending.suggestedCategoryId }
+                val isInvestment = InvestmentTransferRules.isInvestmentTransfer(
+                    pending.rawMerchant, pending.suggestedCategoryId, category?.name
+                )
                 val service = transferService
-                if (platform == InvestmentPlatform.OPTIMIZE) {
-                    continue
-                } else if (platform == InvestmentPlatform.XTB && service != null) {
-                    service.recordTransfer(newTx, InvestmentTransferRules.XTB_HOLDING_ASSET_ID)
+                if (isInvestment && service != null) {
+                    val assetId = InvestmentTransferRules.resolveDefaultAssetId(
+                        platform, _uiState.value.investmentAssets, _uiState.value.lastAssetByPlatform
+                    ) ?: continue
+                    service.recordTransfer(newTx, assetId)
                 } else {
                     transactionDao.insert(newTx)
                 }

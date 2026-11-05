@@ -991,8 +991,9 @@ fun HomeScreen(
             onConfirm = { pending, cat, ctx ->
                 viewModel.confirmPending(pending, cat, ctx)
             },
-            onConfirmInvestment = { pending, assetId ->
-                viewModel.confirmPending(pending, investmentAssetId = assetId)
+            lastAssetByPlatform = uiState.lastAssetByPlatform,
+            onConfirmInvestment = { pending, assetId, categoryId ->
+                viewModel.confirmPending(pending, chosenCategoryId = categoryId, investmentAssetId = assetId)
             },
             onEditFull = { pending ->
                 showPendingSheet = false

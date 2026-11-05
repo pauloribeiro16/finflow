@@ -51,6 +51,28 @@ class InvestmentTransferRulesTest {
     }
 
     @Test
+    fun investmentCategory_isRecognisedByIdOrName() {
+        assertTrue(InvestmentTransferRules.isInvestmentCategory("exp_financial_savings", null))
+        assertTrue(InvestmentTransferRules.isInvestmentCategory("x", "Poupança / Investimento"))
+        assertTrue(!InvestmentTransferRules.isInvestmentCategory("exp_food", "Alimentação"))
+        assertTrue(InvestmentTransferRules.isInvestmentTransfer("Continente", "exp_financial_savings", null))
+        assertTrue(InvestmentTransferRules.isInvestmentTransfer("Enviado a XTB", "exp_food", "Alimentação"))
+        assertTrue(!InvestmentTransferRules.isInvestmentTransfer("Continente", "exp_food", "Alimentação"))
+    }
+
+    @Test
+    fun resolveDefaultAssetId_xtbAndGenericGoToHolding_optimizeUsesLastOrAggressive() {
+        val assets = listOf(asset("a", "Optimize Conservador", 1), asset("b", "Optimize Agressivo", 1))
+        val holding = InvestmentTransferRules.XTB_HOLDING_ASSET_ID
+        assertEquals(holding, InvestmentTransferRules.resolveDefaultAssetId(InvestmentPlatform.XTB, assets, emptyMap()))
+        assertEquals(holding, InvestmentTransferRules.resolveDefaultAssetId(null, assets, emptyMap()))
+        assertEquals("b", InvestmentTransferRules.resolveDefaultAssetId(InvestmentPlatform.OPTIMIZE, assets, emptyMap()))
+        assertEquals("a", InvestmentTransferRules.resolveDefaultAssetId(InvestmentPlatform.OPTIMIZE, assets, mapOf(InvestmentPlatform.OPTIMIZE to "a")))
+        assertEquals("b", InvestmentTransferRules.resolveDefaultAssetId(InvestmentPlatform.OPTIMIZE, assets, mapOf(InvestmentPlatform.OPTIMIZE to "gone")))
+        assertNull(InvestmentTransferRules.resolveDefaultAssetId(InvestmentPlatform.OPTIMIZE, listOf(asset("a", "Outro", 1)), emptyMap()))
+    }
+
+    @Test
     fun allocate_movesValueBetweenAssets_andRejectsInvalidAmounts() {
         val from = asset(InvestmentTransferRules.XTB_HOLDING_ASSET_ID, "XTB", 10_000)
         val to = asset("t", "VWCE", 5_000, 6_000)

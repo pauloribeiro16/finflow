@@ -9,6 +9,7 @@ import com.financas.app.data.repository.InvestmentTransferService
 import com.financas.app.domain.usecase.InvestmentTransferRules
 import com.financas.app.data.db.TransactionDao
 import com.financas.app.data.entity.CategoryEntity
+import com.financas.app.data.entity.InvestmentAssetEntity
 import com.financas.app.data.entity.PendingTransactionEntity
 import com.financas.app.data.entity.TransactionEntity
 import com.financas.app.data.prefs.ContextTagsStore
@@ -37,6 +38,7 @@ data class AddTransactionUiState(
     val linkedTransactionId: Long? = null,
     val hasLinkedRefunds: Boolean = false,
     val investmentAssetId: String? = null,
+    val investmentAssets: List<InvestmentAssetEntity> = emptyList(),
     val recentExpenses: List<TransactionEntity> = emptyList(),
     val recentMerchants: List<String> = emptyList(),
     val customContextTags: Set<String> = emptySet(),
@@ -67,6 +69,7 @@ class AddTransactionViewModel(
         loadCustomContextTags()
         loadCategories()
         loadHistory()
+        loadInvestmentAssets()
     }
 
     private fun loadCustomContextTags() {
@@ -98,6 +101,25 @@ class AddTransactionViewModel(
                 }
             }
         }
+    }
+
+    private fun loadInvestmentAssets() {
+        val dao = investmentAssetDao ?: return
+        viewModelScope.launch {
+            dao.getActive().collect { assets ->
+                _uiState.update { it.copy(investmentAssets = assets) }
+            }
+        }
+    }
+
+    fun onInvestmentAssetSelected(assetId: String?) {
+        _uiState.update { it.copy(investmentAssetId = assetId) }
+    }
+
+    private fun isInvestmentCategorySelected(state: AddTransactionUiState): Boolean {
+        val category = state.allCategories.find { it.id == state.selectedCategoryId }
+        return state.type.equals("EXPENSE", ignoreCase = true) &&
+            InvestmentTransferRules.isInvestmentCategory(state.selectedCategoryId, category?.name)
     }
 
     private fun loadHistory() {
@@ -460,7 +482,15 @@ class AddTransactionViewModel(
                 }
                 transactionDao.update(toSave)
             } else {
-                transactionDao.insert(entity)
+                val service = transferService
+                if (service != null && isInvestmentCategorySelected(state)) {
+                    service.recordTransfer(
+                        entity,
+                        state.investmentAssetId ?: InvestmentTransferRules.XTB_HOLDING_ASSET_ID
+                    )
+                } else {
+                    transactionDao.insert(entity)
+                }
             }
             _uiState.update { it.copy(isSaved = true) }
             onSuccess()

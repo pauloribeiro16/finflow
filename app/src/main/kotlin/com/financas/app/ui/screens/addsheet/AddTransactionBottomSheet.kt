@@ -99,6 +99,7 @@ import com.financas.app.ui.theme.FinflowTealLight
 import com.financas.app.ui.theme.FinflowTextMuted
 import com.financas.app.ui.theme.FinflowTextPrimary
 import com.financas.app.ui.theme.FinflowTextSecondary
+import com.financas.app.domain.usecase.InvestmentTransferRules
 import com.financas.app.ui.i18n.AppLanguage
 import com.financas.app.ui.i18n.CategoryTranslator
 import com.financas.app.ui.i18n.LocalAppLanguage
@@ -494,6 +495,56 @@ fun AddTransactionBottomSheet(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = FinflowPrimary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            val selectedCategoryForInvestment = uiState.allCategories.find { it.id == uiState.selectedCategoryId }
+            if (uiState.editingTransactionId == null &&
+                uiState.type.equals("EXPENSE", ignoreCase = true) &&
+                InvestmentTransferRules.isInvestmentCategory(uiState.selectedCategoryId, selectedCategoryForInvestment?.name)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Investimento — para onde vai este dinheiro? (podes alocar mais tarde na Carteira)",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = FinflowTextSecondary
+                    )
+                    val effectiveAssetId = uiState.investmentAssetId ?: InvestmentTransferRules.XTB_HOLDING_ASSET_ID
+                    val assetOptions = buildList {
+                        add(InvestmentTransferRules.XTB_HOLDING_ASSET_ID to InvestmentTransferRules.XTB_HOLDING_NAME)
+                        uiState.investmentAssets
+                            .filter { !InvestmentTransferRules.isHoldingAsset(it) }
+                            .forEach { add(it.id to it.name) }
+                    }
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        assetOptions.forEach { (assetId, assetName) ->
+                            val isSelected = effectiveAssetId == assetId
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (isSelected) FinflowPrimary else FinflowSurfaceContainerLow)
+                                    .clickable { viewModel.onInvestmentAssetSelected(assetId) }
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = assetName,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isSelected) Color.White else FinflowTextPrimary,
+                                    maxLines = 1
                                 )
                             }
                         }

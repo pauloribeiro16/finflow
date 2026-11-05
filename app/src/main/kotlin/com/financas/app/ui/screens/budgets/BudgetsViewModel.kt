@@ -283,6 +283,13 @@ class BudgetsViewModel(
         }
     }
 
+    fun addMoneyToAsset(assetId: String, amountCents: Long) {
+        val dao = investmentAssetDao ?: return
+        viewModelScope.launch {
+            InvestmentTransferService(transactionDao, dao).addContribution(assetId, amountCents)
+        }
+    }
+
     fun allocateAsset(fromAssetId: String, toAssetId: String, amountCents: Long) {
         val dao = investmentAssetDao ?: return
         viewModelScope.launch {
