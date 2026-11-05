@@ -61,7 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.financas.app.data.entity.CategoryEntity
 import com.financas.app.data.entity.InvestmentAssetEntity
-import com.financas.app.domain.usecase.InvestmentPlatform
 import com.financas.app.domain.usecase.InvestmentTransferRules
 import com.financas.app.data.entity.PendingTransactionEntity
 import com.financas.app.data.seed.DefaultSeed
@@ -87,7 +86,6 @@ fun PendingReviewBottomSheet(
     categories: Map<String, CategoryEntity>,
     onDismiss: () -> Unit,
     investmentAssets: List<InvestmentAssetEntity> = emptyList(),
-    lastAssetByPlatform: Map<InvestmentPlatform, String> = emptyMap(),
     onConfirmInvestment: (PendingTransactionEntity, String, String) -> Unit = { _, _, _ -> },
     onConfirm: (PendingTransactionEntity, String, String) -> Unit,
     onEditFull: (PendingTransactionEntity) -> Unit,
@@ -342,26 +340,33 @@ fun PendingReviewBottomSheet(
                                     }
                                 }
 
-                                val platform = InvestmentTransferRules.detectPlatform(item.rawMerchant)
                                 val isInvestment = InvestmentTransferRules.isInvestmentTransfer(
                                     item.rawMerchant, currentCategoryId, currentCategory?.name
                                 )
-                                val chosenAssetId = if (isInvestment) {
-                                    selectedAssets[item.id]
-                                        ?: InvestmentTransferRules.resolveDefaultAssetId(platform, investmentAssets, lastAssetByPlatform)
+                                val monthlyAssetId = if (isInvestment) {
+                                    InvestmentTransferRules.matchMonthlyAsset(
+                                        item.amountCents,
+                                        InvestmentTransferRules.detectPlatform(item.rawMerchant),
+                                        investmentAssets
+                                    )
                                 } else {
                                     null
                                 }
+                                val chosenAssetId = if (isInvestment) selectedAssets[item.id] ?: monthlyAssetId else null
 
                                 if (isInvestment) {
                                     Text(
-                                        text = "Investimento — para onde foi este dinheiro? (podes alocar mais tarde na Carteira)",
+                                        text = if (monthlyAssetId != null && selectedAssets[item.id] == null) {
+                                            "Investimento — sugerido pelo aporte mensal definido (podes mudar)"
+                                        } else {
+                                            "Investimento — escolhe para onde foi (ou 'Decidir depois' para alocar na Carteira)"
+                                        },
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = TextSecondary
                                     )
                                     val options = buildList {
-                                        add(InvestmentTransferRules.XTB_HOLDING_ASSET_ID to InvestmentTransferRules.XTB_HOLDING_NAME)
+                                        add(InvestmentTransferRules.XTB_HOLDING_ASSET_ID to InvestmentTransferRules.XTB_HOLDING_CHOICE_LABEL)
                                         investmentAssets
                                             .filter { !InvestmentTransferRules.isHoldingAsset(it) }
                                             .forEach { add(it.id to it.name) }

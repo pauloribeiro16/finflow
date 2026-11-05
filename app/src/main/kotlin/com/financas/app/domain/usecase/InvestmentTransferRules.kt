@@ -9,6 +9,7 @@ object InvestmentTransferRules {
     const val TRANSFER_TYPE = "TRANSFER"
     const val XTB_HOLDING_ASSET_ID = "xtb-holding"
     const val XTB_HOLDING_NAME = "XTB – por alocar"
+    const val XTB_HOLDING_CHOICE_LABEL = "Decidir depois (XTB)"
     const val INVESTMENT_CATEGORY_ID = "exp_financial_savings"
 
     private val xtbRegex = Regex("""\bxtb\b""", RegexOption.IGNORE_CASE)
@@ -26,15 +27,21 @@ object InvestmentTransferRules {
     fun isInvestmentTransfer(merchant: String, categoryId: String?, categoryName: String?): Boolean =
         detectPlatform(merchant) != null || isInvestmentCategory(categoryId, categoryName)
 
-    fun resolveDefaultAssetId(
+    fun matchMonthlyAsset(
+        amountCents: Long,
         platform: InvestmentPlatform?,
-        assets: List<InvestmentAssetEntity>,
-        lastAssetByPlatform: Map<InvestmentPlatform, String>
-    ): String? = when (platform) {
-        InvestmentPlatform.OPTIMIZE -> lastAssetByPlatform[platform]
-            ?.takeIf { id -> assets.any { it.id == id && !it.archived } }
-            ?: suggestAssetId(platform, assets)
-        else -> XTB_HOLDING_ASSET_ID
+        assets: List<InvestmentAssetEntity>
+    ): String? {
+        if (amountCents <= 0L) return null
+        val candidates = assets.filter { !it.archived && it.monthlyContributionCents > 0L && it.monthlyContributionCents == amountCents }
+        if (candidates.size <= 1 || platform == null) return candidates.singleOrNull()?.id
+        val platformName = platform.name
+        val narrowed = candidates.filter {
+            it.institution.contains(platformName, ignoreCase = true) ||
+                it.name.contains(platformName, ignoreCase = true) ||
+                (platform == InvestmentPlatform.XTB && isHoldingAsset(it))
+        }
+        return narrowed.singleOrNull()?.id
     }
 
     fun isHoldingAsset(asset: InvestmentAssetEntity): Boolean = asset.id == XTB_HOLDING_ASSET_ID
@@ -49,15 +56,6 @@ object InvestmentTransferRules {
         notes = "Dinheiro enviado para a XTB que ainda não foi alocado a ativos.",
         lastUpdatedEpochDay = epochDay
     )
-
-    fun suggestAssetId(platform: InvestmentPlatform, assets: List<InvestmentAssetEntity>): String? = when (platform) {
-        InvestmentPlatform.XTB -> XTB_HOLDING_ASSET_ID
-        InvestmentPlatform.OPTIMIZE -> assets.firstOrNull {
-            !it.archived &&
-                it.name.contains("optimize", ignoreCase = true) &&
-                it.name.contains("agress", ignoreCase = true)
-        }?.id
-    }
 
     fun contribute(asset: InvestmentAssetEntity, amountCents: Long, epochDay: Long): InvestmentAssetEntity =
         asset.copy(

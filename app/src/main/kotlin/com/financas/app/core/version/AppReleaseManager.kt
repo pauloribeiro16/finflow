@@ -30,8 +30,9 @@ object AppReleaseManager {
             title = "Investimentos em Dois Toques",
             description = "Categorizar um movimento como investimento passa a mostrar logo para onde foi o dinheiro, e dá para somar dinheiro diretamente a um ativo.",
             changes = listOf(
-                "Ao categorizar um pendente como 'Poupança / Investimento' escolhes o ativo (por omissão 'XTB – por alocar') e confirmas; deixa de contar como despesa.",
-                "Optimize lembra o último ativo usado; 'Confirmar Todos' envia os investimentos para o ativo habitual.",
+                "Ao categorizar um pendente como 'Poupança / Investimento' escolhes tu o destino (um ativo ou 'Decidir depois (XTB)'); nada vem selecionado e deixa de contar como despesa.",
+                "Se definires um reforço mensal num ativo (ex.: 200 €/mês), esse ativo vem sugerido quando chegar um investimento desse valor.",
+                "'Confirmar Todos' só envia automaticamente os investimentos com reforço mensal correspondente; os outros ficam pendentes.",
                 "Novo botão '+ Aporte' em cada ativo da Carteira para somar dinheiro diretamente (fica como transferência).",
                 "A folha 'Novo Movimento' também pergunta o ativo quando a categoria é investimento."
             )

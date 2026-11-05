@@ -27,18 +27,6 @@ class InvestmentTransferRulesTest {
     }
 
     @Test
-    fun suggestAssetId_xtbAlwaysHolding_optimizeOnlyWhenAggressiveAssetExists() {
-        val assets = listOf(
-            asset("a", "Optimize Conservador", 100),
-            asset("b", "Optimize Agressivo", 100)
-        )
-        assertEquals(InvestmentTransferRules.XTB_HOLDING_ASSET_ID, InvestmentTransferRules.suggestAssetId(InvestmentPlatform.XTB, assets))
-        assertEquals("b", InvestmentTransferRules.suggestAssetId(InvestmentPlatform.OPTIMIZE, assets))
-        assertNull(InvestmentTransferRules.suggestAssetId(InvestmentPlatform.OPTIMIZE, listOf(asset("a", "Optimize Conservador", 1))))
-        assertNull(InvestmentTransferRules.suggestAssetId(InvestmentPlatform.OPTIMIZE, listOf(asset("b", "Optimize Agressivo", 1, archived = true))))
-    }
-
-    @Test
     fun contributeAndRevert_adjustInvestedAndCurrentValue_neverBelowZero() {
         val a = asset("a", "A", 1000, 1200)
         val up = InvestmentTransferRules.contribute(a, 500, 9L)
@@ -60,16 +48,31 @@ class InvestmentTransferRulesTest {
         assertTrue(!InvestmentTransferRules.isInvestmentTransfer("Continente", "exp_food", "Alimentação"))
     }
 
+    private fun monthly(id: String, name: String, institution: String, cents: Long, archived: Boolean = false) =
+        asset(id, name, 1, archived = archived).copy(institution = institution, monthlyContributionCents = cents)
+
     @Test
-    fun resolveDefaultAssetId_xtbAndGenericGoToHolding_optimizeUsesLastOrAggressive() {
-        val assets = listOf(asset("a", "Optimize Conservador", 1), asset("b", "Optimize Agressivo", 1))
-        val holding = InvestmentTransferRules.XTB_HOLDING_ASSET_ID
-        assertEquals(holding, InvestmentTransferRules.resolveDefaultAssetId(InvestmentPlatform.XTB, assets, emptyMap()))
-        assertEquals(holding, InvestmentTransferRules.resolveDefaultAssetId(null, assets, emptyMap()))
-        assertEquals("b", InvestmentTransferRules.resolveDefaultAssetId(InvestmentPlatform.OPTIMIZE, assets, emptyMap()))
-        assertEquals("a", InvestmentTransferRules.resolveDefaultAssetId(InvestmentPlatform.OPTIMIZE, assets, mapOf(InvestmentPlatform.OPTIMIZE to "a")))
-        assertEquals("b", InvestmentTransferRules.resolveDefaultAssetId(InvestmentPlatform.OPTIMIZE, assets, mapOf(InvestmentPlatform.OPTIMIZE to "gone")))
-        assertNull(InvestmentTransferRules.resolveDefaultAssetId(InvestmentPlatform.OPTIMIZE, listOf(asset("a", "Outro", 1)), emptyMap()))
+    fun matchMonthlyAsset_suggestsOnlyWhenAmountMatchesExactlyOneMonthlyContribution() {
+        val assets = listOf(
+            monthly("x", "XTB – por alocar", "XTB", 20_000L),
+            monthly("o", "Optimize Agressivo", "Optimize", 10_000L),
+            monthly("old", "Antigo", "Optimize", 10_000L, archived = true)
+        )
+        assertEquals("x", InvestmentTransferRules.matchMonthlyAsset(20_000L, null, assets))
+        assertEquals("o", InvestmentTransferRules.matchMonthlyAsset(10_000L, InvestmentPlatform.OPTIMIZE, assets))
+        assertNull(InvestmentTransferRules.matchMonthlyAsset(15_000L, null, assets))
+        assertNull(InvestmentTransferRules.matchMonthlyAsset(0L, null, assets))
+    }
+
+    @Test
+    fun matchMonthlyAsset_ambiguousAmountIsNarrowedByPlatformOrLeftEmpty() {
+        val assets = listOf(
+            monthly("x", "XTB – por alocar", "XTB", 20_000L),
+            monthly("o", "Optimize Agressivo", "Optimize", 20_000L)
+        )
+        assertEquals("x", InvestmentTransferRules.matchMonthlyAsset(20_000L, InvestmentPlatform.XTB, assets))
+        assertEquals("o", InvestmentTransferRules.matchMonthlyAsset(20_000L, InvestmentPlatform.OPTIMIZE, assets))
+        assertNull(InvestmentTransferRules.matchMonthlyAsset(20_000L, null, assets))
     }
 
     @Test

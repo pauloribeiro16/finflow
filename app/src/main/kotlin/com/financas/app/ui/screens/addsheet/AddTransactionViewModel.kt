@@ -48,6 +48,16 @@ data class AddTransactionUiState(
     val isSaved: Boolean = false
 )
 
+fun AddTransactionUiState.requiresInvestmentDestination(): Boolean {
+    val category = allCategories.find { it.id == selectedCategoryId }
+    return editingTransactionId == null &&
+        type.equals("EXPENSE", ignoreCase = true) &&
+        InvestmentTransferRules.isInvestmentCategory(selectedCategoryId, category?.name)
+}
+
+fun AddTransactionUiState.effectiveInvestmentAssetId(): String? =
+    investmentAssetId ?: InvestmentTransferRules.matchMonthlyAsset(amountCents, null, investmentAssets)
+
 class AddTransactionViewModel(
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
@@ -114,12 +124,6 @@ class AddTransactionViewModel(
 
     fun onInvestmentAssetSelected(assetId: String?) {
         _uiState.update { it.copy(investmentAssetId = assetId) }
-    }
-
-    private fun isInvestmentCategorySelected(state: AddTransactionUiState): Boolean {
-        val category = state.allCategories.find { it.id == state.selectedCategoryId }
-        return state.type.equals("EXPENSE", ignoreCase = true) &&
-            InvestmentTransferRules.isInvestmentCategory(state.selectedCategoryId, category?.name)
     }
 
     private fun loadHistory() {
@@ -443,6 +447,8 @@ class AddTransactionViewModel(
         val cents = state.amountCents
         if (cents <= 0L) return
 
+        if (state.requiresInvestmentDestination() && state.effectiveInvestmentAssetId() == null) return
+
         val date = LocalDate.ofEpochDay(state.epochDay)
         val yearMonth = date.year * 100 + date.monthValue
         val editingId = state.editingTransactionId
@@ -483,11 +489,9 @@ class AddTransactionViewModel(
                 transactionDao.update(toSave)
             } else {
                 val service = transferService
-                if (service != null && isInvestmentCategorySelected(state)) {
-                    service.recordTransfer(
-                        entity,
-                        state.investmentAssetId ?: InvestmentTransferRules.XTB_HOLDING_ASSET_ID
-                    )
+                val assetId = state.effectiveInvestmentAssetId()
+                if (service != null && state.requiresInvestmentDestination() && assetId != null) {
+                    service.recordTransfer(entity, assetId)
                 } else {
                     transactionDao.insert(entity)
                 }

@@ -502,11 +502,7 @@ fun AddTransactionBottomSheet(
                 }
             }
 
-            val selectedCategoryForInvestment = uiState.allCategories.find { it.id == uiState.selectedCategoryId }
-            if (uiState.editingTransactionId == null &&
-                uiState.type.equals("EXPENSE", ignoreCase = true) &&
-                InvestmentTransferRules.isInvestmentCategory(uiState.selectedCategoryId, selectedCategoryForInvestment?.name)
-            ) {
+            if (uiState.requiresInvestmentDestination()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -514,14 +510,14 @@ fun AddTransactionBottomSheet(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Investimento — para onde vai este dinheiro? (podes alocar mais tarde na Carteira)",
+                        text = "Investimento — escolhe para onde vai (ou 'Decidir depois' para alocar na Carteira)",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = FinflowTextSecondary
                     )
-                    val effectiveAssetId = uiState.investmentAssetId ?: InvestmentTransferRules.XTB_HOLDING_ASSET_ID
+                    val effectiveAssetId = uiState.effectiveInvestmentAssetId()
                     val assetOptions = buildList {
-                        add(InvestmentTransferRules.XTB_HOLDING_ASSET_ID to InvestmentTransferRules.XTB_HOLDING_NAME)
+                        add(InvestmentTransferRules.XTB_HOLDING_ASSET_ID to InvestmentTransferRules.XTB_HOLDING_CHOICE_LABEL)
                         uiState.investmentAssets
                             .filter { !InvestmentTransferRules.isHoldingAsset(it) }
                             .forEach { add(it.id to it.name) }
@@ -777,6 +773,7 @@ fun AddTransactionBottomSheet(
                 }
                 Button(
                     onClick = { viewModel.saveTransaction(onSaveSuccess) },
+                    enabled = !(uiState.requiresInvestmentDestination() && uiState.effectiveInvestmentAssetId() == null),
                     modifier = Modifier
                         .then(if (isEditing) Modifier.weight(1f) else Modifier.fillMaxWidth())
                         .height(52.dp),

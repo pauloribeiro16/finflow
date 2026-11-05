@@ -8,7 +8,6 @@ import com.financas.app.data.db.CategoryDao
 import com.financas.app.data.db.GoalDao
 import com.financas.app.data.db.InvestmentAssetDao
 import com.financas.app.data.repository.InvestmentTransferService
-import com.financas.app.domain.usecase.InvestmentPlatform
 import com.financas.app.domain.usecase.InvestmentTransferRules
 import com.financas.app.data.db.PendingTransactionDao
 import com.financas.app.data.db.TransactionDao
@@ -86,7 +85,6 @@ data class HomeUiState(
     val userName: String = "",
     val portfolioSummary: PortfolioSummary = PortfolioSummary(),
     val investmentAssets: List<InvestmentAssetEntity> = emptyList(),
-    val lastAssetByPlatform: Map<InvestmentPlatform, String> = emptyMap(),
     val isLoading: Boolean = false
 )
 
@@ -161,16 +159,7 @@ class HomeViewModel(
             dao.getAll().collect { assets ->
                 val summary = investmentPortfolioCalculator.calculate(assets)
                 _uiState.update { it.copy(portfolioSummary = summary, investmentAssets = assets.filter { a -> !a.archived }) }
-                refreshLastAssets()
             }
-        }
-    }
-
-    private fun refreshLastAssets() {
-        val service = transferService ?: return
-        viewModelScope.launch {
-            val last = service.lastAssetByPlatform()
-            _uiState.update { it.copy(lastAssetByPlatform = last) }
         }
     }
 
@@ -321,7 +310,6 @@ class HomeViewModel(
                 transactionDao.insert(newTx)
             }
             pendingTransactionDao?.deleteById(pending.id)
-            if (investmentAssetId != null) refreshLastAssets()
             if (txYearMonth == _uiState.value.selectedYearMonth) {
                 loadMonthData(txYearMonth)
             }
@@ -358,17 +346,19 @@ class HomeViewModel(
                     paymentMethod = pending.suggestedPaymentMethod,
                     isFixed = pending.isFixed
                 )
-                val platform = InvestmentTransferRules.detectPlatform(pending.rawMerchant)
                 val category = cachedCategories.firstOrNull { it.id == pending.suggestedCategoryId }
                 val isInvestment = InvestmentTransferRules.isInvestmentTransfer(
                     pending.rawMerchant, pending.suggestedCategoryId, category?.name
                 )
                 val service = transferService
-                if (isInvestment && service != null) {
-                    val assetId = InvestmentTransferRules.resolveDefaultAssetId(
-                        platform, _uiState.value.investmentAssets, _uiState.value.lastAssetByPlatform
-                    ) ?: continue
-                    service.recordTransfer(newTx, assetId)
+                if (isInvestment) {
+                    val monthlyAssetId = InvestmentTransferRules.matchMonthlyAsset(
+                        pending.amountCents,
+                        InvestmentTransferRules.detectPlatform(pending.rawMerchant),
+                        _uiState.value.investmentAssets
+                    )
+                    if (monthlyAssetId == null || service == null) continue
+                    service.recordTransfer(newTx, monthlyAssetId)
                 } else {
                     transactionDao.insert(newTx)
                 }

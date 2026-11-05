@@ -84,19 +84,6 @@ class InvestmentTransferServiceTest {
     }
 
     @Test
-    fun lastAssetByPlatform_returnsMostRecentAssetPerPlatform() = runTest {
-        val txDao = FakeTransactionDao()
-        val assetDao = FakeInvestmentAssetDao(listOf(optimize))
-        val service = InvestmentTransferService(txDao, assetDao) { 200L }
-        service.recordTransfer(tx(1_000L).copy(id = 0L, merchant = "Transferência Optimize", epochDay = 10L), "opt")
-        service.recordTransfer(tx(1_000L).copy(id = 0L, merchant = "Transferência Optimize", epochDay = 20L), InvestmentTransferRules.XTB_HOLDING_ASSET_ID)
-
-        val last = service.lastAssetByPlatform()
-
-        assertEquals(InvestmentTransferRules.XTB_HOLDING_ASSET_ID, last[com.financas.app.domain.usecase.InvestmentPlatform.OPTIMIZE])
-    }
-
-    @Test
     fun allocate_movesFromHoldingToRealAsset() = runTest {
         val assetDao = FakeInvestmentAssetDao(listOf(optimize))
         val service = InvestmentTransferService(FakeTransactionDao(), assetDao) { 200L }

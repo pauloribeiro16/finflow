@@ -4,7 +4,6 @@ import com.financas.app.data.db.InvestmentAssetDao
 import com.financas.app.data.db.TransactionDao
 import com.financas.app.data.entity.InvestmentAssetEntity
 import com.financas.app.data.entity.TransactionEntity
-import com.financas.app.domain.usecase.InvestmentPlatform
 import com.financas.app.domain.usecase.InvestmentTransferRules
 import java.time.LocalDate
 
@@ -63,17 +62,6 @@ class InvestmentTransferService(
             paymentMethod = "TRANSFERENCIA"
         )
         return recordTransfer(transaction, asset.id)
-    }
-
-    suspend fun lastAssetByPlatform(): Map<InvestmentPlatform, String> {
-        val result = mutableMapOf<InvestmentPlatform, String>()
-        transactionDao.getAllSync()
-            .filter { it.investmentAssetId != null }
-            .sortedBy { it.epochDay }
-            .forEach { tx ->
-                InvestmentTransferRules.detectPlatform(tx.merchant)?.let { result[it] = tx.investmentAssetId!! }
-            }
-        return result
     }
 
     suspend fun deleteTransaction(transaction: TransactionEntity) {

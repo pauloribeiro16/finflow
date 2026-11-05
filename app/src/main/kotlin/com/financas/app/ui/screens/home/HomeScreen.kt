@@ -991,7 +991,6 @@ fun HomeScreen(
             onConfirm = { pending, cat, ctx ->
                 viewModel.confirmPending(pending, cat, ctx)
             },
-            lastAssetByPlatform = uiState.lastAssetByPlatform,
             onConfirmInvestment = { pending, assetId, categoryId ->
                 viewModel.confirmPending(pending, chosenCategoryId = categoryId, investmentAssetId = assetId)
             },
