@@ -50,9 +50,11 @@ data class AddTransactionUiState(
 
 fun AddTransactionUiState.requiresInvestmentDestination(): Boolean {
     val category = allCategories.find { it.id == selectedCategoryId }
+    val isInvestCategory = InvestmentTransferRules.isInvestmentCategory(selectedCategoryId, category?.name)
+    val isInvestPlatform = InvestmentTransferRules.detectPlatform(merchant) != null
     return editingTransactionId == null &&
-        type.equals("EXPENSE", ignoreCase = true) &&
-        InvestmentTransferRules.isInvestmentCategory(selectedCategoryId, category?.name)
+        (type.equals("EXPENSE", ignoreCase = true) || type.equals("TRANSFER", ignoreCase = true)) &&
+        (isInvestCategory || isInvestPlatform)
 }
 
 fun AddTransactionUiState.effectiveInvestmentAssetId(): String? =

@@ -17,11 +17,26 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.4.1"
-    const val CURRENT_BUILD = 24
+    const val CURRENT_VERSION = "2.5.0"
+    const val CURRENT_BUILD = 25
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.5.0",
+            buildCode = 25,
+            date = "06 Nov 2026",
+            type = ReleaseType.MINOR,
+            title = "Dois Pilares de Poupança e Alocação Modular",
+            description = "Organização clara entre Poupança Segura e Investimentos de Longo Prazo, e gestão direta de transferências sem ativos temporários a poluir a carteira.",
+            changes = listOf(
+                "Painel de destaque 'Saldo por Alocar' no topo do separador Investimentos para alocação rápida.",
+                "Divisão modular do mesmo montante: podes alocar 50 € a um ativo e deixar o restante para decidir depois.",
+                "Divisão em dois pilares: Reserva Segura (capital 100% protegido) e Carteira de Investimentos (rendimento a longo prazo).",
+                "O ativo temporário de espera deixa de surgir como cartão avulso na lista de ativos reais.",
+                "Atribuição de destino de investimento disponível tanto para despesas como para transferências."
+            )
+        ),
         AppRelease(
             version = "2.4.1",
             buildCode = 24,

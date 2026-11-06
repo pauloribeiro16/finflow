@@ -29,3 +29,5 @@ app/src/main/assets/historical_*.json
 app/src/main/assets/personal_*.json
 *.json.bak
 personal_*.json
+docs/review-screens/
+

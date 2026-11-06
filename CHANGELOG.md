@@ -9,6 +9,16 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.5.0] — 2026-11-06 (Minor Release)
+### Adicionado
+- **Dois Pilares de Poupança e Investimento**: separação clara entre Reserva Segura (capital 100% garantido em depósitos a prazo e certificados de aforro) e Carteira de Investimentos (crescimento a longo prazo em ETFs, PPRs e ações), visíveis logo abaixo do resumo patrimonial.
+- **Painel de Destaque "Saldo por Alocar"**: alerta no topo do separador de Investimentos quando existem transferências de investimento pendentes de destino (ex.: transferências para XTB para 'decidir depois').
+- **Alocação Modular Fracionada**: botão de alocação que permite dividir um montante livremente (ex.: transferir 50 € para um ativo e deixar 100 € em espera para alocar mais tarde), com atalhos de preenchimento rápido (Tudo, 50 €, 100 €).
+- O ativo temporário de espera deixa de surgir como cartão avulso a poluir a lista de ativos reais.
+- Suporte para seleção de ativo de investimento em transferências bancárias (`TRANSFER`), além de despesas.
+
+---
+
 ## [2.4.1] — 2026-11-05 (Patch & Fix)
 ### Corrigido
 - **Atualização da app demo**: a demo oferecia o APK da app real (outro pacote e outra assinatura), que nunca instalava por cima. As releases passam a incluir `Finflow-Demo-<versão>.apk` e o atualizador escolhe o APK do seu flavor. O APK de produção deixa de poder ser confundido com o da demo no pipeline.

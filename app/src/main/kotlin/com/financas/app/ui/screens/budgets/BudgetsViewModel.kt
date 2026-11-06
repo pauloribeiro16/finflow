@@ -8,6 +8,7 @@ import com.financas.app.data.db.CategoryDao
 import com.financas.app.data.db.GoalDao
 import com.financas.app.data.db.InvestmentAssetDao
 import com.financas.app.data.repository.InvestmentTransferService
+import com.financas.app.domain.usecase.InvestmentTransferRules
 import com.financas.app.data.db.TransactionDao
 import com.financas.app.data.entity.BudgetEntity
 import com.financas.app.data.entity.CategoryEntity
@@ -74,6 +75,13 @@ data class BudgetsUiState(
     // Investments
     val investmentAssets: List<InvestmentAssetEntity> = emptyList(),
     val filteredInvestmentAssets: List<InvestmentAssetEntity> = emptyList(),
+    val unallocatedHoldingAsset: InvestmentAssetEntity? = null,
+    val unallocatedBalanceCents: Long = 0L,
+    val safeSavingsTotalCents: Long = 0L,
+    val longTermInvestedCents: Long = 0L,
+    val longTermCurrentValueCents: Long = 0L,
+    val longTermProfitLossCents: Long = 0L,
+    val longTermProfitLossPct: Double = 0.0,
     val portfolioSummary: PortfolioSummary = PortfolioSummary(),
     val selectedAssetTypeFilter: InvestmentType? = null,
     val isLoading: Boolean = false
@@ -165,11 +173,32 @@ class BudgetsViewModel(
         val formattedTitle = ymObj.atDay(1).format(monthFormatter).replaceFirstChar { it.uppercase() }
 
         val portfolio = investmentPortfolioCalculator.calculate(assets)
+        val realAssets = assets.filter { !it.archived && !InvestmentTransferRules.isHoldingAsset(it) }
         val filteredAssets = if (filterType == null) {
-            assets
+            realAssets
         } else {
-            assets.filter { InvestmentType.fromKey(it.type) == filterType }
+            realAssets.filter { InvestmentType.fromKey(it.type) == filterType }
         }
+
+        val unallocatedHolding = assets.find { InvestmentTransferRules.isHoldingAsset(it) && it.currentValueCents > 0L }
+        val unallocatedCents = unallocatedHolding?.currentValueCents ?: 0L
+
+        val safeAssets = realAssets.filter {
+            val t = InvestmentType.fromKey(it.type)
+            t == InvestmentType.DEPOSITO_PRAZO || t == InvestmentType.CERTIFICADOS_AFORRO
+        }
+        val safeSavingsTotal = safeAssets.sumOf { it.currentValueCents }
+
+        val longTermAssets = realAssets.filter {
+            val t = InvestmentType.fromKey(it.type)
+            t != InvestmentType.DEPOSITO_PRAZO && t != InvestmentType.CERTIFICADOS_AFORRO
+        }
+        val longTermInvested = longTermAssets.sumOf { it.investedCents }
+        val longTermCurrent = longTermAssets.sumOf { it.currentValueCents }
+        val longTermProfitLoss = longTermCurrent - longTermInvested
+        val longTermProfitLossPct = if (longTermInvested > 0L) {
+            (longTermProfitLoss.toDouble() / longTermInvested.toDouble()) * 100.0
+        } else 0.0
 
         return BudgetsUiState(
             selectedYearMonth = ym,
@@ -187,6 +216,13 @@ class BudgetsViewModel(
             rolloverEnabled = false,
             investmentAssets = assets,
             filteredInvestmentAssets = filteredAssets,
+            unallocatedHoldingAsset = unallocatedHolding,
+            unallocatedBalanceCents = unallocatedCents,
+            safeSavingsTotalCents = safeSavingsTotal,
+            longTermInvestedCents = longTermInvested,
+            longTermCurrentValueCents = longTermCurrent,
+            longTermProfitLossCents = longTermProfitLoss,
+            longTermProfitLossPct = longTermProfitLossPct,
             portfolioSummary = portfolio,
             selectedAssetTypeFilter = filterType,
             isLoading = false

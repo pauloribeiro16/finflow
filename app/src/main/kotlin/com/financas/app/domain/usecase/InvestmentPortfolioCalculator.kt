@@ -24,7 +24,8 @@ class InvestmentPortfolioCalculator {
 
         val totalMonthlyContribution = activeAssets.sumOf { it.monthlyContributionCents }
 
-        val allocations = activeAssets
+        val realActive = activeAssets.filter { !InvestmentTransferRules.isHoldingAsset(it) }
+        val allocations = realActive
             .groupBy { InvestmentType.fromKey(it.type) }
             .map { (type, typeAssets) ->
                 val typeTotal = typeAssets.sumOf { it.currentValueCents }
@@ -48,7 +49,7 @@ class InvestmentPortfolioCalculator {
             totalProfitLossPercentage = totalProfitLossPct,
             totalMonthlyContributionCents = totalMonthlyContribution,
             allocations = allocations,
-            totalAssetsCount = activeAssets.size
+            totalAssetsCount = realActive.size
         )
     }
 }

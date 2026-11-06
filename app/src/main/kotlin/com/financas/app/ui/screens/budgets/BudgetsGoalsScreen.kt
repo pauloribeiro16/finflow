@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -333,7 +334,7 @@ fun BudgetsGoalsScreen(
     allocatingAsset?.let { source ->
         AllocateAssetDialog(
             source = source,
-            targets = uiState.investmentAssets.filter { it.id != source.id && !it.archived },
+            targets = uiState.investmentAssets.filter { it.id != source.id && !it.archived && !InvestmentTransferRules.isHoldingAsset(it) },
             onDismiss = { allocatingAsset = null },
             onConfirm = { targetId, cents ->
                 viewModel.allocateAsset(source.id, targetId, cents)
@@ -435,6 +436,98 @@ fun InvestmentsTabContent(
     val profitBg = if (isProfitPositive) FinflowSecondaryLight else FinflowCoralLight
     val sign = if (isProfitPositive) "+" else ""
 
+    // Card de Alerta no Topo: Saldo Pendente de Alocação (ex.: XTB)
+    if (uiState.unallocatedBalanceCents > 0L && uiState.unallocatedHoldingAsset != null) {
+        val holding = uiState.unallocatedHoldingAsset
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = FinflowSurface),
+            border = BorderStroke(1.dp, FinflowAmber)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(FinflowAmberLight),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountBalanceWallet,
+                                contentDescription = null,
+                                tint = FinflowAmber,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Saldo por Alocar",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = FinflowTextPrimary
+                            )
+                            Text(
+                                text = "${holding.institution} • Transferência em espera",
+                                fontSize = 11.sp,
+                                color = FinflowTextSecondary
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = { onAllocate(holding) },
+                        colors = ButtonDefaults.buttonColors(containerColor = FinflowPrimary),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "Alocar",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    Column {
+                        Text(
+                            text = MoneyCents(uiState.unallocatedBalanceCents).formatPt(),
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = FinflowAmber
+                        )
+                        Text(
+                            text = "Podes alocar o valor total ou dividir por múltiplos ativos",
+                            fontSize = 11.sp,
+                            color = FinflowTextMuted
+                        )
+                    }
+                }
+            }
+        }
+    }
+
     // Hero Card: PORTFÓLIO APLICADO
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -534,6 +627,93 @@ fun InvestmentsTabContent(
         }
     }
 
+    // Dois Pilares: Reserva de Segurança vs Investimentos de Crescimento
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // Pilar 1: Reserva de Segurança (Depósitos a Prazo + Certificados de Aforro)
+        Card(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = FinflowSurface),
+            border = BorderStroke(1.dp, FinflowBorderSubtle)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(text = "🛡️", fontSize = 14.sp)
+                    Text(
+                        text = "Reserva Segura",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = FinflowTextPrimary
+                    )
+                }
+                Text(
+                    text = MoneyCents(uiState.safeSavingsTotalCents).formatPt(),
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = FinflowSecondary
+                )
+                Text(
+                    text = "Capital 100% garantido",
+                    fontSize = 10.sp,
+                    color = FinflowTextMuted
+                )
+            }
+        }
+
+        // Pilar 2: Investimentos de Longo Prazo (ETFs, PPR, Crypto, Outros)
+        Card(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = FinflowSurface),
+            border = BorderStroke(1.dp, FinflowBorderSubtle)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(text = "📈", fontSize = 14.sp)
+                    Text(
+                        text = "Investimentos",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = FinflowTextPrimary
+                    )
+                }
+                Text(
+                    text = MoneyCents(uiState.longTermCurrentValueCents).formatPt(),
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = FinflowTextPrimary
+                )
+                val ltProfitPositive = uiState.longTermProfitLossCents >= 0
+                val ltSign = if (ltProfitPositive) "+" else ""
+                Text(
+                    text = "$ltSign${MoneyCents(uiState.longTermProfitLossCents).formatPt()} ($ltSign${MoneyCents.formatPercent(uiState.longTermProfitLossPct)})",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (ltProfitPositive) FinflowSecondary else FinflowCoral
+                )
+            }
+        }
+    }
+
     // Filter Chips Row
     Row(
         modifier = Modifier
@@ -562,7 +742,9 @@ fun InvestmentsTabContent(
         // Each InvestmentType chip
         InvestmentType.entries.forEach { type ->
             val isSelected = uiState.selectedAssetTypeFilter == type
-            val countForType = uiState.investmentAssets.count { InvestmentType.fromKey(it.type) == type }
+            val countForType = uiState.investmentAssets
+                .filter { !it.archived && !InvestmentTransferRules.isHoldingAsset(it) }
+                .count { InvestmentType.fromKey(it.type) == type }
 
             Box(
                 modifier = Modifier
@@ -1061,6 +1243,71 @@ fun AllocateAssetDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                // Atalhos rápidos para alocação parcial ou total
+                val maxCents = source.currentValueCents
+                val fullAmountFormatted = MoneyCents(maxCents).formatPt().replace("€", "").trim()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(if (amountText == fullAmountFormatted) FinflowPrimary else FinflowSurfaceContainer)
+                            .clickable { amountText = fullAmountFormatted }
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "Tudo (${MoneyCents(maxCents).formatPt()})",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (amountText == fullAmountFormatted) Color.Black else FinflowTextPrimary
+                        )
+                    }
+
+                    if (maxCents >= 5_000L && maxCents != 5_000L) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (amountText == "50,00" || amountText == "50") FinflowPrimary else FinflowSurfaceContainer)
+                                .clickable { amountText = "50,00" }
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "50 €",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (amountText == "50,00" || amountText == "50") Color.Black else FinflowTextPrimary
+                            )
+                        }
+                    }
+
+                    if (maxCents >= 10_000L && maxCents != 10_000L) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(if (amountText == "100,00" || amountText == "100") FinflowPrimary else FinflowSurfaceContainer)
+                                .clickable { amountText = "100,00" }
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "100 €",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (amountText == "100,00" || amountText == "100") Color.Black else FinflowTextPrimary
+                            )
+                        }
+                    }
+                }
+
+                if (amountCents in 1L until maxCents) {
+                    Text(
+                        text = "Ficarão ${MoneyCents(maxCents - amountCents).formatPt()} em espera para alocares depois.",
+                        fontSize = 11.sp,
+                        color = FinflowAmber
+                    )
+                }
             }
         },
         confirmButton = {
