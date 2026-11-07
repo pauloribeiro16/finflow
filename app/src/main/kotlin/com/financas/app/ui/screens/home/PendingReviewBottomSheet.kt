@@ -357,7 +357,7 @@ fun PendingReviewBottomSheet(
                                 if (isInvestment) {
                                     Text(
                                         text = if (monthlyAssetId != null && selectedAssets[item.id] == null) {
-                                            "Investimento — sugerido pelo aporte mensal definido (podes mudar)"
+                                            "Investimento — sugerido pelo reforço mensal definido (podes mudar)"
                                         } else {
                                             "Investimento — escolhe para onde foi (ou 'Decidir depois' para alocar na Carteira)"
                                         },

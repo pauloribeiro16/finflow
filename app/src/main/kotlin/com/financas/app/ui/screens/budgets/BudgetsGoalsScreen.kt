@@ -65,6 +65,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -125,6 +126,7 @@ import com.financas.app.ui.theme.FinflowSurfaceContainerLow
 import com.financas.app.ui.theme.FinflowTextMuted
 import com.financas.app.ui.theme.FinflowTextPrimary
 import com.financas.app.ui.theme.FinflowTextSecondary
+import com.financas.app.ui.theme.FinflowTextInverse
 import com.financas.app.ui.i18n.AppLanguage
 import com.financas.app.ui.i18n.CategoryTranslator
 import com.financas.app.ui.i18n.LocalAppLanguage
@@ -500,7 +502,7 @@ fun InvestmentsTabContent(
                             text = "Alocar",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Black
+                            color = FinflowTextInverse
                         )
                     }
                 }
@@ -1055,7 +1057,7 @@ fun InvestmentAssetCard(
                             .padding(horizontal = 10.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = "+ Aporte",
+                            text = "+ Reforço",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinflowSecondary,
@@ -1076,7 +1078,7 @@ fun InvestmentAssetCard(
                             text = "Alocar",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Black,
+                            color = FinflowTextInverse,
                             maxLines = 1,
                             softWrap = false
                         )
@@ -1126,9 +1128,10 @@ fun AddMoneyDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = FinflowSurface,
         title = {
             Column {
-                Text("Adicionar dinheiro", fontWeight = FontWeight.Bold, color = FinflowTextPrimary)
+                Text("Reforçar investimento", fontWeight = FontWeight.Bold, color = FinflowTextPrimary)
                 Text(text = asset.name, fontSize = 12.sp, color = FinflowPrimary)
             }
         },
@@ -1138,14 +1141,33 @@ fun AddMoneyDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "Soma ao capital investido e ao valor atual, e fica registado como transferência (não conta como despesa).",
+                    text = "Soma ao capital investido e ao valor atual, ficando registado como transferência (não conta como despesa).",
                     fontSize = 12.sp,
                     color = FinflowTextSecondary
                 )
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("Valor a adicionar (€)") },
+                    label = { Text("Valor do reforço (€)", color = FinflowTextSecondary) },
+                    placeholder = { Text("ex.: 100,00", color = FinflowTextMuted) },
+                    trailingIcon = {
+                        Text(
+                            text = "€",
+                            fontWeight = FontWeight.Bold,
+                            color = FinflowTextSecondary,
+                            modifier = Modifier.padding(end = 12.dp)
+                        )
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = FinflowTextPrimary,
+                        unfocusedTextColor = FinflowTextPrimary,
+                        focusedBorderColor = FinflowPrimary,
+                        unfocusedBorderColor = FinflowBorder,
+                        focusedLabelColor = FinflowPrimary,
+                        unfocusedLabelColor = FinflowTextSecondary,
+                        focusedContainerColor = FinflowSurface,
+                        unfocusedContainerColor = FinflowSurface
+                    ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -1158,7 +1180,7 @@ fun AddMoneyDialog(
                 enabled = amountCents > 0L,
                 colors = ButtonDefaults.buttonColors(containerColor = FinflowPrimary)
             ) {
-                Text("Adicionar", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text("Reforçar", color = FinflowTextInverse, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -1176,21 +1198,25 @@ fun AllocateAssetDialog(
     onDismiss: () -> Unit,
     onConfirm: (String, Long) -> Unit
 ) {
+    val maxCents = source.currentValueCents
     var selectedTargetId by remember { mutableStateOf<String?>(null) }
     var amountText by remember {
-        mutableStateOf(MoneyCents(source.currentValueCents).formatPt().replace("€", "").trim())
+        mutableStateOf(MoneyCents(maxCents).formatPt().replace("€", "").trim())
     }
     val amountCents = parseEuroToCents(amountText)
-    val isValid = selectedTargetId != null && amountCents > 0L && amountCents <= source.currentValueCents
+    val isValid = selectedTargetId != null && amountCents > 0L && amountCents <= maxCents
+    val selectedTarget = targets.firstOrNull { it.id == selectedTargetId }
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = FinflowSurface,
         title = {
-            Column {
-                Text("Alocar saldo", fontWeight = FontWeight.Bold, color = FinflowTextPrimary)
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("Alocar Saldo", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = FinflowTextPrimary)
                 Text(
-                    text = "${source.name} · disponível ${MoneyCents(source.currentValueCents).formatPt()}",
+                    text = "${source.name} · Saldo disponível: ${MoneyCents(maxCents).formatPt()}",
                     fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
                     color = FinflowPrimary
                 )
             }
@@ -1198,114 +1224,147 @@ fun AllocateAssetDialog(
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth().imePadding(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Em que ativo aplicaste este dinheiro?",
+                    text = "Escolhe o ativo de destino:",
                     fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = FinflowTextSecondary
                 )
                 if (targets.isEmpty()) {
                     Text(
-                        text = "Ainda não tens outros ativos. Cria primeiro o ativo (ex.: um ETF) em \"Nova Aplicação\".",
+                        text = "Ainda não tens outros ativos criados. Adiciona primeiro uma aplicação (ex.: um ETF ou PPR) em \"Nova Aplicação\".",
                         fontSize = 12.sp,
                         color = FinflowTextMuted
                     )
-                }
-                Column(
-                    modifier = Modifier.heightIn(max = 220.dp).verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    targets.forEach { target ->
-                        val isSelected = selectedTargetId == target.id
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (isSelected) FinflowPrimary else FinflowSurfaceContainer)
-                                .clickable { selectedTargetId = target.id }
-                                .padding(horizontal = 12.dp, vertical = 10.dp)
-                        ) {
-                            Text(
-                                text = target.name,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = if (isSelected) Color.Black else FinflowTextPrimary
-                            )
+                } else {
+                    Column(
+                        modifier = Modifier.heightIn(max = 160.dp).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        targets.forEach { target ->
+                            val isSelected = selectedTargetId == target.id
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (isSelected) FinflowPrimary else FinflowSurfaceContainer)
+                                    .clickable { selectedTargetId = target.id }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = target.name,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isSelected) FinflowTextInverse else FinflowTextPrimary
+                                    )
+                                    Text(
+                                        text = target.institution,
+                                        fontSize = 11.sp,
+                                        color = if (isSelected) FinflowTextInverse.copy(alpha = 0.8f) else FinflowTextSecondary
+                                    )
+                                }
+                            }
                         }
                     }
                 }
                 OutlinedTextField(
                     value = amountText,
                     onValueChange = { amountText = it },
-                    label = { Text("Valor a alocar (€)") },
+                    label = { Text("Valor a alocar (€)", color = FinflowTextSecondary) },
+                    placeholder = { Text("Insere qualquer quantia", color = FinflowTextMuted) },
+                    trailingIcon = {
+                        Text(
+                            text = "€",
+                            fontWeight = FontWeight.Bold,
+                            color = FinflowTextSecondary,
+                            modifier = Modifier.padding(end = 12.dp)
+                        )
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = FinflowTextPrimary,
+                        unfocusedTextColor = FinflowTextPrimary,
+                        focusedBorderColor = FinflowPrimary,
+                        unfocusedBorderColor = FinflowBorder,
+                        focusedLabelColor = FinflowPrimary,
+                        unfocusedLabelColor = FinflowTextSecondary,
+                        focusedContainerColor = FinflowSurface,
+                        unfocusedContainerColor = FinflowSurface
+                    ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Atalhos rápidos para alocação parcial ou total
-                val maxCents = source.currentValueCents
-                val fullAmountFormatted = MoneyCents(maxCents).formatPt().replace("€", "").trim()
+                // Atalhos modulares rápidos: Percentagens calculadas dinamicamente
+                val pct25 = MoneyCents(maxCents / 4L).formatPt().replace("€", "").trim()
+                val pct50 = MoneyCents(maxCents / 2L).formatPt().replace("€", "").trim()
+                val pct75 = MoneyCents((maxCents * 3L) / 4L).formatPt().replace("€", "").trim()
+                val pct100 = MoneyCents(maxCents).formatPt().replace("€", "").trim()
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(if (amountText == fullAmountFormatted) FinflowPrimary else FinflowSurfaceContainer)
-                            .clickable { amountText = fullAmountFormatted }
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "Tudo (${MoneyCents(maxCents).formatPt()})",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (amountText == fullAmountFormatted) Color.Black else FinflowTextPrimary
-                        )
-                    }
-
-                    if (maxCents >= 5_000L && maxCents != 5_000L) {
+                    listOf(
+                        "25%" to pct25,
+                        "50%" to pct50,
+                        "75%" to pct75,
+                        "Tudo" to pct100
+                    ).forEach { (label, value) ->
+                        val isPicked = amountText.trim() == value.trim()
                         Box(
                             modifier = Modifier
+                                .weight(1f)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (amountText == "50,00" || amountText == "50") FinflowPrimary else FinflowSurfaceContainer)
-                                .clickable { amountText = "50,00" }
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                                .background(if (isPicked) FinflowPrimary else FinflowSurfaceContainer)
+                                .clickable { amountText = value }
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "50 €",
+                                text = label,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (amountText == "50,00" || amountText == "50") Color.Black else FinflowTextPrimary
-                            )
-                        }
-                    }
-
-                    if (maxCents >= 10_000L && maxCents != 10_000L) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (amountText == "100,00" || amountText == "100") FinflowPrimary else FinflowSurfaceContainer)
-                                .clickable { amountText = "100,00" }
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = "100 €",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (amountText == "100,00" || amountText == "100") Color.Black else FinflowTextPrimary
+                                color = if (isPicked) FinflowTextInverse else FinflowTextPrimary
                             )
                         }
                     }
                 }
 
-                if (amountCents in 1L until maxCents) {
+                // Feedback em tempo real sobre a alocação e o remanescente
+                if (amountCents > maxCents) {
                     Text(
-                        text = "Ficarão ${MoneyCents(maxCents - amountCents).formatPt()} em espera para alocares depois.",
+                        text = "O valor excede o saldo disponível de ${MoneyCents(maxCents).formatPt()}.",
                         fontSize = 11.sp,
-                        color = FinflowAmber
+                        fontWeight = FontWeight.Medium,
+                        color = FinflowCoral
+                    )
+                } else if (amountCents in 1L until maxCents) {
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            text = "A alocar: ${MoneyCents(amountCents).formatPt()}${if (selectedTarget != null) " ➔ ${selectedTarget.name}" else ""}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = FinflowTextPrimary
+                        )
+                        Text(
+                            text = "Ficarão ${MoneyCents(maxCents - amountCents).formatPt()} em espera para alocares depois.",
+                            fontSize = 11.sp,
+                            color = FinflowAmber
+                        )
+                    }
+                } else if (amountCents == maxCents && maxCents > 0L) {
+                    Text(
+                        text = "Todo o saldo disponível (${MoneyCents(maxCents).formatPt()}) será alocado.",
+                        fontSize = 11.sp,
+                        color = FinflowSecondary
                     )
                 }
             }
@@ -1314,9 +1373,16 @@ fun AllocateAssetDialog(
             Button(
                 onClick = { selectedTargetId?.let { onConfirm(it, amountCents) } },
                 enabled = isValid,
-                colors = ButtonDefaults.buttonColors(containerColor = FinflowPrimary)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = FinflowPrimary,
+                    disabledContainerColor = FinflowSurfaceContainer
+                )
             ) {
-                Text("Alocar", color = Color.Black, fontWeight = FontWeight.Bold)
+                Text(
+                    text = "Confirmar Alocação",
+                    color = if (isValid) FinflowTextInverse else FinflowTextMuted,
+                    fontWeight = FontWeight.Bold
+                )
             }
         },
         dismissButton = {

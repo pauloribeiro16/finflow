@@ -17,11 +17,25 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.5.1"
-    const val CURRENT_BUILD = 26
+    const val CURRENT_VERSION = "2.5.2"
+    const val CURRENT_BUILD = 27
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.5.2",
+            buildCode = 27,
+            date = "07 Nov 2026",
+            type = ReleaseType.PATCH,
+            title = "Alocação Livre e Correções PT-PT",
+            description = "Saldo a alocar 100% editável, modo claro legível, substituição do termo brasileiro 'Aporte' por 'Reforço' e deteção de notificações do moey! com cartão de crédito.",
+            changes = listOf(
+                "O valor a alocar é agora livre e totalmente editável, com atalhos de percentagem (25%, 50%, 75%, Tudo).",
+                "Correção total de visibilidade em Modo Claro no diálogo de alocação e botões de destaque.",
+                "Substituição do termo 'Aporte' por 'Reforço' em toda a aplicação (PT-PT natural).",
+                "Correção na captura de notificações do moey! com compras a crédito e títulos com exclamação."
+            )
+        ),
         AppRelease(
             version = "2.5.1",
             buildCode = 26,
@@ -72,7 +86,7 @@ object AppReleaseManager {
                 "Ao categorizar um pendente como 'Poupança / Investimento' escolhes tu o destino (um ativo ou 'Decidir depois (XTB)'); nada vem selecionado e deixa de contar como despesa.",
                 "Se definires um reforço mensal num ativo (ex.: 200 €/mês), esse ativo vem sugerido quando chegar um investimento desse valor.",
                 "'Confirmar Todos' só envia automaticamente os investimentos com reforço mensal correspondente; os outros ficam pendentes.",
-                "Novo botão '+ Aporte' em cada ativo da Carteira para somar dinheiro diretamente (fica como transferência).",
+                "Novo botão '+ Reforço' em cada ativo da Carteira para somar dinheiro diretamente (fica como transferência).",
                 "A folha 'Novo Movimento' também pergunta o ativo quando a categoria é investimento."
             )
         ),

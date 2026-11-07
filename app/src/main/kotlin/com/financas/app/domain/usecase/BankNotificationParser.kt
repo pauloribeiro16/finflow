@@ -17,7 +17,8 @@ class BankNotificationParser {
 
     private val expenseDirectionKeywords = listOf(
         "enviado", "enviada", "enviaste", "enviou", "pagou", "pagamento", "compra",
-        "autorizada", "debitado"
+        "autorizada", "debitado", "transação", "transacao", "movimento", "gasto",
+        "cartão de crédito", "cartão de débito", "cartao"
     )
 
     private val amountAfterCurrencyRegex = Regex("""(?:€|EUR|Eur|eur)\s*(\d{1,3}(?:[ .]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)""")
@@ -32,10 +33,12 @@ class BankNotificationParser {
 
     private val ignoredTitleWords = setOf(
         "pagamento", "compra", "transferência", "envio", "autorização", "notificação",
-        "mb way", "mbway", "moey", "carteira", "banco",
+        "mb way", "mbway", "moey", "moey!", "carteira", "banco",
         "alerta", "aviso", "caixadirecta", "cgd", "caixa", "millennium", "millennium bcp",
         "bcp", "santander", "activobank", "revolut", "novo banco", "novobanco", "montepio",
-        "bankinter", "bpi", "ctt", "banco ctt"
+        "bankinter", "bpi", "ctt", "banco ctt", "cartão", "cartao", "cartão de crédito",
+        "cartao de credito", "cartão de débito", "cartao de debito", "crédito", "credito",
+        "débito", "debito", "transação", "transacao", "movimento", "extrato"
     )
 
     fun parse(
@@ -134,8 +137,10 @@ class BankNotificationParser {
         // 1. Title-is-merchant pattern (e.g. "Continente", "Uber", "Pingo Doce")
         if (title.isNotBlank()) {
             val cleanTitle = title.trim()
-            val lowerTitle = cleanTitle.lowercase()
-            val isGenericTitle = ignoredTitleWords.any { lowerTitle == it || lowerTitle.startsWith("$it ") }
+            val normalizedTitle = cleanTitle.lowercase().trimEnd('!', '?', '.', ':', ';', '-', ' ')
+            val isGenericTitle = ignoredTitleWords.any { 
+                normalizedTitle == it || normalizedTitle.startsWith("$it ") || normalizedTitle.startsWith("$it!") 
+            }
             val containsDigitsOnly = cleanTitle.all { it.isDigit() || it.isWhitespace() }
             if (!isGenericTitle && !containsDigitsOnly && !cleanTitle.contains("€") && cleanTitle.length in 2..50) {
                 return cleanTitle
@@ -147,7 +152,7 @@ class BankNotificationParser {
             val matches = regex.findAll(text)
             for (match in matches) {
                 val candidate = match.groupValues[1]
-                    .replace(Regex("""(?i)\s+(?:com sucesso|no valor de|com o cartão|via mb way|no dia.*)"""), "")
+                    .replace(Regex("""(?i)\s+(?:com sucesso|no valor de|com o cartão.*|com o teu cartão.*|com cartão.*|no cartão.*|no teu cartão.*|via mb way.*|no dia.*)"""), "")
                     .replace(Regex("""[.,;:]+$"""), "")
                     .trim()
                 if (candidate.isNotBlank() && candidate.length in 2..60 && !candidate.contains("€") && !candidate.matches(Regex("""^\d+[.,]\d+.*"""))) {

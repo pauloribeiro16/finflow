@@ -9,6 +9,15 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.5.2] — 2026-11-07 (Patch & Fix)
+### Corrigido
+- **Alocação de saldo 100% livre e editável**: qualquer quantia pode agora ser inserida no campo de texto de alocação, complementada por atalhos de percentagem (25%, 50%, 75%, Tudo) com feedback em tempo real.
+- **Visibilidade perfeita em Modo Claro**: corrigido o contraste no diálogo de alocação de ativos e no painel de destaque (cores de texto invertidas e campos de texto com fundo e contraste adequados).
+- **Terminologia PT-PT**: substituído o termo 'Aporte' por 'Reforço' em todos os ecrãs e serviços da aplicação.
+- **Notificações moey! com cartão de crédito**: suporte para títulos com pontuação (`moey!`) e limpeza de sufixos de cartão de crédito para extração precisa do comerciante e valor.
+
+---
+
 ## [2.5.1] — 2026-11-07 (Patch & Fix)
 ### Corrigido
 - **Captura de notificações alargada**: adicionado reconhecimento de notificações para apps de corretagem e carteiras de investimento (XTB, Trade Republic, DEGIRO, Wise, N26, Openbank) e cartões de refeição (Coverflex, Edenred, Pluxee, Sodexo).

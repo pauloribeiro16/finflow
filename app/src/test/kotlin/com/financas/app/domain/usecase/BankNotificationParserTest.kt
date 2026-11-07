@@ -326,4 +326,33 @@ class BankNotificationParserTest {
         assertEquals("Restaurante O Forno", result?.merchant)
         assertEquals("Cartão Refeição", result?.sourceApp)
     }
+
+    @Test
+    fun parseMoeyCreditCardNotification_extractsMerchantAndAmountCorrectly() {
+        val result = parser.parse(
+            packageName = "pt.moey.app",
+            title = "Cartão de Crédito",
+            text = "Compra aprovada: 34,90 € em Pingo Doce com o teu cartão de crédito"
+        )
+        assertNotNull(result)
+        assertEquals(3490L, result?.amountCents)
+        assertEquals("Pingo Doce", result?.merchant)
+        assertEquals("CARD", result?.paymentMethod)
+        assertEquals("Moey", result?.sourceApp)
+        assertEquals("EXPENSE", result?.direction)
+    }
+
+    @Test
+    fun parseMoeyCreditCardWithGenericTitle_extractsMerchantFromText() {
+        val result = parser.parse(
+            packageName = "pt.moey.app",
+            title = "moey!",
+            text = "Pagamento efetuado com o cartão de crédito: 12,00 € em Restaurante Alentejano"
+        )
+        assertNotNull(result)
+        assertEquals(1200L, result?.amountCents)
+        assertEquals("Restaurante Alentejano", result?.merchant)
+        assertEquals("CARD", result?.paymentMethod)
+        assertEquals("Moey", result?.sourceApp)
+    }
 }

@@ -58,7 +58,7 @@ class InvestmentTransferService(
             epochDay = epochDay,
             categoryId = InvestmentTransferRules.INVESTMENT_CATEGORY_ID,
             contextTag = "",
-            merchant = label ?: "Aporte – ${asset.name}",
+            merchant = label ?: "Reforço – ${asset.name}",
             paymentMethod = "TRANSFERENCIA"
         )
         return recordTransfer(transaction, asset.id)
