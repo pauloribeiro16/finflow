@@ -9,6 +9,13 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.5.1] — 2026-11-07 (Patch & Fix)
+### Corrigido
+- **Captura de notificações alargada**: adicionado reconhecimento de notificações para apps de corretagem e carteiras de investimento (XTB, Trade Republic, DEGIRO, Wise, N26, Openbank) e cartões de refeição (Coverflex, Edenred, Pluxee, Sodexo).
+- **Prioridade de atualização no GitHub**: ordem de artefactos no pipeline de release ajustada para garantir que utilizadores com versões anteriores atualizam sempre a aplicação principal (`Finflow-<versão>.apk`) sem confundir com o pacote Demo.
+
+---
+
 ## [2.5.0] — 2026-11-06 (Minor Release)
 ### Adicionado
 - **Dois Pilares de Poupança e Investimento**: separação clara entre Reserva Segura (capital 100% garantido em depósitos a prazo e certificados de aforro) e Carteira de Investimentos (crescimento a longo prazo em ETFs, PPRs e ações), visíveis logo abaixo do resumo patrimonial.

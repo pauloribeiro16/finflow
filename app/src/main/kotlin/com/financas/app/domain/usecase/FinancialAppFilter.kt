@@ -24,7 +24,27 @@ object FinancialAppFilter {
         "ctt",
         "creditoagricola",
         "bestbank",
-        "abanca"
+        "abanca",
+        "xtb",
+        "traderepublic",
+        "degiro",
+        "wise",
+        "transferwise",
+        "n26",
+        "number26",
+        "curve",
+        "openbank",
+        "coverflex",
+        "edenred",
+        "pluxee",
+        "sodexo",
+        "ticket",
+        "wizink",
+        "unibanco",
+        "cetelem",
+        "cofidis",
+        "banco",
+        "bank"
     )
 
     fun isFinancialApp(packageName: String): Boolean {

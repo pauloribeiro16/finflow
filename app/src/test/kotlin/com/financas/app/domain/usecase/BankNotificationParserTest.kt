@@ -286,4 +286,44 @@ class BankNotificationParserTest {
         assertNotNull(result)
         assertEquals("INCOME", result?.direction)
     }
+
+    @Test
+    fun parseXtbDepositNotification_extractsAmountAndBroker() {
+        val result = parser.parse(
+            packageName = "com.xtb.xstation5",
+            title = "Depósito efetuado",
+            text = "Depósito de 150,00 € creditado na sua conta XTB"
+        )
+        assertNotNull(result)
+        assertEquals(15000L, result?.amountCents)
+        assertEquals("XTB", result?.sourceApp)
+        assertEquals("TRANSFER", result?.paymentMethod)
+    }
+
+    @Test
+    fun parseWiseTransferNotification_extractsAmount() {
+        val result = parser.parse(
+            packageName = "com.transferwise.android",
+            title = "Transferência enviada",
+            text = "Enviaste 45,50 € para Pedro Santos"
+        )
+        assertNotNull(result)
+        assertEquals(4550L, result?.amountCents)
+        assertEquals("Pedro Santos", result?.merchant)
+        assertEquals("Wise", result?.sourceApp)
+        assertEquals("TRANSFER", result?.paymentMethod)
+    }
+
+    @Test
+    fun parseMealCardNotification_extractsAmountAndCardMethod() {
+        val result = parser.parse(
+            packageName = "com.coverflex.app",
+            title = "Compra aprovada",
+            text = "Pagamento de 8,90 € em Restaurante O Forno"
+        )
+        assertNotNull(result)
+        assertEquals(890L, result?.amountCents)
+        assertEquals("Restaurante O Forno", result?.merchant)
+        assertEquals("Cartão Refeição", result?.sourceApp)
+    }
 }

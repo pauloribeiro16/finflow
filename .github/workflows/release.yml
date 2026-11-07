@@ -99,8 +99,9 @@ jobs:
           tag_name: ${{ steps.vars.outputs.tag }}
           name: "Finflow ${{ steps.vars.outputs.tag }}"
           files: |
-            dist/Finflow-*.apk
-            dist/Finflow-*.aab
+            dist/Finflow-${{ steps.vars.outputs.tag }}.apk
+            dist/Finflow-Demo-${{ steps.vars.outputs.tag }}.apk
+            dist/Finflow-${{ steps.vars.outputs.tag }}.aab
             dist/SHA256SUMS.txt
           generate_release_notes: true
           draft: false

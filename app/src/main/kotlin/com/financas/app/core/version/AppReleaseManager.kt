@@ -17,11 +17,23 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.5.0"
-    const val CURRENT_BUILD = 25
+    const val CURRENT_VERSION = "2.5.1"
+    const val CURRENT_BUILD = 26
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.5.1",
+            buildCode = 26,
+            date = "07 Nov 2026",
+            type = ReleaseType.PATCH,
+            title = "Notificações Alargadas e Atualizador",
+            description = "Suporte para notificações da XTB, corretoras e cartões de refeição, e prioridade absoluta para a app principal nas atualizações.",
+            changes = listOf(
+                "Captura automática de notificações alargada a XTB, Trade Republic, DEGIRO, Wise, N26, Openbank e cartões de refeição (Coverflex, Edenred, Pluxee, etc.).",
+                "Garantia de que a app principal atualiza sempre diretamente sem descarregar o pacote demo."
+            )
+        ),
         AppRelease(
             version = "2.5.0",
             buildCode = 25,
