@@ -1,3 +1,12 @@
+<!-- second-brain:begin (gerido por scripts/gen-agents-block.py — não editar) -->
+## Ecossistema (second-brain)
+**AppAndroid** — aplicação Android nativa (Finflow Android). Programa: *Aplicações Móveis & Quant* (Aplicações móveis, quant e plataformas).
+1. **Antes de explorar ficheiros, lê o catálogo:** `MAPA.md` no repo `https://git.pushin.eu/paulo/second-brain.git` — diz o que existe, onde está e por onde começar.
+2. **Antes de reinvestigar, procura:** `second-brain search "termos" --project=AppAndroid` e a ficha `distilled/aprendizagens/AppAndroid.md` (erros e gotchas já documentados) nesse repo.
+3. **Ao concluir algo que valha a pena guardar** (decisão, causa de um bug, resultado de uma experiência), acrescenta ao fim de `NOTAS.md` na raiz deste repo: `## AAAA-MM-DD — título` + 2-5 linhas (o quê, porquê, fontes) e faz commit. Assim a conclusão sobrevive à conversa e o second-brain indexa-a.
+Repos irmãos (mesmo programa): MusicaApp, financial-adviser, macro-forecasting-league, viagens.
+<!-- second-brain:end -->
+
 # AGENTS.md — AppAndroid (Finanças Pessoais)
 
 > **Fonte única de verdade operacional para agentes de IA.**
