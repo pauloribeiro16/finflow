@@ -62,16 +62,26 @@ android {
                 keyPassword = System.getenv("KEY_PASSWORD")
                 enableV1Signing = true
                 enableV2Signing = true
-            } else {
-                initWith(getByName("debug"))
             }
         }
+    }
+
+    val requestsReleaseArtifact = gradle.startParameter.taskNames.any { name ->
+        val task = name.substringAfterLast(':')
+        task.contains("Release") && (task.startsWith("assemble") || task.startsWith("bundle") || task.startsWith("package") || task.startsWith("install"))
+    }
+    if (requestsReleaseArtifact && signingConfigs.getByName("release").storeFile == null) {
+        throw GradleException(
+            "Release signing is not configured. Provide keystore.properties or KEYSTORE_FILE/KEYSTORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD. " +
+                "Refusing to produce a release signed with the debug key."
+        )
     }
 
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

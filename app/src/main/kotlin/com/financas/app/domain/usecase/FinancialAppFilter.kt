@@ -2,54 +2,57 @@ package com.financas.app.domain.usecase
 
 object FinancialAppFilter {
 
-    private val financialPackageTokens = listOf(
+    private val exactSegmentTokens = setOf(
+        "bcp",
+        "bpi",
+        "cgd",
+        "xtb",
+        "n26",
+        "wise",
+        "curve"
+    )
+
+    private val brandTokens = listOf(
         "mbway",
         "moey",
         "paypal",
         "revolut",
-        "cgd",
         "caixadirecta",
+        "caixadireta",
         "caixageral",
-        "caixa",
         "millennium",
-        "bcp",
         "santander",
         "activobank",
         "novobanco",
-        "novo banco",
         "montepio",
         "bankinter",
-        "bpi",
+        "bancobpi",
         "bancoctt",
-        "ctt",
         "creditoagricola",
         "bestbank",
         "abanca",
-        "xtb",
         "traderepublic",
         "degiro",
-        "wise",
         "transferwise",
-        "n26",
         "number26",
-        "curve",
+        "imaginecurve",
         "openbank",
         "coverflex",
         "edenred",
         "pluxee",
         "sodexo",
-        "ticket",
         "wizink",
         "unibanco",
         "cetelem",
-        "cofidis",
-        "banco",
-        "bank"
+        "cofidis"
     )
 
     fun isFinancialApp(packageName: String): Boolean {
-        val pkg = packageName.lowercase()
-        if (pkg.isBlank()) return false
-        return financialPackageTokens.any { pkg.contains(it) }
+        val segments = packageName.lowercase().split('.').filter { it.isNotBlank() }
+        if (segments.isEmpty()) return false
+        return segments.any { segment ->
+            segment in exactSegmentTokens ||
+                brandTokens.any { token -> segment.startsWith(token) || segment.endsWith(token) }
+        }
     }
 }

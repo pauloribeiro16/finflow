@@ -1,3 +1,5 @@
+> **Obsoleto.** Esta auditoria refere-se à v2.2.0 e assume uma app sem permissão `INTERNET`. Ver [`SECURITY_AUDIT_2026-11-09.md`](./SECURITY_AUDIT_2026-11-09.md).
+
 # SECURITY_AUDIT.md — Finflow (AppAndroid, Finanças Pessoais)
 
 **Data:** 2026-11-01 · **Tipo:** Auditoria estática defensiva (read-only), estilo OWASP MASVS

@@ -1,6 +1,7 @@
 package com.financas.app
 
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -79,17 +80,43 @@ class MainActivity : ComponentActivity() {
                 val isLocked = sessionLocked.value == true
                 var showSplash by rememberSaveable { mutableStateOf(true) }
 
+                var lockError by remember { mutableStateOf<String?>(null) }
+                var showRecoveryNotice by remember {
+                    mutableStateOf(com.financas.app.core.security.DatabaseRecovery.hasPendingNotice(this@MainActivity))
+                }
+
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (!isLocked) {
                         MainScaffold(container = appContainer)
+                        if (showRecoveryNotice && !showSplash) {
+                            androidx.compose.material3.AlertDialog(
+                                onDismissRequest = {},
+                                title = { Text("Dados anteriores indisponíveis") },
+                                text = {
+                                    Text(
+                                        "A chave que protegia a base de dados deste dispositivo já não existe " +
+                                            "(por exemplo, após transferir a app para um telemóvel novo). " +
+                                            "A app começou com dados vazios. Restaura um backup em Conta → Preferências → Restaurar Backup."
+                                    )
+                                },
+                                confirmButton = {
+                                    androidx.compose.material3.TextButton(onClick = {
+                                        com.financas.app.core.security.DatabaseRecovery.dismissNotice(this@MainActivity)
+                                        showRecoveryNotice = false
+                                    }) { Text("Percebi") }
+                                }
+                            )
+                        }
                     } else {
                         BiometricLockScreen(
                             canPrompt = !showSplash,
+                            errorMessage = lockError,
                             onAuthenticate = {
+                                lockError = null
                                 biometricGate.promptBiometric(
                                     activity = this@MainActivity,
                                     onSuccess = { sessionLocked.value = false },
-                                    onError = { }
+                                    onError = { lockError = it }
                                 )
                             }
                         )
@@ -109,7 +136,7 @@ class MainActivity : ComponentActivity() {
         super.onPause()
         if (sessionLocked.value == false) {
             val app = application as FinancasApplication
-            app.container.sessionBackgroundClock.lastBackgroundAtMs = System.currentTimeMillis()
+            app.container.sessionBackgroundClock.lastBackgroundAtMs = SystemClock.elapsedRealtime()
         }
     }
 
@@ -122,7 +149,7 @@ class MainActivity : ComponentActivity() {
         val lastBackgroundAtMs = clock.lastBackgroundAtMs
         if (lastBackgroundAtMs > 0L) {
             clock.lastBackgroundAtMs = 0L
-            val elapsed = System.currentTimeMillis() - lastBackgroundAtMs
+            val elapsed = SystemClock.elapsedRealtime() - lastBackgroundAtMs
             val biometricsEnabled = app.container.biometricLockGate.isBiometricsEnabled()
             if (SessionLockPolicy.shouldLock(elapsed, biometricsEnabled)) {
                 sessionLocked.value = true
@@ -134,6 +161,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun BiometricLockScreen(
     canPrompt: Boolean = true,
+    errorMessage: String? = null,
     onAuthenticate: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -178,11 +206,20 @@ fun BiometricLockScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Autentique-se com a sua biometria para aceder às suas finanças.",
+                text = "Autentique-se com a biometria ou o PIN do telemóvel para aceder às suas finanças.",
                 fontSize = 13.sp,
                 color = TextSecondary,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = errorMessage,
+                    fontSize = 13.sp,
+                    color = Color(0xFFEF4444),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
             Spacer(modifier = Modifier.height(32.dp))
             Button(
                 onClick = onAuthenticate,

@@ -201,6 +201,7 @@ fun MainScaffold(
     )
 
     LaunchedEffect(Unit) {
+        if (!container.userProfileStore.isAutoUpdateCheckEnabled()) return@LaunchedEffect
         container.appUpdateManager.checkForUpdates(
             currentVersion = com.financas.app.BuildConfig.VERSION_NAME,
             notifyIfAvailable = true

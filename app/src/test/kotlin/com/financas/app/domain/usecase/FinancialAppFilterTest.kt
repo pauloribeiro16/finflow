@@ -58,4 +58,37 @@ class FinancialAppFilterTest {
         assertFalse(FinancialAppFilter.isFinancialApp("com.unknown.app"))
         assertFalse(FinancialAppFilter.isFinancialApp(""))
     }
+
+    @Test
+    fun realWorldPackageVariants_pass() {
+        listOf(
+            "wit.android.bcpBankingApp.millennium",
+            "pt.santandertotta.mobileparticulares",
+            "pt.bancobpi.mobile.fiabilizacao",
+            "com.imaginecurve.curve.prd",
+            "de.traderepublic.app",
+            "de.number26.android",
+            "com.transferwise.android",
+            "com.xtb.xstation5",
+            "pt.cgd.caixadireta"
+        ).forEach { pkg ->
+            assertTrue("Expected $pkg to be financial", FinancialAppFilter.isFinancialApp(pkg))
+        }
+    }
+
+    @Test
+    fun genericOrLookalikePackages_fail() {
+        listOf(
+            "com.evil.bank",
+            "com.fake.banco",
+            "com.ticketmaster.mobile",
+            "com.likewise.app",
+            "com.otherwise.notes",
+            "pt.ctt.outsystems.ctt",
+            "com.caixa.mercado",
+            "com.bpifrance.app.x"
+        ).forEach { pkg ->
+            assertFalse("Expected $pkg to be rejected", FinancialAppFilter.isFinancialApp(pkg))
+        }
+    }
 }

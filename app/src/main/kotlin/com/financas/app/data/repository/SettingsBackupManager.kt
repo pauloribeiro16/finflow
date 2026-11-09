@@ -75,16 +75,19 @@ class SettingsBackupManager(
 
     private fun decodePhoto(base64: String) {
         try {
+            if (base64.length > MAX_PHOTO_BASE64_CHARS) return
             val bytes = Base64.decode(base64, Base64.DEFAULT)
             if (bytes.isEmpty()) return
-            photoFile.outputStream().use { it.write(bytes) }
+            if (!com.financas.app.ui.util.writeDownscaledJpeg(bytes, photoFile)) return
             userProfileStore.setProfilePhotoUri("${photoFile.absolutePath}?t=${System.currentTimeMillis()}")
         } catch (_: Exception) {
+        } catch (_: OutOfMemoryError) {
         }
     }
 
     companion object {
         const val PHOTO_FILE_NAME = "profile_photo.png"
         const val MAX_PHOTO_SIDE = 768
+        const val MAX_PHOTO_BASE64_CHARS = 8 * 1024 * 1024
     }
 }

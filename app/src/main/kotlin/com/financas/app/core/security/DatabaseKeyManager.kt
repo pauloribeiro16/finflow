@@ -6,6 +6,7 @@ import java.io.File
 import java.security.KeyStore
 import java.security.SecureRandom
 import java.util.Base64
+import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -37,18 +38,30 @@ class DatabaseKeyManager(
     }
 
     fun unwrap(blob: String): ByteArray {
-        require(isValidBlobFormat(blob)) { "Invalid database key blob format" }
+        if (!isValidBlobFormat(blob)) {
+            throw UnrecoverableDatabaseKeyException("Invalid database key blob format")
+        }
+        val masterKey = existingMasterKey()
+            ?: throw UnrecoverableDatabaseKeyException("Keystore master key is missing")
         val payload = Base64.getDecoder().decode(blob)
         val iv = payload.copyOfRange(0, GCM_IV_LENGTH_BYTES)
         val encrypted = payload.copyOfRange(GCM_IV_LENGTH_BYTES, payload.size)
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, getOrCreateMasterKey(), GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
-        return cipher.doFinal(encrypted)
+        cipher.init(Cipher.DECRYPT_MODE, masterKey, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
+        return try {
+            cipher.doFinal(encrypted)
+        } catch (e: AEADBadTagException) {
+            throw UnrecoverableDatabaseKeyException("Database key blob does not match the Keystore key", e)
+        }
+    }
+
+    private fun existingMasterKey(): SecretKey? {
+        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+        return keyStore.getKey(KEY_ALIAS, null) as? SecretKey
     }
 
     private fun getOrCreateMasterKey(): SecretKey {
-        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        existingMasterKey()?.let { return it }
 
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
         generator.init(
@@ -87,3 +100,5 @@ class DatabaseKeyManager(
         }
     }
 }
+
+class UnrecoverableDatabaseKeyException(message: String, cause: Throwable? = null) : Exception(message, cause)

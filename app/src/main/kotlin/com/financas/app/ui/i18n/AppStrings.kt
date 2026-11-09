@@ -185,7 +185,7 @@ val EnStrings = AppStrings(
     filter = "Filter",
     clear = "Clear",
     loading = "Loading...",
-    offlineMode = "100% Offline (No Server)",
+    offlineMode = "Local-first (No Data Server)",
 
     // Navigation Tabs
     navHome = "Home",
@@ -308,8 +308,8 @@ val EnStrings = AppStrings(
     backupImportJson = "Restore from Backup",
     clearAllData = "Erase All Data",
     clearAllDataConfirm = "This will permanently delete all transactions, accounts, and categories. This cannot be undone.",
-    privacyGuaranteeTitle = "100% Offline Privacy Guarantee",
-    privacyGuaranteeDesc = "All your financial records are stored strictly on this device inside an encrypted SQLCipher (AES-256) vault. Finflow never transmits your data to remote servers or analytics networks.",
+    privacyGuaranteeTitle = "Local-First Privacy Guarantee",
+    privacyGuaranteeDesc = "All your financial records are stored strictly on this device inside an encrypted SQLCipher (AES-256) vault. Finflow never transmits your data to remote servers or analytics networks. The only connection is to GitHub, to check for app updates (can be disabled).",
     disclaimerTitle = "Legal Notice & Financial Disclaimer",
     disclaimerText = "Finflow is an offline personal budgeting and simulation tool. All metrics, savings rates, and tax deduction estimates are provided for informational and educational purposes only and do not constitute regulated financial, legal, or tax advice.",
     versionTitle = "Finflow Version",
@@ -349,7 +349,7 @@ val PtStrings = AppStrings(
     filter = "Filtrar",
     clear = "Limpar",
     loading = "A carregar...",
-    offlineMode = "100% Offline (Sem Servidor)",
+    offlineMode = "Dados Locais (Sem Servidor de Dados)",
 
     // Navigation Tabs
     navHome = "Início",
@@ -472,8 +472,8 @@ val PtStrings = AppStrings(
     backupImportJson = "Restaurar Cópia de Segurança",
     clearAllData = "Limpar Todos os Dados",
     clearAllDataConfirm = "Esta ação irá eliminar permanentemente todas as transações, contas e categorias locais.",
-    privacyGuaranteeTitle = "Garantia de Privacidade 100% Offline",
-    privacyGuaranteeDesc = "Todos os seus dados financeiros estão salvaguardados exclusivamente na memória segura deste telemóvel num cofre encriptado SQLCipher (AES-256). O Finflow não possui servidores na nuvem nem rastreadores externos.",
+    privacyGuaranteeTitle = "Garantia de Privacidade: Dados Locais",
+    privacyGuaranteeDesc = "Todos os seus dados financeiros estão salvaguardados exclusivamente na memória segura deste telemóvel num cofre encriptado SQLCipher (AES-256). O Finflow não possui servidores na nuvem nem rastreadores externos. A única ligação é ao GitHub, para procurar atualizações da app (pode ser desativada).",
     disclaimerTitle = "Aviso Legal & Isenção Financeira",
     disclaimerText = "O Finflow é uma ferramenta de gestão e organização pessoal offline. Os cálculos, estimativas de poupança, taxas de esforço e benefícios fiscais de PPR (art. 21º do EBF) têm finalidade meramente pedagógica e indicativa, não constituindo consultoria financeira, jurídica ou fiscal.",
     versionTitle = "Versão do Finflow",

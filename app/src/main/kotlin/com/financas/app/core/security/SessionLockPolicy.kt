@@ -4,7 +4,7 @@ object SessionLockPolicy {
     const val BACKGROUND_LOCK_TIMEOUT_MS = 30_000L
 
     fun shouldLock(elapsedBackgroundMs: Long, biometricsEnabled: Boolean): Boolean =
-        biometricsEnabled && elapsedBackgroundMs > BACKGROUND_LOCK_TIMEOUT_MS
+        biometricsEnabled && (elapsedBackgroundMs < 0L || elapsedBackgroundMs > BACKGROUND_LOCK_TIMEOUT_MS)
 }
 
 class SessionBackgroundClock {

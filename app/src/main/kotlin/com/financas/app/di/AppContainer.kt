@@ -3,6 +3,8 @@ package com.financas.app.di
 import android.content.Context
 import com.financas.app.core.security.DatabaseEncryptionMigrator
 import com.financas.app.core.security.DatabaseKeyManager
+import com.financas.app.core.security.DatabaseRecovery
+import com.financas.app.core.security.UnrecoverableDatabaseKeyException
 import com.financas.app.core.security.SessionBackgroundClock
 import com.financas.app.data.db.AppDatabase
 import com.financas.app.data.db.BudgetDao
@@ -51,8 +53,14 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
 
     override val database: AppDatabase by lazy {
         System.loadLibrary("sqlcipher")
-        val keyManager = DatabaseKeyManager(File(context.filesDir, DatabaseKeyManager.KEY_FILE_NAME))
-        val passphrase = keyManager.getOrCreatePassphrase()
+        val keyFile = File(context.filesDir, DatabaseKeyManager.KEY_FILE_NAME)
+        val keyManager = DatabaseKeyManager(keyFile)
+        val passphrase = try {
+            keyManager.getOrCreatePassphrase()
+        } catch (e: UnrecoverableDatabaseKeyException) {
+            DatabaseRecovery.quarantine(context, AppDatabase.DATABASE_NAME, keyFile)
+            keyManager.getOrCreatePassphrase()
+        }
         val openHelperFactory = SupportOpenHelperFactory(passphrase)
         runBlocking {
             DatabaseEncryptionMigrator.migrateIfNeeded(

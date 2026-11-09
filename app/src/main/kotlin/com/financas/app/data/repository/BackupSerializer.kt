@@ -38,6 +38,7 @@ class BackupSerializer {
     companion object {
         const val CURRENT_SCHEMA_VERSION = 3
         const val LEGACY_SCHEMA_VERSION = 1
+        private val FORMULA_TRIGGERS = setOf('=', '+', '-', '@', '\t', '\r')
         val CSV_HEADER = "Data;Mês;Tipo;Valor €;Categoria;Subcategoria;Onde (Contexto);Estabelecimento/Nota;Como (Método);Fixo"
     }
 
@@ -451,11 +452,19 @@ class BackupSerializer {
     }
 
     private fun escapeCsv(value: String): String {
-        return if (value.contains(';') || value.contains('"') || value.contains('\n') || value.contains('\r')) {
-            "\"" + value.replace("\"", "\"\"") + "\""
+        val safe = neutralizeFormula(value)
+        return if (safe.contains(';') || safe.contains('"') || safe.contains('\n') || safe.contains('\r')) {
+            "\"" + safe.replace("\"", "\"\"") + "\""
         } else {
-            value
+            safe
         }
+    }
+
+    internal fun neutralizeFormula(value: String): String {
+        if (value.isEmpty()) return value
+        if (value.first() !in FORMULA_TRIGGERS) return value
+        if (value.first() == '-' && value.drop(1).replace(',', '.').toDoubleOrNull() != null) return value
+        return "'$value"
     }
 
     private fun escapeJsonString(value: String): String {
@@ -527,8 +536,23 @@ sealed class JsonValue {
     }
 }
 
-class JsonParser(private val src: String) {
+class JsonParser(private val src: String, private val maxDepth: Int = MAX_DEPTH) {
     private var pos = 0
+    private var depth = 0
+
+    companion object {
+        const val MAX_DEPTH = 32
+    }
+
+    private inline fun <T> nested(block: () -> T): T {
+        depth++
+        if (depth > maxDepth) throw IllegalArgumentException("JSON demasiado aninhado (máx. $maxDepth níveis)")
+        try {
+            return block()
+        } finally {
+            depth--
+        }
+    }
 
     private fun skipWhitespace() {
         while (pos < src.length && src[pos].isWhitespace()) {
@@ -551,8 +575,8 @@ class JsonParser(private val src: String) {
         skipWhitespace()
         val ch = peek() ?: throw IllegalArgumentException("Empty JSON input")
         return when (ch) {
-            '{' -> parseObject()
-            '[' -> parseArray()
+            '{' -> nested { parseObject() }
+            '[' -> nested { parseArray() }
             '"' -> parseString()
             't', 'f' -> parseBoolean()
             'n' -> parseNull()

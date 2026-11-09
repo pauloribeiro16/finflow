@@ -22,6 +22,8 @@ interface UserProfileStore {
     fun getAppLanguage(): String // "EN", "PT"
     fun setAppLanguage(lang: String)
     val appLanguageFlow: StateFlow<String>
+    fun isAutoUpdateCheckEnabled(): Boolean = true
+    fun setAutoUpdateCheckEnabled(enabled: Boolean) {}
 }
 
 class SharedPrefsUserProfileStore(
@@ -108,5 +110,11 @@ class SharedPrefsUserProfileStore(
         val uppercaseLang = lang.uppercase()
         prefs.edit().putString("app_language", uppercaseLang).apply()
         _appLanguageFlow.value = uppercaseLang
+    }
+
+    override fun isAutoUpdateCheckEnabled(): Boolean = prefs.getBoolean("auto_update_check", true)
+
+    override fun setAutoUpdateCheckEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("auto_update_check", enabled).apply()
     }
 }

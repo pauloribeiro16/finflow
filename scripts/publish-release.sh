@@ -82,7 +82,7 @@ RELEASE_NOTES=$(cat <<EOF
 ## Finflow $TAG
 
 ### Highlights
-- 🔒 **100% Offline-First:** Zero cloud tracking, no third-party servers. All data encrypted on-device with AES-256 (SQLCipher).
+- 🔒 **Local-first:** No cloud sync, no tracking. All data encrypted on-device with AES-256 (SQLCipher). The app only contacts GitHub to check for and download updates (can be disabled).
 - 🌐 **Global Multi-Language:** Built-in instant toggle between English (default) and Portuguese in Account.
 - 📊 **4-Dimensional Transactions:** Category, Entity/Context, Payment Method, and Fixed vs. Variable classification.
 - ⚡ **Smart Automation:** Fast prefill engine and recurring monthly transaction generator.

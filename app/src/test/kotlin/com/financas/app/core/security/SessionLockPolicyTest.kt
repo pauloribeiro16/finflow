@@ -40,4 +40,11 @@ class SessionLockPolicyTest {
     fun timeout_isThirtySeconds() {
         assertEquals(30_000L, SessionLockPolicy.BACKGROUND_LOCK_TIMEOUT_MS)
     }
+
+    @Test
+    fun negativeElapsed_locksWhenClockGoesBackwards() {
+        assertTrue(SessionLockPolicy.shouldLock(-1L, true))
+        assertTrue(SessionLockPolicy.shouldLock(-3_600_000L, true))
+        assertFalse(SessionLockPolicy.shouldLock(-1L, false))
+    }
 }

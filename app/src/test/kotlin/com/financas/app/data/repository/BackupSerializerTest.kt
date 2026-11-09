@@ -183,6 +183,36 @@ class BackupSerializerTest {
     }
 
     @Test
+    fun testExportToCsv_neutralizesSpreadsheetFormulas() {
+        val formulas = listOf("=HYPERLINK(\"http://x\")", "+1+1", "@SUM(A1)", "-2+3")
+        formulas.forEach { merchant ->
+            val tx = sampleTransactions[0].copy(merchant = merchant)
+            val csv = serializer.exportToCsv(listOf(tx), sampleCategories.associateBy { it.id })
+            val row = csv.trim().split("\n")[1]
+            assertTrue("Formula leaked for $merchant", row.contains("'" + merchant.take(4)))
+        }
+    }
+
+    @Test
+    fun testExportToCsv_keepsNegativeNumbersAndPlainText() {
+        assertEquals("-12,50", serializer.neutralizeFormula("-12,50"))
+        assertEquals("Continente", serializer.neutralizeFormula("Continente"))
+        assertEquals("", serializer.neutralizeFormula(""))
+        assertEquals("'=1+1", serializer.neutralizeFormula("=1+1"))
+    }
+
+    @Test
+    fun testImportJson_rejectsExcessiveNesting() {
+        val deep = "[".repeat(10_000) + "]".repeat(10_000)
+        try {
+            JsonParser(deep).parse()
+            org.junit.Assert.fail("Expected nesting limit")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message!!.contains("aninhado"))
+        }
+    }
+
+    @Test
     fun testExportJsonV2_includesBudgetsAndGoals() {
         val budgets = listOf(
             BudgetEntity(

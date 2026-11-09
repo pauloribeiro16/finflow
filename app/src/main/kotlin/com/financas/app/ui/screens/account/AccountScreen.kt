@@ -128,7 +128,9 @@ import com.financas.app.ui.theme.DarkSurfaceVariant
 import com.financas.app.ui.theme.TextMuted
 import com.financas.app.ui.theme.TextPrimary
 import com.financas.app.ui.theme.TextSecondary
-import com.financas.app.ui.util.exportTextFile
+import com.financas.app.ui.util.writeTextToUri
+import com.financas.app.ui.util.readTextLimited
+import com.financas.app.ui.util.copyImageDownscaled
 import com.financas.app.ui.util.shareText
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -164,6 +166,24 @@ fun AccountScreen(
     val updateState by viewModel.updateState.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val requestBiometricToggle: (Boolean) -> Unit = { enabled ->
+        val activity = context.findComponentActivity()
+        val gate = (context.applicationContext as? com.financas.app.FinancasApplication)?.container?.biometricLockGate
+        when {
+            activity == null || gate == null -> Unit
+            enabled && !gate.canEnableLock(context) -> Toast.makeText(
+                context,
+                "Configura primeiro um bloqueio de ecrã (PIN, padrão ou biometria) nas definições do telemóvel.",
+                Toast.LENGTH_LONG
+            ).show()
+            else -> gate.authenticate(
+                activity = activity,
+                subtitle = if (enabled) "Confirme para ativar o bloqueio" else "Confirme para desativar o bloqueio",
+                onSuccess = { viewModel.toggleBiometrics(enabled) },
+                onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+            )
+        }
+    }
     val strings = LocalAppStrings.current
     val language = LocalAppLanguage.current
 
@@ -188,18 +208,9 @@ fun AccountScreen(
     ) { uri: Uri? ->
         uri?.let { selectedUri ->
             try {
-                try {
-                    context.contentResolver.takePersistableUriPermission(
-                        selectedUri,
-                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                } catch (_: Exception) {}
-
                 val localFile = context.filesDir.resolve("profile_photo.png")
-                context.contentResolver.openInputStream(selectedUri)?.use { input ->
-                    localFile.outputStream().use { output ->
-                        input.copyTo(output)
-                    }
+                if (!copyImageDownscaled(context, selectedUri, localFile)) {
+                    throw IllegalArgumentException("imagem inválida ou demasiado grande")
                 }
                 viewModel.updateProfilePhoto("${localFile.absolutePath}?t=${System.currentTimeMillis()}")
                 Toast.makeText(context, "Foto de perfil atualizada!", Toast.LENGTH_SHORT).show()
@@ -255,16 +266,36 @@ fun AccountScreen(
         .sortedWith(compareBy({ it.parentId ?: it.id }, { it.sortOrder }))
     val categoriesAvailableForBudget = expenseCategories.filter { it.id !in uiState.budgetedCategoryIds }
 
+    val jsonExportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        uri?.let { target ->
+            coroutineScope.launch {
+                val ok = writeTextToUri(context, target, viewModel.exportJson())
+                Toast.makeText(context, if (ok) "Backup guardado." else "Não foi possível guardar o backup.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    val csvExportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("text/csv")
+    ) { uri: Uri? ->
+        uri?.let { target ->
+            coroutineScope.launch {
+                val ok = writeTextToUri(context, target, viewModel.exportCsv())
+                Toast.makeText(context, if (ok) "CSV guardado." else "Não foi possível guardar o CSV.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { selectedUri ->
             try {
-                context.contentResolver.openInputStream(selectedUri)?.use { inputStream ->
-                    val content = inputStream.bufferedReader().use { it.readText() }
-                    coroutineScope.launch {
-                        viewModel.importJson(content)
-                    }
+                val content = readTextLimited(context, selectedUri)
+                coroutineScope.launch {
+                    viewModel.importJson(content)
                 }
             } catch (e: Exception) {
                 Toast.makeText(context, "Erro ao ler ficheiro: ${e.message}", Toast.LENGTH_LONG).show()
@@ -403,7 +434,7 @@ fun AccountScreen(
                                     .background(AccentEmerald)
                             )
                             Text(
-                                text = "100% Offline & Seguro",
+                                text = "Dados locais & cifrados",
                                 fontSize = 11.sp,
                                 color = AccentEmerald,
                                 fontWeight = FontWeight.Medium
@@ -524,7 +555,7 @@ fun AccountScreen(
                             photoPickerLauncher.launch("image/*")
                         }
                     },
-                    onToggleBiometrics = { viewModel.toggleBiometrics(it) },
+                    onToggleBiometrics = { requestBiometricToggle(it) },
                     onSelectThemeMode = { viewModel.updateThemeMode(it) },
                     onSelectLanguage = { viewModel.updateAppLanguage(it) }
                 )
@@ -804,10 +835,7 @@ fun AccountScreen(
                         title = "Exportar Backup Completo (JSON)",
                         subtitle = "Cópia completa e atómica de categorias, movimentos, orçamentos e metas",
                         onClick = {
-                            coroutineScope.launch {
-                                val json = viewModel.exportJson()
-                                exportTextFile(context, json, "backup_financas_${System.currentTimeMillis()}.json", "application/json")
-                            }
+                            jsonExportLauncher.launch("backup_financas_${System.currentTimeMillis()}.json")
                         }
                     )
 
@@ -820,10 +848,7 @@ fun AccountScreen(
                         title = "Exportar para Folha de Cálculo (CSV)",
                         subtitle = "Compatível com Excel em PT-PT com as 4 dimensões completas",
                         onClick = {
-                            coroutineScope.launch {
-                                val csv = viewModel.exportCsv()
-                                exportTextFile(context, csv, "movimentos_financas_${System.currentTimeMillis()}.csv", "text/csv")
-                            }
+                            csvExportLauncher.launch("movimentos_financas_${System.currentTimeMillis()}.csv")
                         }
                     )
 
@@ -907,7 +932,7 @@ fun AccountScreen(
 
                         Switch(
                             checked = uiState.isBiometricsEnabled,
-                            onCheckedChange = { viewModel.toggleBiometrics(it) },
+                            onCheckedChange = { requestBiometricToggle(it) },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
                                 checkedTrackColor = AccentBlue,
@@ -918,7 +943,7 @@ fun AccountScreen(
                     }
 
                     Text(
-                        text = "Por defeito, a aplicação abre instantaneamente em 0 segundos. Ative esta opção se pretender exigir autenticação biométrica (impressão digital ou reconhecimento facial) sempre que abrir a aplicação.",
+                        text = "Por defeito, a aplicação abre instantaneamente em 0 segundos. Ative esta opção se pretender exigir autenticação (biometria ou PIN do telemóvel) sempre que abrir a aplicação ou voltar a ela após 30 segundos.",
                         fontSize = 12.sp,
                         color = TextMuted,
                         lineHeight = 16.sp
@@ -937,7 +962,7 @@ fun AccountScreen(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "100% Offline · Zero internet · Deteta compras e envia para Pendentes",
+                text = "Processado no telemóvel · Nada é enviado · Deteta compras e envia para Pendentes",
                 fontSize = 12.sp,
                 color = TextSecondary
             )
@@ -2558,14 +2583,14 @@ private fun ProfileTabContent(
                         modifier = Modifier.size(18.dp)
                     )
                     Text(
-                        text = "Privacidade 100% Offline",
+                        text = "Privacidade: Dados Locais",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
                 }
                 Text(
-                    text = "Todos os seus dados financeiros, nome e fotografia estão salvaguardados exclusivamente na memória segura deste telemóvel. O Finflow não possui servidores, telemetria nem rastreadores externos.",
+                    text = "Todos os seus dados financeiros, nome e fotografia estão salvaguardados exclusivamente na memória segura deste telemóvel. O Finflow não possui servidores, telemetria nem rastreadores externos. A única ligação é ao GitHub, para procurar atualizações (pode ser desativada em Versão).",
                     fontSize = 12.sp,
                     color = TextMuted,
                     lineHeight = 16.sp
@@ -2625,8 +2650,55 @@ private fun VersionTabContent(
     onOpenReleaseNotes: () -> Unit
 ) {
     val strings = LocalAppStrings.current
+    val versionContext = LocalContext.current
+    val profileStore = remember(versionContext) {
+        (versionContext.applicationContext as? com.financas.app.FinancasApplication)?.container?.userProfileStore
+    }
+    var autoUpdateCheck by remember { mutableStateOf(profileStore?.isAutoUpdateCheckEnabled() ?: true) }
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Procurar atualizações ao abrir",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "Contacta o GitHub (api.github.com) para ver se há uma versão nova. Nenhum dado financeiro é enviado.",
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                    )
+                }
+                Switch(
+                    checked = autoUpdateCheck,
+                    onCheckedChange = {
+                        autoUpdateCheck = it
+                        profileStore?.setAutoUpdateCheckEnabled(it)
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = AccentEmerald,
+                        uncheckedThumbColor = TextMuted,
+                        uncheckedTrackColor = DarkSurfaceVariant
+                    )
+                )
+            }
+        }
+
         if (com.financas.app.BuildConfig.IS_DEMO) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -3041,7 +3113,7 @@ private fun VersionTabContent(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Modo Operacional", fontSize = 13.sp, color = TextSecondary)
-                    Text("100% Offline (Sem Servidor)", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AccentEmerald)
+                    Text("Dados locais (sem servidor)", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AccentEmerald)
                 }
             }
         }
@@ -3460,4 +3532,13 @@ private fun LanguageSelectionDialog(
         containerColor = DarkSurface,
         shape = RoundedCornerShape(16.dp)
     )
+}
+
+private fun android.content.Context.findComponentActivity(): androidx.activity.ComponentActivity? {
+    var current: android.content.Context? = this
+    while (current is android.content.ContextWrapper) {
+        if (current is androidx.activity.ComponentActivity) return current
+        current = current.baseContext
+    }
+    return null
 }

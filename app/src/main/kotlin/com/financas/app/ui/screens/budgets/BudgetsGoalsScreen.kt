@@ -162,9 +162,7 @@ fun BudgetsGoalsScreen(
     ) { uri: Uri? ->
         uri?.let {
             try {
-                val content = context.contentResolver.openInputStream(it)?.bufferedReader()?.use { reader ->
-                    reader.readText()
-                } ?: ""
+                val content = com.financas.app.ui.util.readTextLimited(context, it)
                 if (content.isNotBlank()) {
                     val report = viewModel.parseXtbReport(content)
                     if (report.openPositions.isNotEmpty() || report.cashOperations.isNotEmpty()) {
@@ -2760,7 +2758,7 @@ fun XtbImportChooserSheet(
                         color = FinflowTextPrimary
                     )
                     Text(
-                        text = "100% Offline. Atualiza cotações e posições sem duplicar.",
+                        text = "Processado no telemóvel. Atualiza cotações e posições sem duplicar.",
                         fontSize = 12.sp,
                         color = FinflowTextSecondary
                     )
