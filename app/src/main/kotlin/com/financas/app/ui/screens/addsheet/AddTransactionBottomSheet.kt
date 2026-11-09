@@ -4,7 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -61,7 +64,9 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -116,7 +121,7 @@ data class StitchCategoryOption(
     val tintColor: Color
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddTransactionBottomSheet(
     viewModel: AddTransactionViewModel,
@@ -133,6 +138,11 @@ fun AddTransactionBottomSheet(
     var showAllCategoriesSheet by remember { mutableStateOf(false) }
     var showPaymentMethodDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var step by rememberSaveable {
+        mutableIntStateOf(if (uiState.editingTransactionId != null || uiState.amountCents > 0) 3 else 1)
+    }
+
+    BackHandler(enabled = step > 1) { step -= 1 }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -187,616 +197,701 @@ fun AddTransactionBottomSheet(
                 }
             }
 
-            // Segmented Type Selector [ ● Expense | ● Income | ● Transfer ]
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(FinflowSurfaceContainerLow)
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                val isExpense = uiState.type == "EXPENSE"
-                val isIncome = uiState.type == "INCOME"
-                val isTransfer = uiState.type == "TRANSFER"
+            AddSheetStepIndicator(
+                currentStep = step,
+                canOpenStep = { target -> target <= step || (target == 2 && uiState.amountCents > 0) || (target == 3 && uiState.amountCents > 0 && uiState.selectedCategoryId.isNotBlank()) },
+                onStepSelected = { step = it }
+            )
 
-                TypeSegmentChip(
-                    label = strings.expense,
-                    dotColor = FinflowCoral,
-                    isSelected = isExpense,
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.onTypeChanged("EXPENSE") }
-                )
-
-                TypeSegmentChip(
-                    label = strings.income,
-                    dotColor = FinflowSecondary,
-                    isSelected = isIncome,
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.onTypeChanged("INCOME") }
-                )
-
-                TypeSegmentChip(
-                    label = if (isEnglish) "Transfer" else "Transferência",
-                    dotColor = FinflowTextMuted,
-                    isSelected = isTransfer,
-                    modifier = Modifier.weight(1f),
-                    onClick = { viewModel.onTypeChanged("TRANSFER") }
-                )
+            val currentCategory = uiState.allCategories.find { it.id == uiState.selectedCategoryId }
+            val currentParent = uiState.parentCategories.find { it.id == currentCategory?.parentId }
+            val currentCategoryLabel = when {
+                currentCategory == null -> if (isEnglish) "No category" else "Sem categoria"
+                currentParent != null -> "${currentParent.name} › ${currentCategory.name}"
+                else -> currentCategory.name
             }
 
-            // Card: QUANTIA A REGISTAR (Stitch Design)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = FinflowSurface),
-                border = androidx.compose.foundation.BorderStroke(1.dp, FinflowBorderSubtle)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
+            when (step) {
+                1 -> {
+                    // Segmented Type Selector [ ● Expense | ● Income | ● Transfer ]
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(FinflowSurfaceContainerLow)
+                            .padding(4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = "QUANTIA A REGISTAR",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = FinflowTextMuted,
-                            letterSpacing = 0.5.sp
+                        val isExpense = uiState.type == "EXPENSE"
+                        val isIncome = uiState.type == "INCOME"
+                        val isTransfer = uiState.type == "TRANSFER"
+
+                        TypeSegmentChip(
+                            label = strings.expense,
+                            dotColor = FinflowCoral,
+                            isSelected = isExpense,
+                            modifier = Modifier.weight(1f),
+                            onClick = { viewModel.onTypeChanged("EXPENSE") }
                         )
 
-                        Box(
+                        TypeSegmentChip(
+                            label = strings.income,
+                            dotColor = FinflowSecondary,
+                            isSelected = isIncome,
+                            modifier = Modifier.weight(1f),
+                            onClick = { viewModel.onTypeChanged("INCOME") }
+                        )
+
+                        TypeSegmentChip(
+                            label = if (isEnglish) "Transfer" else "Transferência",
+                            dotColor = FinflowTextMuted,
+                            isSelected = isTransfer,
+                            modifier = Modifier.weight(1f),
+                            onClick = { viewModel.onTypeChanged("TRANSFER") }
+                        )
+                    }
+
+                    // Card: QUANTIA A REGISTAR (Stitch Design)
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = FinflowSurface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, FinflowBorderSubtle)
+                    ) {
+                        Column(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(FinflowSurfaceContainerLow)
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "QUANTIA A REGISTAR",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = FinflowTextMuted,
+                                    letterSpacing = 0.5.sp
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(FinflowSurfaceContainerLow)
+                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                ) {
+                                    Text(
+                                        text = "EUR (€) ⇅",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = FinflowTextSecondary
+                                    )
+                                }
+                            }
+
+                            // Large Amount Display
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "€ ",
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = FinflowTextMuted
+                                )
+                                Text(
+                                    text = MoneyCents.formatCents(uiState.amountCents).replace("€", "").trim(),
+                                    fontSize = 38.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = FinflowTextPrimary
+                                )
+                                Text(
+                                    text = " |",
+                                    fontSize = 36.sp,
+                                    fontWeight = FontWeight.Light,
+                                    color = FinflowPrimary
+                                )
+                            }
+
+                            // Quick-Add Pills: [+5 €] [+10 €] [+20 €] [+50 €]
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(500L to "+5 €", 1000L to "+10 €", 2000L to "+20 €", 5000L to "+50 €").forEach { (delta, label) ->
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(FinflowSurfaceContainerLow)
+                                            .clickable { viewModel.addQuickAmountCents(delta) }
+                                            .padding(vertical = 7.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = FinflowPrimary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    FinflowNumpad(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        onDigit = { viewModel.onDigit(it) },
+                        onComma = { viewModel.onComma() },
+                        onBackspace = { viewModel.onBackspace() }
+                    )
+
+                    Button(
+                        onClick = { step += 1 },
+                        enabled = uiState.amountCents > 0,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .height(52.dp),
+                        shape = RoundedCornerShape(26.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = FinflowPrimary)
+                    ) {
+                        Text(
+                            text = if (isEnglish) "Next" else "Seguinte",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
+                2 -> {
+                    AddSheetSummary(
+                        amountText = MoneyCents.formatCents(uiState.amountCents),
+                        typeLabel = when (uiState.type) {
+                            "INCOME" -> strings.income
+                            "TRANSFER" -> if (isEnglish) "Transfer" else "Transferência"
+                            else -> strings.expense
+                        },
+                        categoryLabel = currentCategoryLabel,
+                        showCategory = step == 3,
+                        onEditAmount = { step = 1 },
+                        onEditCategory = { step = 2 }
+                    )
+
+                    // Dynamic Category & Subcategory Selector
+                    val selectedCategory = uiState.allCategories.find { it.id == uiState.selectedCategoryId }
+                    val selectedParent = uiState.parentCategories.find { it.id == uiState.selectedParentCategoryId }
+                        ?: uiState.parentCategories.find { it.id == selectedCategory?.parentId }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f, fill = false)) {
+                                Text(
+                                    text = "Categoria",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = FinflowTextPrimary
+                                )
+                                val categoryLabel = when {
+                                    selectedCategory != null && selectedParent != null && selectedCategory.id != selectedParent.id ->
+                                        "${selectedParent.name} › ${selectedCategory.name}"
+                                    selectedCategory != null -> selectedCategory.name
+                                    selectedParent != null -> selectedParent.name
+                                    else -> "Nenhuma selecionada"
+                                }
+                                Text(
+                                    text = categoryLabel,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = FinflowPrimary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                TextButton(
+                                    onClick = { showAddCategoryDialog = true },
+                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = FinflowPrimary)
+                                    Spacer(modifier = Modifier.width(2.dp))
+                                    Text("Nova", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FinflowPrimary)
+                                }
+
+                                TextButton(
+                                    onClick = { showAllCategoriesSheet = true },
+                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text("Ver Todas ▾", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = FinflowTextSecondary)
+                                }
+                            }
+                        }
+
+                        // Horizontal scroll of Parent Categories for active type
+                        if (uiState.parentCategories.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                uiState.parentCategories.forEach { parent ->
+                                    val isSelected = uiState.selectedParentCategoryId == parent.id
+                                    val icon = getCategoryIcon(parent.name, parent.icon)
+                                    val parentColor = Color(parent.colorHex)
+
+                                    Column(
+                                        modifier = Modifier
+                                            .width(76.dp)
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(if (isSelected) FinflowPrimaryLight.copy(alpha = 0.5f) else FinflowSurfaceContainerLow)
+                                            .border(
+                                                width = if (isSelected) 2.dp else 1.dp,
+                                                color = if (isSelected) FinflowPrimary else FinflowBorderSubtle,
+                                                shape = RoundedCornerShape(14.dp)
+                                            )
+                                            .clickable {
+                                                viewModel.onParentCategorySelected(parent.id)
+                                                if (uiState.allCategories.none { it.parentId == parent.id }) step = 3
+                                            }
+                                            .padding(vertical = 8.dp, horizontal = 4.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(38.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(parentColor.copy(alpha = 0.18f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = icon,
+                                                contentDescription = parent.name,
+                                                tint = parentColor,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                        Text(
+                                            text = parent.name,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) FinflowPrimary else FinflowTextSecondary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Horizontal Subcategory Chips under the selected parent
+                        if (uiState.subcategories.isNotEmpty()) {
+                            Text(
+                                text = "Escolhe a subcategoria:",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = FinflowTextMuted,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                uiState.subcategories.forEach { sub ->
+                                    val isSubSelected = uiState.selectedCategoryId == sub.id
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(if (isSubSelected) FinflowPrimary else FinflowSurfaceContainerLow)
+                                            .border(
+                                                width = 1.dp,
+                                                color = if (isSubSelected) FinflowPrimary else FinflowBorderSubtle,
+                                                shape = RoundedCornerShape(10.dp)
+                                            )
+                                            .clickable {
+                                                viewModel.onSubcategorySelected(sub.id)
+                                                if (!viewModel.uiState.value.requiresInvestmentDestination()) step = 3
+                                            }
+                                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = sub.name,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSubSelected) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isSubSelected) Color.White else FinflowTextPrimary
+                                        )
+                                    }
+                                }
+
+                                // Add Subcategory quick pill
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(FinflowPrimaryLight.copy(alpha = 0.3f))
+                                        .border(1.dp, FinflowPrimary.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
+                                        .clickable { showAddCategoryDialog = true }
+                                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = null, tint = FinflowPrimary, modifier = Modifier.size(13.dp))
+                                        Text(
+                                            text = "Nova Subcategoria",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = FinflowPrimary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (uiState.requiresInvestmentDestination()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "EUR (€) ⇅",
-                                fontSize = 11.sp,
+                                text = "Investimento — escolhe para onde vai (ou 'Decidir depois' para alocar na Carteira)",
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = FinflowTextSecondary
                             )
+                            val effectiveAssetId = uiState.effectiveInvestmentAssetId()
+                            val assetOptions = buildList {
+                                add(InvestmentTransferRules.XTB_HOLDING_ASSET_ID to InvestmentTransferRules.XTB_HOLDING_CHOICE_LABEL)
+                                uiState.investmentAssets
+                                    .filter { !InvestmentTransferRules.isHoldingAsset(it) }
+                                    .forEach { add(it.id to it.name) }
+                            }
+                            Row(
+                                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                assetOptions.forEach { (assetId, assetName) ->
+                                    val isSelected = effectiveAssetId == assetId
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(if (isSelected) FinflowPrimary else FinflowSurfaceContainerLow)
+                                            .clickable { viewModel.onInvestmentAssetSelected(assetId) }
+                                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = assetName,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = if (isSelected) Color.White else FinflowTextPrimary,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
-                    // Large Amount Display
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                    Button(
+                        onClick = { step += 1 },
+                        enabled = !(uiState.requiresInvestmentDestination() && uiState.effectiveInvestmentAssetId() == null) && uiState.selectedCategoryId.isNotBlank(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .height(52.dp),
+                        shape = RoundedCornerShape(26.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = FinflowPrimary)
                     ) {
                         Text(
-                            text = "€ ",
-                            fontSize = 28.sp,
+                            text = if (isEnglish) "Next" else "Seguinte",
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = FinflowTextMuted
+                            color = Color.White
                         )
+                    }
+                }
+                else -> {
+                    AddSheetSummary(
+                        amountText = MoneyCents.formatCents(uiState.amountCents),
+                        typeLabel = when (uiState.type) {
+                            "INCOME" -> strings.income
+                            "TRANSFER" -> if (isEnglish) "Transfer" else "Transferência"
+                            else -> strings.expense
+                        },
+                        categoryLabel = currentCategoryLabel,
+                        showCategory = step == 3,
+                        onEditAmount = { step = 1 },
+                        onEditCategory = { step = 2 }
+                    )
+
+                    // Input: Descrição ou Estabelecimento
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         Text(
-                            text = MoneyCents.formatCents(uiState.amountCents).replace("€", "").trim(),
-                            fontSize = 38.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = FinflowTextPrimary
+                            text = "Descrição ou Estabelecimento",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = FinflowTextSecondary
                         )
-                        Text(
-                            text = " |",
-                            fontSize = 36.sp,
-                            fontWeight = FontWeight.Light,
-                            color = FinflowPrimary
+                        OutlinedTextField(
+                            value = uiState.merchant,
+                            onValueChange = { viewModel.onMerchantChanged(it) },
+                            placeholder = { Text("Ex: Continente Colombo") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Store,
+                                    contentDescription = null,
+                                    tint = FinflowPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = FinflowSurfaceContainerLow,
+                                unfocusedContainerColor = FinflowSurfaceContainerLow,
+                                focusedBorderColor = FinflowPrimary,
+                                unfocusedBorderColor = Color.Transparent
+                            )
                         )
                     }
 
-                    // Quick-Add Pills: [+5 €] [+10 €] [+20 €] [+50 €]
+                    // Row: Data do Movimento
+                    val dateFormatted = remember(uiState.epochDay) {
+                        LocalDate.ofEpochDay(uiState.epochDay).format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("pt", "PT"))).replaceFirstChar { it.uppercase() }
+                    }
+
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(FinflowSurfaceContainerLow)
+                            .clickable { showDateDropdownDialog = true }
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        listOf(500L to "+5 €", 1000L to "+10 €", 2000L to "+20 €", 5000L to "+50 €").forEach { (delta, label) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = null,
+                                tint = FinflowPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = "Data do Movimento",
+                                    fontSize = 11.sp,
+                                    color = FinflowTextMuted
+                                )
+                                Text(
+                                    text = dateFormatted,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = FinflowTextPrimary
+                                )
+                            }
+                        }
+                        Text(
+                            text = ">",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = FinflowTextMuted
+                        )
+                    }
+
+                    // Row: Conta / Método
+                    val (methodLabel, methodIcon, methodTint) = when (uiState.selectedPaymentMethod.uppercase()) {
+                        "CASH", "DINHEIRO" -> Triple("Dinheiro", Icons.Default.AccountBalanceWallet, FinflowSecondary)
+                        "CARD", "DEBITO" -> Triple("Cartão Débito", Icons.Default.CreditCard, FinflowPrimary)
+                        "MBWAY" -> Triple("MB WAY", Icons.Default.CreditCard, FinflowCoral)
+                        "TRANSFER", "TRANSFERENCIA" -> Triple("Transferência", Icons.Default.Repeat, FinflowPurple)
+                        "DIRECT_DEBIT", "DEBITO_DIRETO" -> Triple("Débito Direto", Icons.Default.AccountBalanceWallet, FinflowAmber)
+                        else -> Triple(uiState.selectedPaymentMethod, Icons.Default.CreditCard, FinflowPrimary)
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(FinflowSurfaceContainerLow)
+                            .clickable { showPaymentMethodDialog = true }
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
                             Box(
                                 modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(FinflowSurfaceContainerLow)
-                                    .clickable { viewModel.addQuickAmountCents(delta) }
-                                    .padding(vertical = 7.dp),
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(methodTint.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center
                             ) {
+                                Icon(
+                                    imageVector = methodIcon,
+                                    contentDescription = null,
+                                    tint = methodTint,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                            Column {
                                 Text(
-                                    text = label,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = FinflowPrimary
+                                    text = "Conta / Método",
+                                    fontSize = 11.sp,
+                                    color = FinflowTextMuted
+                                )
+                                Text(
+                                    text = methodLabel,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = FinflowTextPrimary
                                 )
                             }
                         }
-                    }
-                }
-            }
-
-            // Dynamic Category & Subcategory Selector
-            val selectedCategory = uiState.allCategories.find { it.id == uiState.selectedCategoryId }
-            val selectedParent = uiState.parentCategories.find { it.id == uiState.selectedParentCategoryId }
-                ?: uiState.parentCategories.find { it.id == selectedCategory?.parentId }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f, fill = false)) {
                         Text(
-                            text = "Categoria",
+                            text = "▾",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = FinflowTextPrimary
-                        )
-                        val categoryLabel = when {
-                            selectedCategory != null && selectedParent != null && selectedCategory.id != selectedParent.id ->
-                                "${selectedParent.name} › ${selectedCategory.name}"
-                            selectedCategory != null -> selectedCategory.name
-                            selectedParent != null -> selectedParent.name
-                            else -> "Nenhuma selecionada"
-                        }
-                        Text(
-                            text = categoryLabel,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = FinflowPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            color = FinflowTextMuted
                         )
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                        TextButton(
-                            onClick = { showAddCategoryDialog = true },
-                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = FinflowPrimary)
-                            Spacer(modifier = Modifier.width(2.dp))
-                            Text("Nova", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FinflowPrimary)
-                        }
-
-                        TextButton(
-                            onClick = { showAllCategoriesSheet = true },
-                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text("Ver Todas ▾", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = FinflowTextSecondary)
-                        }
-                    }
-                }
-
-                // Horizontal scroll of Parent Categories for active type
-                if (uiState.parentCategories.isNotEmpty()) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        uiState.parentCategories.forEach { parent ->
-                            val isSelected = uiState.selectedParentCategoryId == parent.id
-                            val icon = getCategoryIcon(parent.name, parent.icon)
-                            val parentColor = Color(parent.colorHex)
-
-                            Column(
-                                modifier = Modifier
-                                    .width(76.dp)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(if (isSelected) FinflowPrimaryLight.copy(alpha = 0.5f) else FinflowSurfaceContainerLow)
-                                    .border(
-                                        width = if (isSelected) 2.dp else 1.dp,
-                                        color = if (isSelected) FinflowPrimary else FinflowBorderSubtle,
-                                        shape = RoundedCornerShape(14.dp)
-                                    )
-                                    .clickable { viewModel.onParentCategorySelected(parent.id) }
-                                    .padding(vertical = 8.dp, horizontal = 4.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(parentColor.copy(alpha = 0.18f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = parent.name,
-                                        tint = parentColor,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Text(
-                                    text = parent.name,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) FinflowPrimary else FinflowTextSecondary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Horizontal Subcategory Chips under the selected parent
-                if (uiState.subcategories.isNotEmpty()) {
-                    Text(
-                        text = "Subcategoria:",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = FinflowTextMuted,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            .padding(horizontal = 20.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(FinflowSurfaceContainerLow)
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        uiState.subcategories.forEach { sub ->
-                            val isSubSelected = uiState.selectedCategoryId == sub.id
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (isSubSelected) FinflowPrimary else FinflowSurfaceContainerLow)
-                                    .border(
-                                        width = 1.dp,
-                                        color = if (isSubSelected) FinflowPrimary else FinflowBorderSubtle,
-                                        shape = RoundedCornerShape(10.dp)
-                                    )
-                                    .clickable { viewModel.onSubcategorySelected(sub.id) }
-                                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                            ) {
-                                Text(
-                                    text = sub.name,
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isSubSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSubSelected) Color.White else FinflowTextPrimary
-                                )
-                            }
-                        }
-
-                        // Add Subcategory quick pill
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(FinflowPrimaryLight.copy(alpha = 0.3f))
-                                .border(1.dp, FinflowPrimary.copy(alpha = 0.5f), RoundedCornerShape(10.dp))
-                                .clickable { showAddCategoryDialog = true }
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(Icons.Default.Add, contentDescription = null, tint = FinflowPrimary, modifier = Modifier.size(13.dp))
+                            Icon(
+                                imageVector = Icons.Default.Repeat,
+                                contentDescription = null,
+                                tint = if (uiState.isFixed) FinflowPrimary else FinflowTextMuted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Nova Subcategoria",
-                                    fontSize = 12.sp,
+                                    text = "Movimento fixo",
+                                    fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = FinflowPrimary
+                                    color = FinflowTextPrimary
+                                )
+                                Text(
+                                    text = "Repete-se todos os meses (renda, ordenado, ginásio…)",
+                                    fontSize = 11.sp,
+                                    color = FinflowTextMuted
                                 )
                             }
                         }
-                    }
-                }
-            }
 
-            if (uiState.requiresInvestmentDestination()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Investimento — escolhe para onde vai (ou 'Decidir depois' para alocar na Carteira)",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = FinflowTextSecondary
-                    )
-                    val effectiveAssetId = uiState.effectiveInvestmentAssetId()
-                    val assetOptions = buildList {
-                        add(InvestmentTransferRules.XTB_HOLDING_ASSET_ID to InvestmentTransferRules.XTB_HOLDING_CHOICE_LABEL)
-                        uiState.investmentAssets
-                            .filter { !InvestmentTransferRules.isHoldingAsset(it) }
-                            .forEach { add(it.id to it.name) }
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Switch(
+                            checked = uiState.isFixed,
+                            onCheckedChange = { viewModel.onFixedToggled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = FinflowPrimary
+                            )
+                        )
                     }
+
+                    // Primary Button: (✓) Guardar Despesa + Eliminar (só em edição)
+                    val isEditing = uiState.editingTransactionId != null
                     Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        assetOptions.forEach { (assetId, assetName) ->
-                            val isSelected = effectiveAssetId == assetId
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (isSelected) FinflowPrimary else FinflowSurfaceContainerLow)
-                                    .clickable { viewModel.onInvestmentAssetSelected(assetId) }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                        if (isEditing) {
+                            TextButton(
+                                onClick = { showDeleteConfirmation = true },
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp)
                             ) {
                                 Text(
-                                    text = assetName,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (isSelected) Color.White else FinflowTextPrimary,
-                                    maxLines = 1
+                                    text = "Eliminar",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = FinflowCoral
                                 )
                             }
                         }
+                        Button(
+                            onClick = { viewModel.saveTransaction(onSaveSuccess) },
+                            enabled = !(uiState.requiresInvestmentDestination() && uiState.effectiveInvestmentAssetId() == null),
+                            modifier = Modifier
+                                .then(if (isEditing) Modifier.weight(1f) else Modifier.fillMaxWidth())
+                                .height(52.dp),
+                            shape = RoundedCornerShape(26.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = FinflowPrimary)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = when {
+                                    isEditing -> if (isEnglish) "Update Transaction" else "Atualizar Despesa"
+                                    uiState.type == "INCOME" -> if (isEnglish) "Save Income" else "Guardar Receita"
+                                    else -> if (isEnglish) "Save Expense" else "Guardar Despesa"
+                                },
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
                     }
-                }
-            }
-
-            // Input: Descrição ou Estabelecimento
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = "Descrição ou Estabelecimento",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = FinflowTextSecondary
-                )
-                OutlinedTextField(
-                    value = uiState.merchant,
-                    onValueChange = { viewModel.onMerchantChanged(it) },
-                    placeholder = { Text("Ex: Continente Colombo") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Store,
-                            contentDescription = null,
-                            tint = FinflowPrimary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = FinflowSurfaceContainerLow,
-                        unfocusedContainerColor = FinflowSurfaceContainerLow,
-                        focusedBorderColor = FinflowPrimary,
-                        unfocusedBorderColor = Color.Transparent
-                    )
-                )
-            }
-
-            // Row: Data do Movimento
-            val dateFormatted = remember(uiState.epochDay) {
-                LocalDate.ofEpochDay(uiState.epochDay).format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("pt", "PT"))).replaceFirstChar { it.uppercase() }
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(FinflowSurfaceContainerLow)
-                    .clickable { showDateDropdownDialog = true }
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CalendarMonth,
-                        contentDescription = null,
-                        tint = FinflowPrimary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Column {
-                        Text(
-                            text = "Data do Movimento",
-                            fontSize = 11.sp,
-                            color = FinflowTextMuted
-                        )
-                        Text(
-                            text = dateFormatted,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = FinflowTextPrimary
-                        )
-                    }
-                }
-                Text(
-                    text = ">",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = FinflowTextMuted
-                )
-            }
-
-            // Row: Conta / Método
-            val (methodLabel, methodIcon, methodTint) = when (uiState.selectedPaymentMethod.uppercase()) {
-                "CASH", "DINHEIRO" -> Triple("Dinheiro", Icons.Default.AccountBalanceWallet, FinflowSecondary)
-                "CARD", "DEBITO" -> Triple("Cartão Débito", Icons.Default.CreditCard, FinflowPrimary)
-                "MBWAY" -> Triple("MB WAY", Icons.Default.CreditCard, FinflowCoral)
-                "TRANSFER", "TRANSFERENCIA" -> Triple("Transferência", Icons.Default.Repeat, FinflowPurple)
-                "DIRECT_DEBIT", "DEBITO_DIRETO" -> Triple("Débito Direto", Icons.Default.AccountBalanceWallet, FinflowAmber)
-                else -> Triple(uiState.selectedPaymentMethod, Icons.Default.CreditCard, FinflowPrimary)
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(FinflowSurfaceContainerLow)
-                    .clickable { showPaymentMethodDialog = true }
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(methodTint.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = methodIcon,
-                            contentDescription = null,
-                            tint = methodTint,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = "Conta / Método",
-                            fontSize = 11.sp,
-                            color = FinflowTextMuted
-                        )
-                        Text(
-                            text = methodLabel,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = FinflowTextPrimary
-                        )
-                    }
-                }
-                Text(
-                    text = "▾",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = FinflowTextMuted
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(FinflowSurfaceContainerLow)
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Repeat,
-                        contentDescription = null,
-                        tint = if (uiState.isFixed) FinflowPrimary else FinflowTextMuted,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Despesa Fixa",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = FinflowTextPrimary
-                        )
-                        Text(
-                            text = "Marca o movimento como fixo para a análise de fixos vs. variáveis",
-                            fontSize = 11.sp,
-                            color = FinflowTextMuted
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Switch(
-                    checked = uiState.isFixed,
-                    onCheckedChange = { viewModel.onFixedToggled(it) },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = FinflowPrimary
-                    )
-                )
-            }
-
-            // Integrated Finflow Numpad
-            FinflowNumpad(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                onDigit = { viewModel.onDigit(it) },
-                onComma = { viewModel.onComma() },
-                onBackspace = { viewModel.onBackspace() }
-            )
-
-            // Primary Button: (✓) Guardar Despesa + Eliminar (só em edição)
-            val isEditing = uiState.editingTransactionId != null
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (isEditing) {
-                    TextButton(
-                        onClick = { showDeleteConfirmation = true },
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp)
-                    ) {
-                        Text(
-                            text = "Eliminar",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = FinflowCoral
-                        )
-                    }
-                }
-                Button(
-                    onClick = { viewModel.saveTransaction(onSaveSuccess) },
-                    enabled = !(uiState.requiresInvestmentDestination() && uiState.effectiveInvestmentAssetId() == null),
-                    modifier = Modifier
-                        .then(if (isEditing) Modifier.weight(1f) else Modifier.fillMaxWidth())
-                        .height(52.dp),
-                    shape = RoundedCornerShape(26.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = FinflowPrimary)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = when {
-                            isEditing -> if (isEnglish) "Update Transaction" else "Atualizar Despesa"
-                            uiState.type == "INCOME" -> if (isEnglish) "Save Income" else "Guardar Receita"
-                            else -> if (isEnglish) "Save Expense" else "Guardar Despesa"
-                        },
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
                 }
             }
         }
@@ -1328,3 +1423,124 @@ private fun TypeSegmentChip(
         }
     }
 }
+
+@Composable
+private fun AddSheetStepIndicator(
+    currentStep: Int,
+    canOpenStep: (Int) -> Boolean,
+    onStepSelected: (Int) -> Unit
+) {
+    val isEnglish = LocalAppLanguage.current == AppLanguage.EN
+    val labels = if (isEnglish) listOf("Amount", "Category", "Details") else listOf("Valor", "Categoria", "Detalhes")
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        labels.forEachIndexed { index, label ->
+            val stepNumber = index + 1
+            val isActive = stepNumber == currentStep
+            val isDone = stepNumber < currentStep
+            val enabled = canOpenStep(stepNumber)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(enabled = enabled && !isActive) { onStepSelected(stepNumber) }
+                    .padding(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(if (isActive || isDone) FinflowPrimary else FinflowBorderSubtle)
+                )
+                Text(
+                    text = "$stepNumber. $label",
+                    fontSize = 12.sp,
+                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                    color = when {
+                        isActive -> FinflowPrimary
+                        isDone -> FinflowTextPrimary
+                        else -> FinflowTextMuted
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AddSheetSummary(
+    amountText: String,
+    typeLabel: String,
+    categoryLabel: String,
+    showCategory: Boolean,
+    onEditAmount: () -> Unit,
+    onEditCategory: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(FinflowSurfaceContainerLow)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onEditAmount)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(text = typeLabel, fontSize = 11.sp, color = FinflowTextMuted)
+                Text(text = amountText, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FinflowTextPrimary)
+            }
+            Text(text = "Alterar", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = FinflowPrimary)
+        }
+        if (showCategory) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(FinflowBorderSubtle)
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onEditCategory)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Category,
+                        contentDescription = null,
+                        tint = FinflowPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = categoryLabel,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = FinflowTextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Text(text = "Alterar", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = FinflowPrimary)
+            }
+        }
+    }
+}
+

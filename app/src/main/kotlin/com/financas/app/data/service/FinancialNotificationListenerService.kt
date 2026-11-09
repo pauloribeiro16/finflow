@@ -68,12 +68,31 @@ class FinancialNotificationListenerService : NotificationListenerService() {
             else -> null
         }
 
+        val extraLines = buildList {
+            extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)?.forEach { line -> line?.toString()?.let { add(it) } }
+            @Suppress("DEPRECATION")
+            extras.getParcelableArray(Notification.EXTRA_MESSAGES)?.forEach { message ->
+                (message as? android.os.Bundle)?.getCharSequence("text")?.toString()?.let { add(it) }
+            }
+            extras.getCharSequence(Notification.EXTRA_INFO_TEXT)?.toString()?.let { add(it) }
+            extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.toString()?.let { add(it) }
+            extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE)?.toString()?.let { add(it) }
+            if (!ticker.isNullOrBlank() && ticker != effectiveText) add(ticker)
+        }
+
         val parsed = parser.parse(
             packageName = pkg,
             title = effectiveTitle,
             text = effectiveText,
-            subText = subText
+            subText = subText,
+            extraLines = extraLines
         ) ?: return
+
+        val originalTextNote = if (parser.isFallbackMerchant(parsed.merchant)) {
+            "Texto da notificação: " + parsed.rawText.take(MAX_ORIGINAL_TEXT_CHARS)
+        } else {
+            ""
+        }
 
         serviceScope.launch {
             processParsedNotification(
@@ -81,7 +100,8 @@ class FinancialNotificationListenerService : NotificationListenerService() {
                 merchant = parsed.merchant,
                 paymentMethod = parsed.paymentMethod,
                 sourceApp = parsed.sourceApp,
-                direction = parsed.direction
+                direction = parsed.direction,
+                originalTextNote = originalTextNote
             )
         }
     }
@@ -91,7 +111,8 @@ class FinancialNotificationListenerService : NotificationListenerService() {
         merchant: String,
         paymentMethod: String,
         sourceApp: String,
-        direction: String
+        direction: String,
+        originalTextNote: String
     ) {
         val application = application as FinancasApplication
         val db = application.container.database
@@ -137,7 +158,10 @@ class FinancialNotificationListenerService : NotificationListenerService() {
                     sourceApp = sourceApp,
                     detectedEpochDay = todayEpochDay,
                     receivedTimestamp = nowTimestamp,
-                    notes = "Corresponde ao fixo '${evalResult.matchedFixedTransaction.merchant}'"
+                    notes = listOf(
+                        "Corresponde ao fixo '${evalResult.matchedFixedTransaction.merchant}'",
+                        originalTextNote
+                    ).filter { it.isNotBlank() }.joinToString("\n")
                 )
                 pendingDao.insert(pending)
             }
@@ -164,7 +188,8 @@ class FinancialNotificationListenerService : NotificationListenerService() {
                     isFixed = false,
                     sourceApp = sourceApp,
                     detectedEpochDay = todayEpochDay,
-                    receivedTimestamp = nowTimestamp
+                    receivedTimestamp = nowTimestamp,
+                    notes = originalTextNote
                 )
                 pendingDao.insert(pending)
             }
@@ -174,6 +199,7 @@ class FinancialNotificationListenerService : NotificationListenerService() {
     companion object {
         const val PREFS_NAME = "bank_notification_capture_prefs"
         const val KEY_CAPTURE_ENABLED = "capture_enabled"
+        private const val MAX_ORIGINAL_TEXT_CHARS = 300
 
         fun isNotificationAccessGranted(context: Context): Boolean {
             return androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(context)

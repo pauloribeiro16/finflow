@@ -1,6 +1,7 @@
 package com.financas.app.domain.usecase
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -150,7 +151,7 @@ class BankNotificationParserTest {
         )
         assertNotNull(result)
         assertEquals(800L, result?.amountCents)
-        assertEquals("Comerciante Desconhecido", result?.merchant)
+        assertTrue(result!!.merchant.startsWith(BankNotificationParser.FALLBACK_EXPENSE_PREFIX))
     }
 
     @Test
@@ -354,5 +355,68 @@ class BankNotificationParserTest {
         assertEquals("Restaurante Alentejano", result?.merchant)
         assertEquals("CARD", result?.paymentMethod)
         assertEquals("Moey", result?.sourceApp)
+    }
+
+    private fun merchantOf(pkg: String, title: String?, text: String?, extra: List<String> = emptyList()): String? =
+        parser.parse(packageName = pkg, title = title, text = text, extraLines = extra)?.merchant
+
+    @Test
+    fun cgdCardReference_doesNotBecomeMerchant() {
+        assertEquals(
+            "Continente",
+            merchantOf("cgd.pt.caixadirectaparticulares", "Caixadirecta", "Compra de 25,00 EUR no cartão ****1234 em Continente")
+        )
+    }
+
+    @Test
+    fun receivedFromPerson_usesDe() {
+        assertEquals("Maria Silva", merchantOf("pt.sibs.android.mbway", "MB WAY", "Recebeste 10,00 € de Maria Silva"))
+    }
+
+    @Test
+    fun sentToPerson_usesA() {
+        assertEquals("Ana Costa", merchantOf("pt.sibs.android.mbway", "MB WAY", "Enviaste 5,00 € à Ana Costa"))
+    }
+
+    @Test
+    fun merchantWithAsteriskAndUppercase_isPrettified() {
+        assertEquals("Uber *Trip", merchantOf("pt.moey.app", "moey!", "Compra de 7,40 € em UBER *TRIP com cartão de crédito."))
+    }
+
+    @Test
+    fun uppercaseMerchantWithoutPreposition_isFound() {
+        assertEquals("Pingo Doce Lisboa", merchantOf("pt.moey.app", "moey!", "Compra com cartão 12,50 € PINGO DOCE LISBOA"))
+    }
+
+    @Test
+    fun revolutEnglish_spentAt() {
+        assertEquals("Continente", merchantOf("com.revolut.revolut", "Revolut", "You spent €12.50 at Continente"))
+    }
+
+    @Test
+    fun emojiTitle_isMerchant() {
+        assertEquals("Lidl", merchantOf("com.revolut.revolut", "🛒 Lidl", "-12,30 €"))
+    }
+
+    @Test
+    fun inboxStyleLines_areUsedWhenTextIsGeneric() {
+        assertEquals(
+            "Farmácia Central",
+            merchantOf("pt.moey.app", "moey!", "Nova compra", listOf("Compra de 9,90 € na Farmácia Central"))
+        )
+    }
+
+    @Test
+    fun timeAndDateSuffixes_areRemoved() {
+        assertEquals("Galp", merchantOf("cgd.pt.caixadirectaparticulares", "Caixadirecta", "Pagamento de 40,00 EUR em Galp às 14:32"))
+        assertEquals("Galp", merchantOf("cgd.pt.caixadirectaparticulares", "Caixadirecta", "Pagamento de 40,00 EUR em Galp em 09/11"))
+    }
+
+    @Test
+    fun unknownMerchant_usesSourceAppFallback() {
+        val merchant = merchantOf("pt.moey.app", "moey!", "Pagamento de 8,00 € efetuado com sucesso.")
+        assertEquals("Pagamento Moey", merchant)
+        val income = merchantOf("pt.sibs.android.mbway", "MB WAY", "Recebeste 8,00 €")
+        assertEquals("Recebimento MB WAY", income)
     }
 }

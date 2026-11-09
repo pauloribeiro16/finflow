@@ -84,6 +84,7 @@ class TransactionDeduplicator(
         return clean.isBlank() ||
             clean.contains("desconhecido") ||
             clean.contains("comerciante") ||
-            clean.contains("pagamento")
+            clean.contains("pagamento") ||
+            clean.startsWith("recebimento ")
     }
 }

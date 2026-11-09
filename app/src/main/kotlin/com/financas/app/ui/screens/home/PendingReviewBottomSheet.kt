@@ -259,6 +259,15 @@ fun PendingReviewBottomSheet(
                                     fontWeight = FontWeight.SemiBold,
                                     color = TextPrimary
                                 )
+                                if (item.notes.isNotBlank()) {
+                                    Text(
+                                        text = item.notes,
+                                        fontSize = 12.sp,
+                                        color = TextSecondary,
+                                        maxLines = 4,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                }
 
                                 // Interactive Category & Context Selectors
                                 Row(

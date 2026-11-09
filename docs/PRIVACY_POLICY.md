@@ -10,7 +10,7 @@ A sua privacidade é a nossa prioridade absoluta. O **Finflow** guarda os seus d
 - **Dados Financeiros:** As transações, categorias, orçamentos, metas de poupança e posições de património introduzidas são guardadas **exclusivamente na base de dados local** do seu dispositivo Android.
 - **Encriptação Local:** A base de dados local é protegida e encriptada com o padrão **SQLCipher (AES-256)**.
 - **Sem Servidores Externos:** Não mantemos servidores de base de dados, nem sincronizamos os seus movimentos financeiros para a nuvem.
-- **Captura de Notificações (opcional):** Se conceder acesso às notificações, o Finflow lê apenas notificações de apps bancárias e de pagamento conhecidas, extrai o montante e o comerciante e guarda-os como movimento pendente na base de dados encriptada. O texto completo da notificação não é guardado. Pode desativar a captura a qualquer momento em Conta.
+- **Captura de Notificações (opcional):** Se conceder acesso às notificações, o Finflow lê apenas notificações de apps bancárias e de pagamento conhecidas, extrai o montante e o comerciante e guarda-os como movimento pendente na base de dados encriptada. Só quando não é possível identificar o comerciante é que o texto da notificação (até 300 caracteres) fica guardado nesse movimento pendente, para o poder rever. Pode desativar a captura a qualquer momento em Conta.
 
 ## 2. Bloqueio da Aplicação
 - Caso ative o bloqueio, a validação (biometria ou PIN/padrão do telemóvel) é efetuada diretamente pelo sistema operativo Android (**Android BiometricPrompt**).

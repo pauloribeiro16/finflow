@@ -15,3 +15,8 @@ Fonte: `SECURITY_AUDIT_2026-11-09.md` (secção "Estado das correções").
 Gradle 9.9, AGP 9.5 (Kotlin incorporado: sem plugin `kotlin-android`, `kotlin { compilerOptions }` em vez de `kotlinOptions`, `resValues = true` obrigatório para `resValue`), Kotlin 2.4.21, KSP 2.3.13 (KSP1 removido), compileSdk 37 / targetSdk 36, SQLCipher 4.20.0, Room 2.8.5, Compose BOM 2026.09.00.
 Gotchas: o lint novo do Compose exige `Locale.ROOT` em pesquisas dentro de composables (NonObservableLocale); o primeiro build depois da atualização demora ~20 min (caches frias, lint ×2, R8 ×2).
 Não testado no emulador (falta de RAM): validar a atualização 2.5.2 → 2.6.0 num telemóvel antes de publicar.
+
+## 2026-11-09 — novo movimento em 3 passos e deteção de comerciante
+O ecrã de novo movimento passou a 3 passos (Valor → Categoria → Detalhes) para o valor ficar visível junto ao teclado; editar ou rever pendente abre nos Detalhes.
+"Comerciante desconhecido" vinha de o serviço só ler título/texto/bigText/subText e de faltarem preposições ("de", "à", "at"); agora lê também linhas agrupadas, mensagens e resumo, ignora referências de cartão e usa "Pagamento <app>"/"Recebimento <app>" como fallback, guardando o texto original no pendente.
+Fontes: `AddTransactionBottomSheet.kt`, `BankNotificationParser.kt`, `FinancialNotificationListenerService.kt`.
