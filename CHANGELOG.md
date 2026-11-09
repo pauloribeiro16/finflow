@@ -9,6 +9,25 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.6.0] — 2026-11-09 (Minor Release)
+### Segurança
+- **Backups privados**: o backup automático antes de cada atualização passa a ficar no armazenamento privado da app (3 mais recentes) em vez de Downloads. Exportar JSON/CSV abre o seletor de ficheiros e o utilizador escolhe o destino.
+- **Bloqueio da app reforçado**: deixa de ser possível contorná-lo alterando a hora do telemóvel; ligar ou desligar o bloqueio exige autenticação; o PIN/padrão do telemóvel funciona como alternativa à biometria.
+- **Atualizações verificadas**: só são instaladas atualizações assinadas com o certificado oficial do Finflow, do mesmo pacote, com versão superior e descarregadas do repositório oficial no GitHub.
+- **Troca de telemóvel**: os dados deixam de ser copiados para backups do Android; se a chave de encriptação faltar, a app arranca vazia e pede para restaurar um backup em vez de fechar.
+- **Captura de notificações**: só apps bancárias e de pagamento reconhecidas pelo nome do pacote (sem palavras genéricas como "bank" ou "banco").
+- **Importações e exportações**: limites de tamanho nos ficheiros importados e neutralização de fórmulas no CSV.
+
+### Adicionado
+- Opção para desligar a procura automática de atualizações (Conta → Versão).
+
+### Alterado
+- Android SDK 37 (compilação) e 36 (alvo); Gradle 9.9, Android Gradle Plugin 9.5, Kotlin 2.4, Room 2.8, Compose BOM 2026.09, SQLCipher 4.20.
+- Release minificada com R8 (APK de ~35 MB para ~10 MB).
+- Política de privacidade e textos da app atualizados: a app guarda os dados localmente e só contacta o GitHub para procurar atualizações.
+
+---
+
 ## [2.5.2] — 2026-11-07 (Patch & Fix)
 ### Corrigido
 - **Alocação de saldo 100% livre e editável**: qualquer quantia pode agora ser inserida no campo de texto de alocação, complementada por atalhos de percentagem (25%, 50%, 75%, Tudo) com feedback em tempo real.

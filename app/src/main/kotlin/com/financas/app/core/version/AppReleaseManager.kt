@@ -17,11 +17,27 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.5.2"
-    const val CURRENT_BUILD = 27
+    const val CURRENT_VERSION = "2.6.0"
+    const val CURRENT_BUILD = 28
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.6.0",
+            buildCode = 28,
+            date = "09 Nov 2026",
+            type = ReleaseType.MINOR,
+            title = "Segurança Reforçada e Android Atualizado",
+            description = "Backups privados, bloqueio da app mais robusto, atualizações verificadas e base técnica atualizada para as versões mais recentes do Android.",
+            changes = listOf(
+                "O backup automático antes de atualizar fica guardado em privado na app; exportar JSON/CSV deixa-te escolher onde guardar.",
+                "O bloqueio já não pode ser contornado mudando a hora do telemóvel, pede autenticação para ser ligado ou desligado e aceita o PIN do telemóvel.",
+                "Só são instaladas atualizações assinadas pelo Finflow e descarregadas do repositório oficial.",
+                "Nova opção para desligar a procura automática de atualizações (Conta → Versão).",
+                "Captura de notificações limitada a apps bancárias e de pagamento reconhecidas.",
+                "Atualização para Android 16/17 (SDK 36/37), Kotlin 2.4 e SQLCipher 4.20; aplicação mais leve (~10 MB)."
+            )
+        ),
         AppRelease(
             version = "2.5.2",
             buildCode = 27,

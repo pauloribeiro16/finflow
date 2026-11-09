@@ -42,7 +42,7 @@ Repos irmãos (mesmo programa): MusicaApp, financial-adviser, macro-forecasting-
 
 ## 3. Project Structure
 
-Single-module Android app (**Kotlin 2.0 + Jetpack Compose Material 3 + Room SQLite**):
+Single-module Android app (**Kotlin 2.4 + Jetpack Compose Material 3 + Room 2.8 + SQLCipher**, compileSdk 37 / targetSdk 36, AGP 9.5):
 
 ```text
 app/src/main/kotlin/com/financas/app/

@@ -37,7 +37,7 @@
 4. **`code-review`** — Valida cada sprint contra os critérios `MUST` (Tier 3/4) antes de qualquer commit.
 
 ### Stack Técnica Mínima (Zero Bloat)
-* **Linguagem & UI:** Kotlin 2.0 + Jetpack Compose (Material 3, Dark Mode exclusivo).
+* **Linguagem & UI:** Kotlin 2.4 + Jetpack Compose (Material 3, Dark Mode exclusivo).
 * **Base de Dados:** Room 2.6+ (SQLite local, sem necessidade de servidor externo).
 * **Injeção de Dependências:** `AppContainer` manual em Kotlin puro (zero atraso de compilação de KAPT/Hilt).
 * **Gráficos:** Compose `Canvas` nativo (0 bibliotecas externas de gráficos).

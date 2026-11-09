@@ -13,7 +13,14 @@ class AppReleaseManagerTest {
         val latest = AppReleaseManager.latestRelease()
         assertEquals(AppReleaseManager.CURRENT_VERSION, latest.version)
         assertEquals(AppReleaseManager.CURRENT_BUILD, latest.buildCode)
-        assertEquals(ReleaseType.PATCH, latest.type)
+        val (major, minor, patch) = latest.version.split(".").map { it.toInt() }
+        val expectedType = when {
+            patch != 0 -> ReleaseType.PATCH
+            minor != 0 -> ReleaseType.MINOR
+            else -> ReleaseType.MAJOR
+        }
+        assertTrue(major >= 1)
+        assertEquals(expectedType, latest.type)
     }
 
     @Test

@@ -110,7 +110,7 @@ app/src/main/kotlin/com/financas/app/
 
 ### Core Technologies
 - **UI Framework:** [Jetpack Compose](https://developer.android.com/jetpack/compose) with Material Design 3.
-- **Language:** Kotlin 2.0 with Coroutines and StateFlow.
+- **Language:** Kotlin 2.4 with Coroutines and StateFlow (compileSdk 37, targetSdk 36, AGP 9.5, Gradle 9.9).
 - **Database:** [Android Room](https://developer.android.com/training/data-storage/room) powered by [SQLCipher](https://github.com/sqlcipher/android-database-sqlcipher) (AES-256).
 - **Navigation:** Multi-screen scaffold with sticky header and bottom bar navigation.
 

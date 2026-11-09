@@ -739,11 +739,11 @@ private fun CategoryPickerDialog(
                             val filteredSubs = if (searchQuery.isBlank()) {
                                 allSubs
                             } else {
-                                val query = searchQuery.trim().lowercase(Locale.getDefault())
-                                if (parent.name.lowercase(Locale.getDefault()).contains(query)) {
+                                val query = searchQuery.trim().lowercase(Locale.ROOT)
+                                if (parent.name.lowercase(Locale.ROOT).contains(query)) {
                                     allSubs
                                 } else {
-                                    allSubs.filter { it.name.lowercase(Locale.getDefault()).contains(query) }
+                                    allSubs.filter { it.name.lowercase(Locale.ROOT).contains(query) }
                                 }
                             }
 
