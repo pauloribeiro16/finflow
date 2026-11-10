@@ -17,11 +17,24 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.6.0"
-    const val CURRENT_BUILD = 28
+    const val CURRENT_VERSION = "2.7.0"
+    const val CURRENT_BUILD = 29
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.7.0",
+            buildCode = 29,
+            date = "10 Nov 2026",
+            type = ReleaseType.MINOR,
+            title = "Modo Privacidade e Registo em Passos",
+            description = "Ocultação instantânea de montantes para apresentações seguras, novo fluxo guiado em 3 passos para adicionar movimentos e melhorias na deteção de comerciantes.",
+            changes = listOf(
+                "Botão de olho (👁️) na barra superior e em Conta para mascarar todos os valores monetários com '•••• €', preservando percentagens, categorias e gráficos.",
+                "Adicionar movimento dividido em 3 passos claros (Valor → Categoria → Detalhes) com montante sempre visível junto ao teclado numérico.",
+                "Deteção inteligente de comerciantes em notificações bancárias (moey!, MB WAY, cartões de refeição, corretoras) com limpeza de prefixos e sufixos."
+            )
+        ),
         AppRelease(
             version = "2.6.0",
             buildCode = 28,

@@ -9,6 +9,16 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [2.7.0] — 2026-11-10 (Minor Release)
+### Adicionado
+- **Modo Privacidade (Máscara de Valores)**: Botão de olho rápido (👁️/👁️‍🗨️) no cabeçalho e interruptor nas preferências de segurança em Conta para mascarar todos os montantes com `•••• €`. Permite mostrar e demonstrar a app com total segurança, preservando a navegação, percentagens, proporções e gráficos operacionais.
+- **Novo fluxo de movimento em 3 passos**: A criação de movimentos passa a ser guiada em Valor → Categoria → Detalhes, com o teclado numérico e o montante em foco imediato.
+
+### Melhorado
+- **Deteção de comerciantes em notificações**: Suporte melhorado a linhas agrupadas, mensagens e compras por cartão, com limpeza automática de referências de pagamento.
+
+---
+
 ## [2.6.0] — 2026-11-09 (Minor Release)
 ### Segurança
 - **Backups privados**: o backup automático antes de cada atualização passa a ficar no armazenamento privado da app (3 mais recentes) em vez de Downloads. Exportar JSON/CSV abre o seletor de ficheiros e o utilizador escolhe o destino.
