@@ -36,6 +36,8 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,6 +73,7 @@ import com.financas.app.ui.i18n.AppStrings
 import com.financas.app.ui.i18n.EnStrings
 import com.financas.app.ui.i18n.LocalAppLanguage
 import com.financas.app.ui.i18n.LocalAppStrings
+import com.financas.app.ui.i18n.LocalPrivacyMode
 import com.financas.app.ui.i18n.PtStrings
 import com.financas.app.ui.screens.account.AccountScreen
 import com.financas.app.ui.screens.account.AccountViewModel
@@ -212,6 +215,7 @@ fun MainScaffold(
     val profilePhotoUri by userProfileStore.profilePhotoFlow.collectAsState()
     val userName by userProfileStore.userNameFlow.collectAsState()
     val appLanguageCode by userProfileStore.appLanguageFlow.collectAsState()
+    val isPrivacyMode by userProfileStore.privacyModeFlow.collectAsState()
     val appLanguage = AppLanguage.fromCode(appLanguageCode)
     val appStrings = if (appLanguage == AppLanguage.PT) PtStrings else EnStrings
 
@@ -245,7 +249,8 @@ fun MainScaffold(
 
     CompositionLocalProvider(
         LocalAppStrings provides appStrings,
-        LocalAppLanguage provides appLanguage
+        LocalAppLanguage provides appLanguage,
+        LocalPrivacyMode provides isPrivacyMode
     ) {
         BackHandler(enabled = showAccount) {
             showAccount = false
@@ -280,6 +285,10 @@ fun MainScaffold(
                     isAppDark = isAppDark,
                     onToggleTheme = {
                         container.userProfileStore.setThemeMode(if (isAppDark) "LIGHT" else "DARK")
+                    },
+                    isPrivacyMode = isPrivacyMode,
+                    onTogglePrivacy = {
+                        container.userProfileStore.setPrivacyModeEnabled(!isPrivacyMode)
                     },
                     onOpenAccount = { showAccount = true },
                     photoUri = profilePhotoUri,
@@ -378,6 +387,8 @@ private fun FinflowFixedHeader(
     onMonthChanged: (Int) -> Unit,
     isAppDark: Boolean,
     onToggleTheme: () -> Unit,
+    isPrivacyMode: Boolean,
+    onTogglePrivacy: () -> Unit,
     onOpenAccount: () -> Unit,
     photoUri: String?,
     userName: String?
@@ -507,6 +518,27 @@ private fun FinflowFixedHeader(
                     }
                 }
                 NavTab.ACCOUNT -> Unit
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(if (isPrivacyMode) AccentBlue.copy(alpha = 0.2f) else FinflowSurface)
+                    .border(
+                        1.dp,
+                        if (isPrivacyMode) AccentBlue else FinflowBorderSubtle,
+                        CircleShape
+                    )
+                    .clickable(onClick = onTogglePrivacy),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = if (isPrivacyMode) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    contentDescription = if (isPrivacyMode) "Modo Privacidade Ativo (Mostrar Valores)" else "Ativar Modo Privacidade (Ocultar Valores)",
+                    tint = if (isPrivacyMode) AccentBlue else FinflowTextSecondary,
+                    modifier = Modifier.size(18.dp)
+                )
             }
 
             Box(

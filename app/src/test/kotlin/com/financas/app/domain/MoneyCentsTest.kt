@@ -64,4 +64,32 @@ class MoneyCentsTest {
         assertEquals("-0,1%", MoneyCents.formatPercent(-0.1))
         assertEquals("44%", MoneyCents.formatPercent(44.2, 0))
     }
+
+    @Test
+    fun testPrivacyMode_explicitMaskParam() {
+        assertEquals(MoneyCents.MASKED_STRING, MoneyCents.formatCents(1250L, masked = true))
+        assertEquals(MoneyCents.MASKED_STRING, MoneyCents(150000L).formatPt(masked = true))
+        assertEquals("12,50 €", MoneyCents.formatCents(1250L, masked = false))
+        assertEquals("1.500,00 €", MoneyCents(150000L).formatPt(masked = false))
+    }
+
+    @Test
+    fun testPrivacyMode_globalToggleAffectsDefaultFormatting() {
+        try {
+            MoneyCents.isPrivacyModeEnabled = true
+            assertEquals(MoneyCents.MASKED_STRING, MoneyCents.formatCents(245000L))
+            assertEquals(MoneyCents.MASKED_STRING, MoneyCents(245000L).formatPt())
+            assertEquals(MoneyCents.MASKED_STRING, MoneyCents.formatCents(-500L))
+            assertEquals(MoneyCents.MASKED_STRING, MoneyCents.formatCents(0L))
+
+            // Percentages must remain intact even in privacy mode
+            assertEquals("24,5%", MoneyCents.formatPercent(24.5))
+        } finally {
+            MoneyCents.isPrivacyModeEnabled = false
+        }
+
+        // After restoring, normal formatting works
+        assertEquals("2.450,00 €", MoneyCents.formatCents(245000L))
+        assertEquals("2.450,00 €", MoneyCents(245000L).formatPt())
+    }
 }

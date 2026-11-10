@@ -131,6 +131,7 @@ import com.financas.app.ui.i18n.AppLanguage
 import com.financas.app.ui.i18n.CategoryTranslator
 import com.financas.app.ui.i18n.LocalAppLanguage
 import com.financas.app.ui.i18n.LocalAppStrings
+import com.financas.app.ui.i18n.LocalPrivacyMode
 import java.util.Locale
 import java.time.YearMonth
 
@@ -143,6 +144,7 @@ fun BudgetsGoalsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val strings = LocalAppStrings.current
     val language = LocalAppLanguage.current
+    val isPrivacyMode = LocalPrivacyMode.current
     val isEnglish = language == AppLanguage.EN
     var showAddBudgetDialog by remember { mutableStateOf(false) }
     var showAddGoalDialog by remember { mutableStateOf(false) }

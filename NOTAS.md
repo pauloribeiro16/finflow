@@ -20,3 +20,8 @@ Não testado no emulador (falta de RAM): validar a atualização 2.5.2 → 2.6.0
 O ecrã de novo movimento passou a 3 passos (Valor → Categoria → Detalhes) para o valor ficar visível junto ao teclado; editar ou rever pendente abre nos Detalhes.
 "Comerciante desconhecido" vinha de o serviço só ler título/texto/bigText/subText e de faltarem preposições ("de", "à", "at"); agora lê também linhas agrupadas, mensagens e resumo, ignora referências de cartão e usa "Pagamento <app>"/"Recebimento <app>" como fallback, guardando o texto original no pendente.
 Fontes: `AddTransactionBottomSheet.kt`, `BankNotificationParser.kt`, `FinancialNotificationListenerService.kt`.
+
+## 2026-11-10 — modo privacidade (ocultação de montantes com máscara)
+Adicionado botão de olho (👁️/👁️‍🗨️) na barra superior do Finflow e interruptor em Conta → Segurança para mascarar instantaneamente todos os valores monetários com "•••• €" (mantendo categorias, datas, percentagens e gráficos operacionais).
+Implementado de forma cirúrgica em `MoneyCents.formatCents`/`formatPt` com toggle reativo via `UserProfileStore.privacyModeFlow` e `LocalPrivacyMode`, garantindo recomposição atómica em todos os ecrãs sem expor montantes reais em apresentações a terceiros.
+Fontes: `MoneyCents.kt`, `UserProfileStore.kt`, `MainScaffold.kt`, `AccountScreen.kt`, `MoneyCentsTest.kt`.

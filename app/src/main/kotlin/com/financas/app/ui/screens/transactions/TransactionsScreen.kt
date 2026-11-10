@@ -66,6 +66,7 @@ import com.financas.app.ui.i18n.AppLanguage
 import com.financas.app.ui.i18n.CategoryTranslator
 import com.financas.app.ui.i18n.LocalAppLanguage
 import com.financas.app.ui.i18n.LocalAppStrings
+import com.financas.app.ui.i18n.LocalPrivacyMode
 import com.financas.app.ui.screens.home.TransactionRowItem
 import com.financas.app.ui.theme.AccentBlue
 import com.financas.app.ui.theme.AccentCoral
@@ -92,6 +93,7 @@ fun TransactionsScreen(
     var pendingDelete by remember { mutableStateOf<TransactionEntity?>(null) }
     val strings = LocalAppStrings.current
     val language = LocalAppLanguage.current
+    val isPrivacyMode = LocalPrivacyMode.current
     val isEnglish = language == AppLanguage.EN
 
     Column(

@@ -706,4 +706,23 @@ class AccountViewModelTest {
         assertEquals("LIGHT", viewModel.uiState.value.themeMode)
         assertEquals("LIGHT", userProfileStore.getThemeMode())
     }
+
+    @Test
+    fun testProfile_privacyModeToggle() = runTest {
+        advanceUntilIdle()
+        assertEquals(false, viewModel.uiState.value.isPrivacyMode)
+        assertEquals(false, userProfileStore.isPrivacyModeEnabled())
+
+        viewModel.setPrivacyMode(true)
+        advanceUntilIdle()
+        assertEquals(true, viewModel.uiState.value.isPrivacyMode)
+        assertEquals(true, userProfileStore.isPrivacyModeEnabled())
+        assertEquals(true, com.financas.app.domain.model.MoneyCents.isPrivacyModeEnabled)
+
+        viewModel.setPrivacyMode(false)
+        advanceUntilIdle()
+        assertEquals(false, viewModel.uiState.value.isPrivacyMode)
+        assertEquals(false, userProfileStore.isPrivacyModeEnabled())
+        assertEquals(false, com.financas.app.domain.model.MoneyCents.isPrivacyModeEnabled)
+    }
 }

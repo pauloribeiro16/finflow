@@ -22,6 +22,9 @@ interface UserProfileStore {
     fun getAppLanguage(): String // "EN", "PT"
     fun setAppLanguage(lang: String)
     val appLanguageFlow: StateFlow<String>
+    fun isPrivacyModeEnabled(): Boolean = false
+    fun setPrivacyModeEnabled(enabled: Boolean) {}
+    val privacyModeFlow: StateFlow<Boolean>
     fun isAutoUpdateCheckEnabled(): Boolean = true
     fun setAutoUpdateCheckEnabled(enabled: Boolean) {}
 }
@@ -42,6 +45,13 @@ class SharedPrefsUserProfileStore(
 
     private val _appLanguageFlow = MutableStateFlow(getAppLanguage())
     override val appLanguageFlow: StateFlow<String> = _appLanguageFlow.asStateFlow()
+
+    private val _privacyModeFlow = MutableStateFlow(isPrivacyModeEnabled())
+    override val privacyModeFlow: StateFlow<Boolean> = _privacyModeFlow.asStateFlow()
+
+    init {
+        com.financas.app.domain.model.MoneyCents.isPrivacyModeEnabled = isPrivacyModeEnabled()
+    }
 
     override fun getUserName(): String =
         prefs.getString("user_name", "") ?: ""
@@ -110,6 +120,14 @@ class SharedPrefsUserProfileStore(
         val uppercaseLang = lang.uppercase()
         prefs.edit().putString("app_language", uppercaseLang).apply()
         _appLanguageFlow.value = uppercaseLang
+    }
+
+    override fun isPrivacyModeEnabled(): Boolean = prefs.getBoolean("privacy_mode_enabled", false)
+
+    override fun setPrivacyModeEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("privacy_mode_enabled", enabled).apply()
+        _privacyModeFlow.value = enabled
+        com.financas.app.domain.model.MoneyCents.isPrivacyModeEnabled = enabled
     }
 
     override fun isAutoUpdateCheckEnabled(): Boolean = prefs.getBoolean("auto_update_check", true)

@@ -101,6 +101,7 @@ import com.financas.app.ui.i18n.AppLanguage
 import com.financas.app.ui.i18n.CategoryTranslator
 import com.financas.app.ui.i18n.LocalAppLanguage
 import com.financas.app.ui.i18n.LocalAppStrings
+import com.financas.app.ui.i18n.LocalPrivacyMode
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -120,6 +121,7 @@ fun HomeScreen(
     val summary = uiState.monthlySummary
     val strings = LocalAppStrings.current
     val language = LocalAppLanguage.current
+    val isPrivacyMode = LocalPrivacyMode.current
     val isEnglish = language == AppLanguage.EN
     var pendingDelete by remember { mutableStateOf<TransactionEntity?>(null) }
     var showPendingSheet by remember { mutableStateOf(false) }

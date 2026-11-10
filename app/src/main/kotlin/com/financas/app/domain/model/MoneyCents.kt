@@ -9,16 +9,22 @@ value class MoneyCents(val cents: Long) {
 
     fun toEurosDouble(): Double = cents / 100.0
 
-    fun formatPt(): String = formatCents(cents)
+    fun formatPt(masked: Boolean = isPrivacyModeEnabled): String = formatCents(cents, masked)
 
     companion object {
+        const val MASKED_STRING = "•••• €"
+
+        @Volatile
+        var isPrivacyModeEnabled: Boolean = false
+
         val ZERO = MoneyCents(0L)
 
         fun fromEuros(euros: Double): MoneyCents {
             return MoneyCents(Math.round(euros * 100.0))
         }
 
-        fun formatCents(cents: Long): String {
+        fun formatCents(cents: Long, masked: Boolean = isPrivacyModeEnabled): String {
+            if (masked) return MASKED_STRING
             val symbols = DecimalFormatSymbols(Locale("pt", "PT")).apply {
                 groupingSeparator = '.'
                 decimalSeparator = ','

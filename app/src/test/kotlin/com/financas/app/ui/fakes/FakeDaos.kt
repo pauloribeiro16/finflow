@@ -375,7 +375,8 @@ class FakeUserProfileStore(
     private var currency: String = "EUR (€)",
     private var cycleDay: Int = 1,
     private var themeMode: String = "SYSTEM",
-    private var appLanguage: String = "EN"
+    private var appLanguage: String = "EN",
+    private var privacyMode: Boolean = false
 ) : UserProfileStore {
     private val _userNameFlow = MutableStateFlow(userName)
     override val userNameFlow: StateFlow<String> = _userNameFlow.asStateFlow()
@@ -388,6 +389,13 @@ class FakeUserProfileStore(
 
     private val _appLanguageFlow = MutableStateFlow(appLanguage)
     override val appLanguageFlow: StateFlow<String> = _appLanguageFlow.asStateFlow()
+
+    private val _privacyModeFlow = MutableStateFlow(privacyMode)
+    override val privacyModeFlow: StateFlow<Boolean> = _privacyModeFlow.asStateFlow()
+
+    init {
+        com.financas.app.domain.model.MoneyCents.isPrivacyModeEnabled = privacyMode
+    }
 
     override fun getUserName(): String = userName
     override fun setUserName(name: String) {
@@ -412,6 +420,12 @@ class FakeUserProfileStore(
     override fun setAppLanguage(lang: String) {
         appLanguage = lang.uppercase()
         _appLanguageFlow.value = appLanguage
+    }
+    override fun isPrivacyModeEnabled(): Boolean = privacyMode
+    override fun setPrivacyModeEnabled(enabled: Boolean) {
+        privacyMode = enabled
+        _privacyModeFlow.value = enabled
+        com.financas.app.domain.model.MoneyCents.isPrivacyModeEnabled = enabled
     }
 }
 

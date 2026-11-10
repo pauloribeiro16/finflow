@@ -556,6 +556,7 @@ fun AccountScreen(
                         }
                     },
                     onToggleBiometrics = { requestBiometricToggle(it) },
+                    onTogglePrivacyMode = { viewModel.setPrivacyMode(it) },
                     onSelectThemeMode = { viewModel.updateThemeMode(it) },
                     onSelectLanguage = { viewModel.updateAppLanguage(it) }
                 )
@@ -2384,6 +2385,7 @@ private fun ProfileTabContent(
     onEditProfile: () -> Unit,
     onEditPhoto: () -> Unit,
     onToggleBiometrics: (Boolean) -> Unit,
+    onTogglePrivacyMode: (Boolean) -> Unit = {},
     onSelectThemeMode: (String) -> Unit,
     onSelectLanguage: (String) -> Unit
 ) {
@@ -2536,13 +2538,13 @@ private fun ProfileTabContent(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Bloqueio Biométrico",
+                            text = strings.biometricLock,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = TextPrimary
                         )
                         Text(
-                            text = "Exigir impressão digital ou Face Unlock ao abrir",
+                            text = strings.biometricLockSubtitle,
                             fontSize = 12.sp,
                             color = TextSecondary
                         )
@@ -2550,6 +2552,36 @@ private fun ProfileTabContent(
                     Switch(
                         checked = uiState.isBiometricsEnabled,
                         onCheckedChange = onToggleBiometrics,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = AccentBlue
+                        )
+                    )
+                }
+
+                HorizontalDivider(color = DarkBorder, thickness = 1.dp)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = strings.privacyModeTitle,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = strings.privacyModeSubtitle,
+                            fontSize = 12.sp,
+                            color = TextSecondary
+                        )
+                    }
+                    Switch(
+                        checked = uiState.isPrivacyMode,
+                        onCheckedChange = onTogglePrivacyMode,
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
                             checkedTrackColor = AccentBlue

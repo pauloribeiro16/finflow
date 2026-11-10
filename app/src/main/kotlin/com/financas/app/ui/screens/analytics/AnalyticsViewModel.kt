@@ -1450,7 +1450,7 @@ class AnalyticsViewModel(
 
     private fun formatDeltaCents(cents: Long): String = when {
         cents > 0L -> "+${MoneyCents.formatCents(cents)}"
-        cents == 0L -> "0,00 €"
+        cents == 0L -> MoneyCents.formatCents(0L)
         else -> MoneyCents.formatCents(cents)
     }
 

@@ -48,6 +48,7 @@ data class AccountUiState(
     val budgetedCategoryIds: Set<String> = emptySet(),
     val goalItems: List<GoalWithProgress> = emptyList(),
     val isBiometricsEnabled: Boolean = false,
+    val isPrivacyMode: Boolean = false,
     val message: String? = null,
     val isLoading: Boolean = false,
     val totalTransactionsCount: Int = 0
@@ -105,6 +106,11 @@ class AccountViewModel(
             viewModelScope.launch {
                 store.appLanguageFlow.collect { lang ->
                     _uiState.update { it.copy(appLanguage = lang) }
+                }
+            }
+            viewModelScope.launch {
+                store.privacyModeFlow.collect { privacy ->
+                    _uiState.update { it.copy(isPrivacyMode = privacy) }
                 }
             }
         }
@@ -460,6 +466,10 @@ class AccountViewModel(
 
     fun resetUpdateState() {
         appUpdateManager?.resetState()
+    }
+
+    fun setPrivacyMode(enabled: Boolean) {
+        userProfileStore?.setPrivacyModeEnabled(enabled)
     }
 
     fun resetDemoData() {

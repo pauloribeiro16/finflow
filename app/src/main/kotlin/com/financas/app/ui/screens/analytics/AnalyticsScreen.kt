@@ -117,6 +117,7 @@ import com.financas.app.ui.i18n.AppLanguage
 import com.financas.app.ui.i18n.CategoryTranslator
 import com.financas.app.ui.i18n.LocalAppLanguage
 import com.financas.app.ui.i18n.LocalAppStrings
+import com.financas.app.ui.i18n.LocalPrivacyMode
 import com.financas.app.ui.util.shareText
 import kotlin.math.roundToLong
 
@@ -130,6 +131,7 @@ fun AnalyticsScreen(
     val context = LocalContext.current
     val strings = LocalAppStrings.current
     val language = LocalAppLanguage.current
+    val isPrivacyMode = LocalPrivacyMode.current
     val isEnglish = language == AppLanguage.EN
 
     Column(
