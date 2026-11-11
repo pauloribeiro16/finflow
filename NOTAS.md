@@ -38,3 +38,7 @@ Garantida sanitização rigorosa da extração da XTB: zero IDs de conta, zero I
 Fontes: `YahooFinanceQuoteService.kt`, `PortfolioMarketSyncUseCase.kt`, `XtbTickerMapper.kt`, `XtbSyncEngine.kt`, `BudgetsGoalsScreen.kt`, `InvestmentAssetEntity.kt`.
 
 
+## 2026-11-11 — auditoria de segurança das alterações v2.6.0 → v2.7.0
+Sem achados altos. Principal: a sincronização Yahoo Finance corre sozinha ao abrir Investimentos e envia os tickers da carteira sem opt-in, contradizendo a política de privacidade e o cartão "só GitHub" (N1). Segue-se a integridade dos valores: câmbio fixo 1.10 em caso de falha e GBp/GBP/CHF tratados como EUR (N2).
+Gotcha: a chave de deduplicação XTB não inclui o ticker, por isso dividendos iguais no mesmo dia colidem (N4).
+Fonte: `SECURITY_AUDIT_2026-11-11.md` (N1–N8 + recomendações gerais).
