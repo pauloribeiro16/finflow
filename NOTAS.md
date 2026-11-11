@@ -56,3 +56,8 @@ Gotchas: os testes de UI estavam escritos para uma UI antiga e esperam portuguê
 A cópia "antes de atualizar" em `files/backups/` era JSON em claro e anulava o SQLCipher em repouso; agora é cifrada com `LocalFileCipher` (chave no Keystore, alias `finflow_local_files_master`) e as antigas são convertidas no arranque. O restauro passa por `BackupSanitizer` (só no restauro do utilizador — a migração de encriptação continua a usar `importFromJson` direto para não perder registos) e nunca desliga o bloqueio. PBKDF2 subiu para 600k.
 Gotcha: ninguém lê ainda essas cópias internas (`AppUpdateManager.readPrivateBackup` existe mas não há UI).
 Fonte: `SECURITY_AUDIT_2026-11-11.md` (secção "Terceira ronda", T1–T6 + pendentes).
+
+## 2026-11-11 — pendentes da terceira auditoria implementados
+Tempo de bloqueio configurável (`SessionLockPolicy.ALLOWED_TIMEOUTS_MS`, guardado em `financas_security_prefs`), autenticação ao exportar, restauro em transação, medidor de palavra-passe (`BackupPasswordPolicy`, mín. 10) e `PendingFloodGuard` na captura de notificações.
+Gotchas: com o bloqueio ativo o `MainScaffold` sai da composição, por isso voltar de um seletor de ficheiros com bloqueio imediato perdia o fluxo — `expectExternalFlow()` dá 2 min de tolerância e tem de ser chamado antes de cada `launcher.launch`. No restauro, id igual só conta como duplicado se data, valor ou comerciante coincidirem.
+Não testado em dispositivo. Fonte: `SECURITY_AUDIT_2026-11-11.md` (fim).

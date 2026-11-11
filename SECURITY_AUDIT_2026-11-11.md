@@ -218,3 +218,15 @@ Revisão de toda a app (não só do diff): chaves e SQLCipher, backups, rede, at
 - Restauro não é atómico e os movimentos do backup entram com o `id` original (`REPLACE`): um backup de outro telemóvel pode substituir movimentos locais com o mesmo id.
 - `FinancialAppFilter` aceita qualquer pacote com um segmento tipo `xtb`/`paypal…`: uma app maliciosa instalada pode criar pendentes falsos (precisam sempre de aprovação).
 - Palavra-passe do backup: mínimo 8 caracteres, sem medidor de força.
+
+### Pendentes da terceira ronda — implementados (2026-11-11)
+
+| Ponto | O que mudou |
+|-------|-------------|
+| Janela de bloqueio | Tempo configurável em Conta → Segurança (Logo / 30 s / 1 min / 5 min; 30 s por omissão), alterar pede autenticação. Ao abrir um seletor de ficheiros/fotos pela app há uma tolerância de 2 min para o fluxo não se perder. |
+| Exportar sem autenticação | Com o bloqueio ativo, exportar backup ou CSV pede biometria/PIN. |
+| Restauro | Corre numa transação (tudo ou nada). Correção ao relatório: movimentos com o mesmo `id` não eram substituídos, eram **ignorados**; agora só são ignorados se parecerem o mesmo registo (mesma data, valor ou comerciante) — caso contrário entram com id novo e as ligações de reembolso são remapeadas. |
+| Palavra-passe do backup | Mínimo 10 caracteres + medidor (`BackupPasswordPolicy`); "Fraca" não deixa exportar. |
+| Captura de notificações | Cada pendente mostra o pacote de origem; `PendingFloodGuard` limita a 30 pendentes/hora por app e 500 no total. Não resolve a falsificação do nome do pacote: para isso é preciso uma lista exata dos pacotes dos bancos usados. |
+
+**Continua por decidir:** ligar a chave da BD à autenticação (S10). Nenhuma destas alterações de UI foi testada num dispositivo.

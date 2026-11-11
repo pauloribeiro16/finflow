@@ -392,7 +392,21 @@ class BackupSerializer {
         }
 
         if (newTransactions.isNotEmpty()) {
-            transactionDao.insertAll(newTransactions)
+            val takenIds = existingTransactions.mapTo(mutableSetOf()) { it.id }
+            val (colliding, free) = newTransactions.partition { it.id > 0 && it.id in takenIds }
+            val remappedIds = mutableMapOf<Long, Long>()
+            for (transaction in colliding.sortedBy { it.linkedTransactionId != null }) {
+                val link = transaction.linkedTransactionId?.let { remappedIds[it] ?: it }
+                remappedIds[transaction.id] = transactionDao.insert(transaction.copy(id = 0, linkedTransactionId = link))
+            }
+            if (free.isNotEmpty()) {
+                transactionDao.insertAll(
+                    free.map { transaction ->
+                        val link = transaction.linkedTransactionId
+                        if (link != null && link in remappedIds) transaction.copy(linkedTransactionId = remappedIds[link]) else transaction
+                    }
+                )
+            }
         }
 
         if (budgetDao != null && backupData.budgets.isNotEmpty()) {
@@ -438,7 +452,7 @@ class BackupSerializer {
     }
 
     fun isDuplicateTransaction(a: TransactionEntity, b: TransactionEntity): Boolean {
-        if (a.id > 0 && b.id > 0 && a.id == b.id) return true
+        if (a.id > 0 && b.id > 0 && a.id == b.id && isLikelySameRecord(a, b)) return true
         return a.type == b.type &&
                 a.amountCents == b.amountCents &&
                 a.epochDay == b.epochDay &&
@@ -450,6 +464,11 @@ class BackupSerializer {
                 a.linkedTransactionId == b.linkedTransactionId &&
                 a.investmentAssetId == b.investmentAssetId
     }
+
+    private fun isLikelySameRecord(a: TransactionEntity, b: TransactionEntity): Boolean =
+        a.epochDay == b.epochDay ||
+            a.amountCents == b.amountCents ||
+            (a.merchant.isNotBlank() && a.merchant.equals(b.merchant, ignoreCase = true))
 
     private fun formatAmountPt(cents: Long): String {
         val sign = if (cents < 0) "-" else ""

@@ -18,6 +18,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 interface BiometricPreferenceStore {
     fun isBiometricsEnabled(): Boolean
     fun setBiometricsEnabled(enabled: Boolean)
+    fun getLockTimeoutMs(): Long = com.financas.app.core.security.SessionLockPolicy.BACKGROUND_LOCK_TIMEOUT_MS
+    fun setLockTimeoutMs(timeoutMs: Long) {}
 }
 
 class SharedPrefsBiometricPreferenceStore(
@@ -31,6 +33,17 @@ class SharedPrefsBiometricPreferenceStore(
 
     override fun setBiometricsEnabled(enabled: Boolean) {
         prefs.edit().putBoolean("biometrics_enabled", enabled).apply()
+    }
+
+    override fun getLockTimeoutMs(): Long =
+        com.financas.app.core.security.SessionLockPolicy.normalizeTimeout(
+            prefs.getLong("lock_timeout_ms", com.financas.app.core.security.SessionLockPolicy.BACKGROUND_LOCK_TIMEOUT_MS)
+        )
+
+    override fun setLockTimeoutMs(timeoutMs: Long) {
+        prefs.edit()
+            .putLong("lock_timeout_ms", com.financas.app.core.security.SessionLockPolicy.normalizeTimeout(timeoutMs))
+            .apply()
     }
 }
 
@@ -52,6 +65,12 @@ class BiometricLockGate(
 
     fun setBiometricsEnabled(enabled: Boolean) {
         preferenceStore.setBiometricsEnabled(enabled)
+    }
+
+    fun lockTimeoutMs(): Long = preferenceStore.getLockTimeoutMs()
+
+    fun setLockTimeoutMs(timeoutMs: Long) {
+        preferenceStore.setLockTimeoutMs(timeoutMs)
     }
 
     fun isDeviceSecure(context: Context): Boolean =

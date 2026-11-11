@@ -155,8 +155,10 @@ class MainActivity : ComponentActivity() {
         if (lastBackgroundAtMs > 0L) {
             clock.lastBackgroundAtMs = 0L
             val elapsed = SystemClock.elapsedRealtime() - lastBackgroundAtMs
-            val biometricsEnabled = app.container.biometricLockGate.isBiometricsEnabled()
-            if (SessionLockPolicy.shouldLock(elapsed, biometricsEnabled)) {
+            val gate = app.container.biometricLockGate
+            val externalFlowExpected = clock.externalFlowExpected
+            clock.externalFlowExpected = false
+            if (SessionLockPolicy.shouldLock(elapsed, gate.isBiometricsEnabled(), gate.lockTimeoutMs(), externalFlowExpected)) {
                 sessionLocked.value = true
             }
         }

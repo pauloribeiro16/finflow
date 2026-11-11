@@ -40,8 +40,13 @@ internal fun BackupPasswordDialog(
 ) {
     var password by remember { mutableStateOf("") }
     var repeat by remember { mutableStateOf("") }
-    val minLength = com.financas.app.data.repository.BackupCrypto.MIN_PASSWORD_LENGTH
-    val valid = if (confirmMode) password.length >= minLength && password == repeat else password.isNotEmpty()
+    val minLength = com.financas.app.data.repository.BackupPasswordPolicy.MIN_LENGTH
+    val strength = com.financas.app.data.repository.BackupPasswordPolicy.strength(password)
+    val valid = if (confirmMode) {
+        strength != com.financas.app.data.repository.PasswordStrength.WEAK && password == repeat
+    } else {
+        password.isNotEmpty()
+    }
     val fieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = AccentBlue,
         unfocusedBorderColor = DarkBorder,
@@ -81,6 +86,23 @@ internal fun BackupPasswordDialog(
                     colors = fieldColors,
                     modifier = Modifier.fillMaxWidth()
                 )
+                if (confirmMode && password.isNotEmpty()) {
+                    val (strengthLabel, strengthColor, strengthFraction) = when (strength) {
+                        com.financas.app.data.repository.PasswordStrength.WEAK ->
+                            Triple(tr("Fraca — use mais caracteres e evite sequências ou palavras comuns", "Weak — use more characters and avoid sequences or common words"), Color(0xFFEF4444), 0.33f)
+                        com.financas.app.data.repository.PasswordStrength.FAIR ->
+                            Triple(tr("Razoável", "Fair"), Color(0xFFF59E0B), 0.66f)
+                        com.financas.app.data.repository.PasswordStrength.STRONG ->
+                            Triple(tr("Forte", "Strong"), Color(0xFF10B981), 1f)
+                    }
+                    androidx.compose.material3.LinearProgressIndicator(
+                        progress = { strengthFraction },
+                        color = strengthColor,
+                        trackColor = DarkBorder,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(strengthLabel, fontSize = 11.sp, color = strengthColor)
+                }
                 if (confirmMode) {
                     OutlinedTextField(
                         value = repeat,

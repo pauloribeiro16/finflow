@@ -3,6 +3,7 @@ package com.financas.app.ui.navigation
 import com.financas.app.core.i18n.tr
 
 import androidx.activity.compose.BackHandler
+import androidx.room.withTransaction
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.animateColorAsState
@@ -205,7 +206,8 @@ fun MainScaffold(
             investmentAssetDao = container.investmentAssetDao,
             userProfileStore = container.userProfileStore,
             appUpdateManager = container.appUpdateManager,
-            settingsBackupManager = container.settingsBackupManager
+            settingsBackupManager = container.settingsBackupManager,
+            runInTransaction = { block -> container.database.withTransaction { block() } }
         )
     )
 

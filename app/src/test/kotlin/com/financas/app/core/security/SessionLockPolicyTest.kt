@@ -47,4 +47,36 @@ class SessionLockPolicyTest {
         assertTrue(SessionLockPolicy.shouldLock(-3_600_000L, true))
         assertFalse(SessionLockPolicy.shouldLock(-1L, false))
     }
+
+    @Test
+    fun immediateTimeout_locksEvenWithoutElapsedTime() {
+        assertTrue(SessionLockPolicy.shouldLock(0L, true, timeoutMs = 0L))
+        assertFalse(SessionLockPolicy.shouldLock(0L, false, timeoutMs = 0L))
+    }
+
+    @Test
+    fun customTimeout_isRespected() {
+        assertFalse(SessionLockPolicy.shouldLock(200_000L, true, timeoutMs = 300_000L))
+        assertTrue(SessionLockPolicy.shouldLock(300_001L, true, timeoutMs = 300_000L))
+    }
+
+    @Test
+    fun externalFlow_getsBoundedGrace() {
+        assertFalse(SessionLockPolicy.shouldLock(60_000L, true, timeoutMs = 0L, externalFlowExpected = true))
+        assertTrue(
+            SessionLockPolicy.shouldLock(
+                SessionLockPolicy.EXTERNAL_FLOW_GRACE_MS + 1,
+                true,
+                timeoutMs = 0L,
+                externalFlowExpected = true
+            )
+        )
+        assertFalse(SessionLockPolicy.shouldLock(200_000L, true, timeoutMs = 300_000L, externalFlowExpected = true))
+    }
+
+    @Test
+    fun unknownTimeout_fallsBackToDefault() {
+        assertEquals(SessionLockPolicy.BACKGROUND_LOCK_TIMEOUT_MS, SessionLockPolicy.normalizeTimeout(123L))
+        assertEquals(0L, SessionLockPolicy.normalizeTimeout(0L))
+    }
 }

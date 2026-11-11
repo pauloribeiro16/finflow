@@ -324,6 +324,7 @@ fun BudgetsGoalsScreen(
         XtbImportChooserSheet(
             onDismiss = { showXtbChooserSheet = false },
             onPickFile = {
+                com.financas.app.ui.screens.account.expectExternalFlow(context)
                 filePickerLauncher.launch("*/*")
             },
             onAnalyzeText = { text ->

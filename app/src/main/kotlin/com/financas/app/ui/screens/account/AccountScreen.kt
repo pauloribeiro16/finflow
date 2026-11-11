@@ -111,6 +111,11 @@ fun AccountScreen(
             )
         }
     }
+    val requestLockTimeoutChange: (Long) -> Unit = { timeoutMs ->
+        requireAuthIfLockEnabled(context, tr("Confirme para alterar o tempo de bloqueio", "Confirm to change the lock delay")) {
+            viewModel.updateLockTimeout(timeoutMs)
+        }
+    }
     val strings = LocalAppStrings.current
     val language = LocalAppLanguage.current
 
@@ -273,7 +278,10 @@ fun AccountScreen(
                 hasCustomPhoto = hasCustomPhoto,
                 initials = initials,
                 onAvatarClick = {
-                    if (hasCustomPhoto) showPhotoOptionsDialog = true else photoPickerLauncher.launch("image/*")
+                    if (hasCustomPhoto) showPhotoOptionsDialog = true else run {
+                        expectExternalFlow(context)
+                        photoPickerLauncher.launch("image/*")
+                    }
                 },
                 onEditProfile = { showEditProfileDialog = true }
             )
@@ -386,7 +394,10 @@ fun AccountScreen(
                         if (hasCustomPhoto) {
                             showPhotoOptionsDialog = true
                         } else {
-                            photoPickerLauncher.launch("image/*")
+                            run {
+                        expectExternalFlow(context)
+                        photoPickerLauncher.launch("image/*")
+                    }
                         }
                     },
                     onToggleBiometrics = { requestBiometricToggle(it) },
@@ -475,8 +486,17 @@ fun AccountScreen(
 
         item {
             BackupSettingsCard(
-                onExportBackup = { showBackupPasswordDialog = true },
-                onExportCsv = { csvExportLauncher.launch("movimentos_financas_${System.currentTimeMillis()}.csv") },
+                onExportBackup = {
+                    requireAuthIfLockEnabled(context, tr("Confirme para exportar os dados", "Confirm to export your data")) {
+                        showBackupPasswordDialog = true
+                    }
+                },
+                onExportCsv = {
+                    requireAuthIfLockEnabled(context, tr("Confirme para exportar os dados", "Confirm to export your data")) {
+                        expectExternalFlow(context)
+                        csvExportLauncher.launch("movimentos_financas_${System.currentTimeMillis()}.csv")
+                    }
+                },
                 onRestore = { showRestoreDialog = true }
             )
         }
@@ -492,7 +512,12 @@ fun AccountScreen(
         }
 
         item {
-            SecuritySettingsCard(viewModel, uiState, onToggleBiometrics = requestBiometricToggle)
+            SecuritySettingsCard(
+                viewModel,
+                uiState,
+                onToggleBiometrics = requestBiometricToggle,
+                onChangeLockTimeout = requestLockTimeoutChange
+            )
         }
 
         // ================= SECTION: CAPTURA DE PAGAMENTOS (MB WAY & BANCOS) =================
@@ -565,10 +590,12 @@ fun AccountScreen(
             onConfirm = { password ->
                 showBackupPasswordDialog = false
                 pendingExportPassword = password
+                expectExternalFlow(context)
                 encryptedExportLauncher.launch("backup_financas_${System.currentTimeMillis()}.finflow")
             },
             onExportPlain = {
                 showBackupPasswordDialog = false
+                expectExternalFlow(context)
                 jsonExportLauncher.launch("backup_financas_${System.currentTimeMillis()}.json")
             }
         )
@@ -596,7 +623,10 @@ fun AccountScreen(
 
     if (showRestoreDialog) {
         RestoreBackupDialog(
-            onPickFile = { filePickerLauncher.launch("*/*") },
+            onPickFile = {
+                expectExternalFlow(context)
+                filePickerLauncher.launch("*/*")
+            },
             onRestoreText = routeImportContent,
             onDismiss = { showRestoreDialog = false }
         )
@@ -651,7 +681,10 @@ fun AccountScreen(
         PhotoOptionsDialog(
             hasCustomPhoto = hasCustomPhoto,
             onDismiss = { showPhotoOptionsDialog = false },
-            onPickFromGallery = { photoPickerLauncher.launch("image/*") },
+            onPickFromGallery = { run {
+                        expectExternalFlow(context)
+                        photoPickerLauncher.launch("image/*")
+                    } },
             onRemovePhoto = {
                 viewModel.updateProfilePhoto(null)
                 try {

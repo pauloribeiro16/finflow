@@ -499,7 +499,8 @@ internal fun BackupSettingsCard(
 internal fun SecuritySettingsCard(
     viewModel: AccountViewModel,
     uiState: AccountUiState,
-    onToggleBiometrics: (Boolean) -> Unit
+    onToggleBiometrics: (Boolean) -> Unit,
+    onChangeLockTimeout: (Long) -> Unit = {}
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -564,8 +565,41 @@ internal fun SecuritySettingsCard(
                 )
             }
 
+            if (uiState.isBiometricsEnabled) {
+                Text(
+                    text = tr("Bloquear ao sair da aplicação", "Lock after leaving the app"),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextSecondary
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    com.financas.app.core.security.SessionLockPolicy.ALLOWED_TIMEOUTS_MS.forEach { timeoutMs ->
+                        val selected = uiState.lockTimeoutMs == timeoutMs
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (selected) AccentBlue.copy(alpha = 0.22f) else DarkSurfaceVariant)
+                                .clickable(enabled = !selected) { onChangeLockTimeout(timeoutMs) }
+                                .padding(horizontal = 10.dp, vertical = 7.dp)
+                        ) {
+                            Text(
+                                text = when (timeoutMs) {
+                                    0L -> tr("Logo", "Now")
+                                    30_000L -> "30 s"
+                                    60_000L -> "1 min"
+                                    else -> "5 min"
+                                },
+                                fontSize = 12.sp,
+                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (selected) AccentBlue else TextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
             Text(
-                text = tr("Por defeito, a aplicação abre instantaneamente em 0 segundos. Ative esta opção se pretender exigir autenticação (biometria ou PIN do telemóvel) sempre que abrir a aplicação ou voltar a ela após 30 segundos.", "By default the app opens instantly. Turn this on to require authentication (biometrics or phone PIN) every time you open the app or return to it after 30 seconds."),
+                text = tr("Por defeito, a aplicação abre instantaneamente em 0 segundos. Ative esta opção se pretender exigir autenticação (biometria ou PIN do telemóvel) sempre que abrir a aplicação, voltar a ela depois do tempo escolhido, ou exportar os seus dados.", "By default the app opens instantly. Turn this on to require authentication (biometrics or phone PIN) every time you open the app, return to it after the chosen time, or export your data."),
                 fontSize = 12.sp,
                 color = TextMuted,
                 lineHeight = 16.sp

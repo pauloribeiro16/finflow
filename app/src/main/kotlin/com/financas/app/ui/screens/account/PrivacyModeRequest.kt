@@ -30,6 +30,26 @@ fun requestPrivacyModeChange(
     )
 }
 
+fun requireAuthIfLockEnabled(context: Context, subtitle: String, action: () -> Unit) {
+    val gate = (context.applicationContext as? com.financas.app.FinancasApplication)?.container?.biometricLockGate
+    if (gate == null || !gate.isBiometricsEnabled()) {
+        action()
+        return
+    }
+    val activity = context.findActivityForPrompt() ?: return
+    gate.authenticate(
+        activity = activity,
+        subtitle = subtitle,
+        onSuccess = action,
+        onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    )
+}
+
+fun expectExternalFlow(context: Context) {
+    (context.applicationContext as? com.financas.app.FinancasApplication)
+        ?.container?.sessionBackgroundClock?.externalFlowExpected = true
+}
+
 private fun Context.findActivityForPrompt(): ComponentActivity? {
     var current: Context? = this
     while (current is ContextWrapper) {

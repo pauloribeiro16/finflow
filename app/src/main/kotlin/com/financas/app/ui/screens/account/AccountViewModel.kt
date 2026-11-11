@@ -50,6 +50,7 @@ data class AccountUiState(
     val budgetedCategoryIds: Set<String> = emptySet(),
     val goalItems: List<GoalWithProgress> = emptyList(),
     val isBiometricsEnabled: Boolean = false,
+    val lockTimeoutMs: Long = com.financas.app.core.security.SessionLockPolicy.BACKGROUND_LOCK_TIMEOUT_MS,
     val isPrivacyMode: Boolean = false,
     val message: String? = null,
     val isLoading: Boolean = false,
@@ -70,6 +71,7 @@ class AccountViewModel(
     private val userProfileStore: UserProfileStore? = null,
     private val appUpdateManager: com.financas.app.data.updater.AppUpdateManager? = null,
     private val settingsBackupManager: com.financas.app.data.repository.SettingsBackupManager? = null,
+    private val runInTransaction: suspend (suspend () -> RestoreResult) -> RestoreResult = { block -> block() },
     private val todayYearMonth: () -> Int = {
         LocalDate.now().let { it.year * 100 + it.monthValue }
     }
@@ -86,7 +88,8 @@ class AccountViewModel(
             monthlyCycleDay = userProfileStore?.getMonthlyCycleDay() ?: 1,
             themeMode = userProfileStore?.getThemeMode() ?: "SYSTEM",
             appLanguage = userProfileStore?.getAppLanguage() ?: "EN",
-            isBiometricsEnabled = biometricLockGate.isBiometricsEnabled()
+            isBiometricsEnabled = biometricLockGate.isBiometricsEnabled(),
+            lockTimeoutMs = biometricLockGate.lockTimeoutMs()
         )
     )
     val uiState: StateFlow<AccountUiState> = _uiState.asStateFlow()
@@ -185,6 +188,11 @@ class AccountViewModel(
     fun toggleBiometrics(enabled: Boolean) {
         biometricLockGate.setBiometricsEnabled(enabled)
         _uiState.update { it.copy(isBiometricsEnabled = enabled) }
+    }
+
+    fun updateLockTimeout(timeoutMs: Long) {
+        biometricLockGate.setLockTimeoutMs(timeoutMs)
+        _uiState.update { it.copy(lockTimeoutMs = biometricLockGate.lockTimeoutMs()) }
     }
 
     fun addSubcategory(
@@ -337,7 +345,9 @@ class AccountViewModel(
         return try {
             val sanitized = com.financas.app.data.repository.BackupSanitizer.sanitize(backupSerializer.importFromJson(jsonString))
             val backupData = sanitized.data
-            val result = backupSerializer.restoreBackup(backupData, categoryDao, transactionDao, budgetDao, goalDao, investmentAssetDao)
+            val result = runInTransaction {
+                backupSerializer.restoreBackup(backupData, categoryDao, transactionDao, budgetDao, goalDao, investmentAssetDao)
+            }
             backupData.settings?.let { settings ->
                 settingsBackupManager?.apply(settings)
                 _uiState.update {
@@ -507,7 +517,8 @@ class AccountViewModel(
             investmentAssetDao: InvestmentAssetDao? = null,
             userProfileStore: UserProfileStore? = null,
             appUpdateManager: com.financas.app.data.updater.AppUpdateManager? = null,
-            settingsBackupManager: com.financas.app.data.repository.SettingsBackupManager? = null
+            settingsBackupManager: com.financas.app.data.repository.SettingsBackupManager? = null,
+            runInTransaction: suspend (suspend () -> RestoreResult) -> RestoreResult = { block -> block() }
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -523,7 +534,8 @@ class AccountViewModel(
                     investmentAssetDao = investmentAssetDao,
                     userProfileStore = userProfileStore,
                     appUpdateManager = appUpdateManager,
-                    settingsBackupManager = settingsBackupManager
+                    settingsBackupManager = settingsBackupManager,
+                    runInTransaction = runInTransaction
                 ) as T
             }
         }

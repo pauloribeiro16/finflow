@@ -101,7 +101,9 @@ class FinancialNotificationListenerService : NotificationListenerService() {
                 paymentMethod = parsed.paymentMethod,
                 sourceApp = parsed.sourceApp,
                 direction = parsed.direction,
-                originalTextNote = originalTextNote
+                originalTextNote = listOf("App de origem: ${pkg.take(MAX_PACKAGE_CHARS)}", originalTextNote)
+                    .filter { it.isNotBlank() }
+                    .joinToString("\n")
             )
         }
     }
@@ -127,6 +129,14 @@ class FinancialNotificationListenerService : NotificationListenerService() {
 
         runCatching { pendingDao.deleteReceivedBefore(com.financas.app.domain.usecase.PendingRetention.cutoffMillis(nowTimestamp)) }
         val existingPending = pendingDao.getAllSync()
+        if (!com.financas.app.domain.usecase.PendingFloodGuard.shouldAccept(
+                existingPending.map { it.sourceApp to it.receivedTimestamp },
+                sourceApp,
+                nowTimestamp
+            )
+        ) {
+            return
+        }
         val monthFixed = transactionDao.getFixedTransactionsForMonth(currentYearMonth)
         val todayConfirmed = transactionDao.getByMonthSync(currentYearMonth).filter { it.epochDay == todayEpochDay }
 
@@ -201,6 +211,7 @@ class FinancialNotificationListenerService : NotificationListenerService() {
         const val PREFS_NAME = "bank_notification_capture_prefs"
         const val KEY_CAPTURE_ENABLED = "capture_enabled"
         private const val MAX_ORIGINAL_TEXT_CHARS = 300
+        private const val MAX_PACKAGE_CHARS = 120
 
         fun isNotificationAccessGranted(context: Context): Boolean {
             return androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(context)
