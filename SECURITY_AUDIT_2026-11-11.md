@@ -46,9 +46,9 @@ Sem achados de gravidade alta. O ecrã em 3 passos não tem impacto de seguranç
 |---|--------|------|
 | 2. Cliente HTTP único | ✅ | `SafeHttp` para as APIs. O download do APK mantém a sua política própria (`UpdateUrlPolicy`). |
 | 3. Backup cifrado | ✅ | Exportação `.finflow`: PBKDF2-HMAC-SHA256 (310k iterações) + AES-256-GCM, com parâmetros autenticados. O restauro deteta o formato e pede a palavra-passe. JSON em claro só por opção explícita. |
-| 4. Bloqueio ligado à chave (S10) | ⏸ Não feito | Com `setUserAuthenticationRequired`, a BD só abre depois de desbloquear. A captura de notificações em segundo plano deixaria de funcionar. Fica aceite, como no S10. |
-| 5. Cadeia de dependências | ◑ Parcial | Dependabot (Gradle + Actions) e CodeQL `security-extended` adicionados. Falta ativar *secret scanning* / *push protection* nas definições do GitHub, o que tem de ser feito pelo dono do repositório. O `verification-metadata.xml` não foi adicionado: cada atualização de dependência obrigaria a regenerá-lo, e o Dependabot não o faz. |
-| 6. Testes de migração | ⏸ Pendente | Exige `androidx.room:room-testing` (dependência nova, precisa de aprovação) e o `androidTest` reparado. |
+| 4. Bloqueio ligado à chave (S10) | ⏸ Aceite | Com `setUserAuthenticationRequired`, a BD só abre depois de desbloquear. A captura de notificações em segundo plano deixaria de funcionar. Fica aceite, como no S10. |
+| 5. Cadeia de dependências | ◑ Parcial | Dependabot (Gradle + Actions) e CodeQL `security-extended` adicionados. *Secret scanning* e *push protection* já estavam ativos no GitHub; faltam *Dependabot security updates* e proteção do `main` (definições do repositório). O `verification-metadata.xml` não foi adicionado: cada atualização de dependência obrigaria a regenerá-lo, e o Dependabot não o faz. |
+| 6. Testes de migração | ✅ | Esquema exportado (`app/schemas/…/8.json`); `RoomMigrationSchemaTest` aplica as migrações 1→8 numa base SQLite real (JVM, `sqlite-jdbc` só em testes) e compara colunas e índices com o esquema do Room. Verificado que deteta uma migração errada. |
 | 7. Tapjacking | ✅ | Android 12+: `setHideOverlayWindows(true)` (permissão normal `HIDE_OVERLAY_WINDOWS`). Android 8–11: `filterTouchesWhenObscured` em toda a janela. |
 | 8. Retenção mínima | ✅ | Ver N8. |
 
@@ -189,3 +189,12 @@ Por ordem de retorno face ao esforço:
    Uma migração errada numa BD cifrada sem backup é perda de dados.
 7. **Tapjacking:** `filterTouchesWhenObscured` nos interruptores de segurança (bloqueio, captura de notificações, instalação de atualização), porque o minSdk 26 ainda permite overlays.
 8. **Retenção mínima:** apagar notas brutas e pendentes antigos (N8) e limpar backups internos antigos. O updater já guarda só os 3 mais recentes.
+
+## Segunda ronda (2026-11-11) — manutenção
+
+- **Modo privacidade:** os campos de edição eram preenchidos com `•••• €` com o modo ligado; guardar podia gravar 0. Corrigido com `MoneyCents.formatForInput()` (nunca mascarado).
+- **Tradução:** ~580 textos passaram a `tr("pt", "en")` (`core/i18n/AppLocale.kt`); datas, dias da semana e meios de pagamento seguem o idioma; mudar o idioma recria a UI (`key(appLanguage)`).
+- **Ecrãs divididos:** Conta, Análise e Património passaram de ~3.200–3.800 linhas para ficheiros de ≤ 1.000 (diálogos e secções em funções próprias).
+- **CI:** lint, gate de cobertura do domínio (≥ 95%), build do `androidTest` e relatórios como artefacto.
+- **Testes de UI:** voltaram a compilar e foram atualizados para a UI atual (português forçado, fluxo em 3 passos), mas **não foram validados até ao fim** — a execução no telemóvel do utilizador foi interrompida a pedido (não alterar dados). Validar num emulador/CI dedicado.
+- **Processo:** gate de segurança & privacidade obrigatório em `AGENTS.md` §6.1 e `contracts/CONTRACT-TEMPLATE.md`.

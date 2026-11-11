@@ -1,5 +1,7 @@
 package com.financas.app.ui.screens.account
 
+import com.financas.app.core.i18n.tr
+
 import android.app.Activity
 import android.app.KeyguardManager
 import android.content.Context
@@ -60,7 +62,7 @@ class BiometricLockGate(
     fun promptBiometric(
         activity: ComponentActivity,
         title: String = "Finflow",
-        subtitle: String = "Confirme a sua identidade para aceder",
+        subtitle: String = tr("Confirme a sua identidade para aceder", "Confirm your identity to continue"),
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
@@ -143,7 +145,7 @@ class BiometricLockGate(
                 onBiometricsUnavailable()
                 return
             }
-            onError(errString?.toString() ?: "Erro de autenticação")
+            onError(errString?.toString() ?: tr("Erro de autenticação", "Authentication error"))
         }
     }
 
@@ -167,7 +169,7 @@ class BiometricLockGate(
         @Suppress("DEPRECATION")
         val intent = keyguard?.createConfirmDeviceCredentialIntent(title, subtitle)
         if (intent == null) {
-            if (isDeviceSecure(activity)) onError("Autenticação indisponível") else onSuccess()
+            if (isDeviceSecure(activity)) onError(tr("Autenticação indisponível", "Authentication unavailable")) else onSuccess()
             return
         }
         var launcher: ActivityResultLauncher<Intent>? = null
@@ -176,7 +178,7 @@ class BiometricLockGate(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
             launcher?.unregister()
-            if (result.resultCode == Activity.RESULT_OK) onSuccess() else onError("Autenticação cancelada")
+            if (result.resultCode == Activity.RESULT_OK) onSuccess() else onError(tr("Autenticação cancelada", "Authentication cancelled"))
         }
         launcher.launch(intent)
     }

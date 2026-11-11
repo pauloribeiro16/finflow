@@ -33,6 +33,9 @@ value class MoneyCents(val cents: Long) {
             return df.format(cents / 100.0)
         }
 
+        fun formatForInput(cents: Long): String =
+            formatCents(cents, masked = false).removeSuffix("€").trim()
+
         fun formatPercent(percent: Double, decimals: Int = 1): String {
             val symbols = DecimalFormatSymbols(Locale("pt", "PT")).apply {
                 decimalSeparator = ','

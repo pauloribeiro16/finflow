@@ -1,5 +1,7 @@
 package com.financas.app.ui.components
 
+import com.financas.app.core.i18n.tr
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -133,7 +135,7 @@ fun MonthSelector(
                 }
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Selecionar Mês",
+                    contentDescription = tr("Selecionar Mês", "Select Month"),
                     tint = AccentBlue,
                     modifier = Modifier.size(20.dp)
                 )
@@ -145,7 +147,7 @@ fun MonthSelector(
             ) {
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Próximo Mês",
+                    contentDescription = tr("Próximo Mês", "Next Month"),
                     tint = TextSecondary,
                     modifier = Modifier.size(20.dp)
                 )
@@ -164,7 +166,7 @@ fun MonthSelector(
             IconButton(onClick = onPreviousMonth) {
                 Icon(
                     imageVector = Icons.Default.ChevronLeft,
-                    contentDescription = "Mês Anterior",
+                    contentDescription = tr("Mês Anterior", "Previous Month"),
                     tint = TextPrimary
                 )
             }
@@ -200,7 +202,7 @@ fun MonthSelector(
                 }
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Selecionar Mês",
+                    contentDescription = tr("Selecionar Mês", "Select Month"),
                     tint = AccentBlue,
                     modifier = Modifier.size(22.dp)
                 )
@@ -209,7 +211,7 @@ fun MonthSelector(
             IconButton(onClick = onNextMonth) {
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Mês Seguinte",
+                    contentDescription = tr("Mês Seguinte", "Next Month"),
                     tint = TextPrimary
                 )
             }

@@ -32,19 +32,19 @@ class WealthHubUiTest {
         openWealthHub()
         val assetName = uniqueToken("UIAtivo")
 
-        composeRule.onNodeWithText("Nova Aplicação / Ativo").performScrollTo().performClick()
+        composeRule.onNodeWithText("Nova Aplicação").performClick()
         composeRule.waitUntil {
-            composeRule.onAllNodesWithText("Nome da Aplicação").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Nova Aplicação / Ativo").fetchSemanticsNodes().isNotEmpty()
         }
 
         // Ordem de composição dos campos do diálogo:
         // 0 Nome, 1 Entidade, 2 Capital investido, 3 Valor atual, 4 Reforço, 5 Notas
         composeRule.fillTextField("Nome da Aplicação", assetName, fallbackIndex = 0)
-        composeRule.fillTextField("Entidade / Banco / Corretora", "Banco Teste", fallbackIndex = 1)
+        composeRule.fillTextField("Entidade / Corretora / Banco", "Banco Teste", fallbackIndex = 1)
         composeRule.fillTextField("Capital Investido (€)", "1000", fallbackIndex = 2)
-        composeRule.fillTextField("Valor Atual / Saldo de Mercado (€)", "1250", fallbackIndex = 3)
+        composeRule.fillTextField("Saldo Atual (€)", "1250", fallbackIndex = 3)
 
-        composeRule.onNodeWithText("Guardar").performClick()
+        composeRule.onNodeWithText("Guardar Aplicação").performScrollTo().performClick()
         composeRule.waitUntil(timeoutMillis = 15_000) {
             composeRule.onAllNodesWithText(assetName).fetchSemanticsNodes().isNotEmpty()
         }

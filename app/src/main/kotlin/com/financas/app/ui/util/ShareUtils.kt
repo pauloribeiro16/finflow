@@ -1,5 +1,7 @@
 package com.financas.app.ui.util
 
+import com.financas.app.core.i18n.tr
+
 import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
@@ -24,7 +26,7 @@ fun shareText(context: Context, text: String, title: String, mimeType: String) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText(title, text).apply { markSensitive() }
         clipboard.setPrimaryClip(clip)
-        Toast.makeText(context, "Copiado para a área de transferência!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, tr("Copiado para a área de transferência!", "Copied to clipboard!"), Toast.LENGTH_SHORT).show()
     }
 }
 

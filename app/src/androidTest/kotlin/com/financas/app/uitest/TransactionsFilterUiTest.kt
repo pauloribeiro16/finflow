@@ -34,11 +34,11 @@ class TransactionsFilterUiTest {
         composeRule.waitForAppReady()
         composeRule.onAllNodesWithContentDescription("Movimentos").onFirst().performClick()
         composeRule.waitUntil {
-            composeRule.onAllNodesWithText("Pesquisar por estabelecimento, categoria, contexto...")
+            composeRule.onAllNodesWithText("Pesquisar descrição, comerciante...")
                 .fetchSemanticsNodes().isNotEmpty()
         }
 
-        val countBefore = movementsSummaryCount()
+        val countBefore = requireNotNull(movementsSummaryCount()) { "Resumo de movimentos não encontrado" }
         assertTrue("Deve existir pelo menos um movimento no mês corrente", countBefore > 0)
 
         // Termo de pesquisa: o estabelecimento do movimento mais recente.
@@ -72,11 +72,11 @@ class TransactionsFilterUiTest {
         composeRule.waitForAppReady()
         composeRule.onAllNodesWithContentDescription("Movimentos").onFirst().performClick()
         composeRule.waitUntil {
-            composeRule.onAllNodesWithText("Pesquisar por estabelecimento, categoria, contexto...")
+            composeRule.onAllNodesWithText("Pesquisar descrição, comerciante...")
                 .fetchSemanticsNodes().isNotEmpty()
         }
 
-        val countBefore = movementsSummaryCount()
+        val countBefore = requireNotNull(movementsSummaryCount()) { "Resumo de movimentos não encontrado" }
         assertTrue("Deve existir pelo menos um movimento no mês corrente", countBefore > 0)
 
         composeRule.onNodeWithText("≤ 10 €").performClick()
@@ -112,11 +112,11 @@ class TransactionsFilterUiTest {
         composeRule.waitForAppReady()
         composeRule.onAllNodesWithContentDescription("Movimentos").onFirst().performClick()
         composeRule.waitUntil {
-            composeRule.onAllNodesWithText("Pesquisar por estabelecimento, categoria, contexto...")
+            composeRule.onAllNodesWithText("Pesquisar descrição, comerciante...")
                 .fetchSemanticsNodes().isNotEmpty()
         }
 
-        val countBefore = movementsSummaryCount()
+        val countBefore = requireNotNull(movementsSummaryCount()) { "Resumo de movimentos não encontrado" }
         assertTrue("Deve existir pelo menos um movimento no mês corrente", countBefore > 0)
 
         // A cápsula de contexto é identificada pelo rótulo visível + ação de clique

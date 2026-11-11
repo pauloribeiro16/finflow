@@ -45,7 +45,7 @@ class NavigationUiTest {
         // 2. Movimentos
         composeRule.onNodeWithContentDescription("Movimentos").performClick()
         composeRule.waitUntil {
-            composeRule.onAllNodesWithText("Pesquisar por estabelecimento, categoria, contexto...")
+            composeRule.onAllNodesWithText("Pesquisar descrição, comerciante...")
                 .fetchSemanticsNodes().isNotEmpty()
         }
         assertTrue(
@@ -80,16 +80,16 @@ class NavigationUiTest {
 
         composeRule.onNodeWithContentDescription("Nova Transação").performClick()
         composeRule.waitUntil {
-            composeRule.onAllNodesWithText("Nova Despesa").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Novo Movimento").fetchSemanticsNodes().isNotEmpty()
         }
         assertTrue(
             "O FAB central deve abrir a folha 'Nova Despesa'",
-            composeRule.onAllNodesWithText("Nova Despesa").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Novo Movimento").fetchSemanticsNodes().isNotEmpty()
         )
 
         composeRule.onNodeWithContentDescription("Fechar").performClick()
         composeRule.waitUntil {
-            composeRule.onAllNodesWithText("Nova Despesa").fetchSemanticsNodes().isEmpty()
+            composeRule.onAllNodesWithText("Novo Movimento").fetchSemanticsNodes().isEmpty()
         }
     }
 
@@ -139,11 +139,11 @@ class NavigationUiTest {
         )
         assertTrue(
             "O ecrã Conta deve mostrar o separador 'Configurações'",
-            composeRule.onAllNodesWithText("Configurações").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Preferências").fetchSemanticsNodes().isNotEmpty()
         )
         assertTrue(
             "O ecrã Conta deve mostrar o separador 'Versão & Sistema'",
-            composeRule.onAllNodesWithText("Versão & Sistema").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Sistema & Versão").fetchSemanticsNodes().isNotEmpty()
         )
     }
 
@@ -165,17 +165,17 @@ class NavigationUiTest {
 
         composeRule.onAllNodesWithText(merchant).onFirst().performScrollTo().performClick()
         composeRule.waitUntil {
-            composeRule.onAllNodesWithText("Editar Despesa").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Editar Movimento").fetchSemanticsNodes().isNotEmpty()
         }
         assertTrue(
             "Tocar numa linha de movimento deve abrir a folha 'Editar Despesa'",
-            composeRule.onAllNodesWithText("Editar Despesa").fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodesWithText("Editar Movimento").fetchSemanticsNodes().isNotEmpty()
         )
-        composeRule.onNodeWithText("Editar Despesa").assertIsDisplayed()
+        composeRule.onNodeWithText("Editar Movimento").assertIsDisplayed()
 
         composeRule.onNodeWithContentDescription("Fechar").performClick()
         composeRule.waitUntil {
-            composeRule.onAllNodesWithText("Editar Despesa").fetchSemanticsNodes().isEmpty()
+            composeRule.onAllNodesWithText("Editar Movimento").fetchSemanticsNodes().isEmpty()
         }
     }
 }

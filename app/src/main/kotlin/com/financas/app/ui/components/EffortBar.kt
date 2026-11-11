@@ -1,5 +1,7 @@
 package com.financas.app.ui.components
 
+import com.financas.app.core.i18n.tr
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -112,21 +114,21 @@ fun EffortBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             EffortLegendItem(
-                label = "Fixos",
+                label = tr("Fixos", "Fixed"),
                 percent = fixedPercent,
                 cents = fixedCents,
                 color = fixedColor
             )
 
             EffortLegendItem(
-                label = "Variáveis",
+                label = tr("Variáveis", "Variable"),
                 percent = variablePercent,
                 cents = variableCents,
                 color = variableColor
             )
 
             EffortLegendItem(
-                label = "Poupado",
+                label = tr("Poupado", "Saved"),
                 percent = savingsPercent,
                 cents = savingsCents,
                 color = savingsColor

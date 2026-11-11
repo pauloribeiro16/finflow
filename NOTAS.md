@@ -47,3 +47,7 @@ Fonte: `SECURITY_AUDIT_2026-11-11.md` (N1–N8 + recomendações gerais).
 Cotações Yahoo passaram a opt-in (aviso + interruptor em Conta → Versão, desligado por omissão); APIs via `SafeHttp` (allowlist, sem redirects, 512 KB); câmbio por moeda sem fallback fixo e GBp÷100; dedup XTB v2 com instrumento + ocorrência (chaves antigas aceites uma vez cada); backup `.finflow` cifrado (PBKDF2 310k + AES-GCM); pendentes >30 dias apagados; tapjacking (`setHideOverlayWindows`); Dependabot + CodeQL.
 Não feito: chave da BD ligada à autenticação (partiria a captura de notificações em segundo plano), testes de migração (exige `room-testing`), `verification-metadata.xml`; secret scanning tem de ser ativado nas definições do GitHub.
 Fonte: `SECURITY_AUDIT_2026-11-11.md` (secção "Estado das correções").
+
+## 2026-11-11 — manutenção: migrações, privacidade em formulários, tradução, ecrãs
+`RoomMigrationSchemaTest` (JVM + `sqlite-jdbc`) aplica 1→8 e compara com `app/schemas/.../8.json`; o esquema v1–v7 é reconstruído a partir do v8 (o repo começa em v6 e as entidades só mudaram via migrações). Bug: `formatPt()` mascarado era usado para pré-preencher campos → `formatForInput()`. Tradução via `tr(pt, en)` + `AppLocale` global atualizado antes do flow e `key(appLanguage)` no MainScaffold. Ecrãs gigantes divididos por ficheiro (privates → internal).
+Gotchas: os testes de UI estavam escritos para uma UI antiga e esperam português (a app arranca em EN); o OnePlus bloqueia toques injetados perto da barra de estado. Não correr testes no telemóvel do utilizador (altera dados).

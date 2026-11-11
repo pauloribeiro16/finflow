@@ -1,5 +1,7 @@
 package com.financas.app.ui.components
 
+import com.financas.app.core.i18n.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,7 +69,7 @@ fun CalculatorNumpad(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Backspace,
-                    contentDescription = "Apagar",
+                    contentDescription = tr("Apagar", "Delete"),
                     tint = TextSecondary
                 )
             }
@@ -135,7 +137,7 @@ fun CalculatorNumpad(
             ) {
                 Icon(
                     imageVector = Icons.Default.Check,
-                    contentDescription = "Concluir",
+                    contentDescription = tr("Concluir", "Done"),
                     tint = Color.Black
                 )
             }
@@ -235,7 +237,7 @@ fun FinflowNumpad(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Backspace,
-                    contentDescription = "Apagar",
+                    contentDescription = tr("Apagar", "Delete"),
                     tint = FinflowTextPrimary,
                     modifier = Modifier.size(20.dp)
                 )

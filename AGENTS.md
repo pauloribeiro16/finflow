@@ -37,7 +37,8 @@ Repos irmãos (mesmo programa): MusicaApp, financial-adviser, macro-forecasting-
 ## 2. Testing
 
 - **Framework:** JUnit 4 + `kotlinx-coroutines-test` (testes rápidos em JVM, sem emulador para lógica de negócio).
-- **Regra de Ouro:** Toda a matemática financeira (`Recebido`, `Gasto`, `% do Rendimento`, `Poupança`, `Média Mensal`, `Gerador de Fixos`) vive em classes Kotlin puras em `domain/` com **100% de cobertura unitária**.
+- **Regra de Ouro:** Toda a matemática financeira (`Recebido`, `Gasto`, `% do Rendimento`, `Poupança`, `Média Mensal`, `Gerador de Fixos`) vive em classes Kotlin puras em `domain/`, com cobertura de linhas **≥ 95%** em `domain/model` e `domain/usecase` (verificada no CI por `.github/scripts/check_domain_coverage.py`).
+- **Migrações:** o esquema Room é exportado para `app/schemas/`. `RoomMigrationSchemaTest` aplica todas as migrações numa base SQLite real (JVM) e compara com o esquema exportado — qualquer alteração de entidade exige subir a versão, acrescentar a migração e fazer commit do novo `N.json`.
 - **Validação de Contratos:** Cada fase exige validação **Tier 3 (Behavioral)** via `./gradlew :app:testProdDebugUnitTest --tests "..."`.
 
 ## 3. Project Structure
@@ -95,11 +96,27 @@ val pct = (amount / totalIncome) * 100 // Crash/Infinity quando totalIncome == 0
 - **Ask first:**
   - Antes de adicionar qualquer dependência externa ao `build.gradle.kts`.
   - Antes de alterar o esquema de tabelas (`CategoryEntity`, `TransactionEntity`).
+  - Antes de acrescentar um servidor a `SafeHttp.ALLOWED_API_HOSTS` ou qualquer outro pedido de rede.
 - **Never:**
   - Nunca usar `Float`/`Double` para guardar montantes em base de dados.
   - Nunca adicionar bibliotecas externas de gráficos (usar Compose `Canvas` nativo).
   - Nunca usar `fallbackToDestructiveMigration()` em produção sem backup.
   - Nunca fazer auto-implementação se estiveres no papel de Planeador ou Validador.
+  - Nunca abrir ligações de rede fora de `SafeHttp` (o download do APK usa `UpdateUrlPolicy`).
+  - Nunca enviar dados para fora do telemóvel sem opt-in explícito do utilizador.
+  - Nunca formatar valores para campos de edição com `formatPt()`/`formatCents()` (são mascarados no modo privacidade) — usar `MoneyCents.formatForInput()`.
+
+## 6.1 Gate de Segurança & Privacidade (obrigatório em cada contrato)
+
+O Validador só aprova uma fase se todas as respostas forem "sim" ou "não se aplica":
+1. **Dados para fora:** a fase envia algum dado para fora do telemóvel? Se sim: o servidor está em `SafeHttp`, há opt-in/aviso na UI, e `docs/PRIVACY_POLICY.md` + o cartão "Privacidade: Dados Locais" foram atualizados.
+2. **Entrada não confiável:** dados de ficheiros, notificações, backups ou rede são validados (tamanho, formato, valores finitos) antes de chegar à BD ou a URLs?
+3. **Esquema:** se mexeu em entidades, a versão subiu, há migração, o `N.json` foi commitado e `RoomMigrationSchemaTest` passa?
+4. **Modo privacidade:** os montantes novos passam por `MoneyCents` (e os campos de edição por `formatForInput`)?
+5. **Segredos e IDs:** nenhum ID de conta/ordem, token ou texto bruto sensível é gravado ou registado em log sem necessidade?
+6. **CI verde:** testes, lint, gate de cobertura e build de `androidTest`.
+
+Modelo de contrato: [`contracts/CONTRACT-TEMPLATE.md`](./contracts/CONTRACT-TEMPLATE.md).
 
 ## 7. Skills (Activate on Demand)
 

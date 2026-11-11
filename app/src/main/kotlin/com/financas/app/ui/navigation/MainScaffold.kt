@@ -1,5 +1,7 @@
 package com.financas.app.ui.navigation
 
+import com.financas.app.core.i18n.tr
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -45,6 +47,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.key
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -264,129 +267,131 @@ fun MainScaffold(
         LocalAppLanguage provides appLanguage,
         LocalPrivacyMode provides isPrivacyMode
     ) {
-        BackHandler(enabled = showAccount) {
-            showAccount = false
-        }
-
-        Scaffold(
-            modifier = modifier.fillMaxSize(),
-            containerColor = FinflowBackground,
-            bottomBar = {
-                FinflowBottomNavBar(
-                    selectedTab = if (showAccount) NavTab.ACCOUNT else selectedTab,
-                    onSelectTab = { tab ->
-                        showAccount = false
-                        coroutineScope.launch { pagerState.animateScrollToPage(tab.visualOrder) }
-                    },
-                    onAddClick = startNewEntry
-                )
+        key(appLanguage) {
+            BackHandler(enabled = showAccount) {
+                showAccount = false
             }
-        ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                FinflowFixedHeader(
-                    selectedTab = if (showAccount) NavTab.ACCOUNT else selectedTab,
-                    homeViewModel = homeViewModel,
-                    transactionsViewModel = transactionsViewModel,
-                    analyticsViewModel = analyticsViewModel,
-                    budgetsViewModel = budgetsViewModel,
-                    onMonthChanged = propagateMonth,
-                    isAppDark = isAppDark,
-                    onToggleTheme = {
-                        container.userProfileStore.setThemeMode(if (isAppDark) "LIGHT" else "DARK")
-                    },
-                    isPrivacyMode = isPrivacyMode,
-                    onTogglePrivacy = {
-                        com.financas.app.ui.screens.account.requestPrivacyModeChange(scaffoldContext, !isPrivacyMode) {
-                            container.userProfileStore.setPrivacyModeEnabled(it)
-                        }
-                    },
-                    onOpenAccount = { showAccount = true },
-                    photoUri = profilePhotoUri,
-                    userName = userName
-                )
 
-                Box(modifier = Modifier.fillMaxSize()) {
-                    HorizontalPager(
-                        state = pagerState,
-                        modifier = Modifier.fillMaxSize()
-                    ) { page ->
-                        when (pagerTabs[page]) {
-                            NavTab.HOME -> {
-                                HomeScreen(
-                                    viewModel = homeViewModel,
-                                    onNavigateToTransactions = { ym ->
-                                        transactionsViewModel.setYearMonth(ym)
-                                        coroutineScope.launch {
-                                            pagerState.animateScrollToPage(NavTab.TRANSACTIONS.visualOrder)
-                                        }
-                                    },
-                                    onNavigateToInvestments = {
-                                        budgetsViewModel.selectTab(WealthTab.INVESTMENTS)
-                                        coroutineScope.launch {
-                                            pagerState.animateScrollToPage(NavTab.BUDGETS.visualOrder)
-                                        }
-                                    },
-                                    onEdit = startEdit,
-                                    onEditPending = startPendingEdit
-                                )
+            Scaffold(
+                modifier = modifier.fillMaxSize(),
+                containerColor = FinflowBackground,
+                bottomBar = {
+                    FinflowBottomNavBar(
+                        selectedTab = if (showAccount) NavTab.ACCOUNT else selectedTab,
+                        onSelectTab = { tab ->
+                            showAccount = false
+                            coroutineScope.launch { pagerState.animateScrollToPage(tab.visualOrder) }
+                        },
+                        onAddClick = startNewEntry
+                    )
+                }
+            ) { paddingValues ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                ) {
+                    FinflowFixedHeader(
+                        selectedTab = if (showAccount) NavTab.ACCOUNT else selectedTab,
+                        homeViewModel = homeViewModel,
+                        transactionsViewModel = transactionsViewModel,
+                        analyticsViewModel = analyticsViewModel,
+                        budgetsViewModel = budgetsViewModel,
+                        onMonthChanged = propagateMonth,
+                        isAppDark = isAppDark,
+                        onToggleTheme = {
+                            container.userProfileStore.setThemeMode(if (isAppDark) "LIGHT" else "DARK")
+                        },
+                        isPrivacyMode = isPrivacyMode,
+                        onTogglePrivacy = {
+                            com.financas.app.ui.screens.account.requestPrivacyModeChange(scaffoldContext, !isPrivacyMode) {
+                                container.userProfileStore.setPrivacyModeEnabled(it)
                             }
-                            NavTab.TRANSACTIONS -> {
-                                TransactionsScreen(
-                                    viewModel = transactionsViewModel,
-                                    onEdit = startEdit
-                                )
-                            }
-                            NavTab.ANALYTICS -> {
-                                AnalyticsScreen(
-                                    viewModel = analyticsViewModel,
-                                    onGlobalMonthChanged = propagateMonth
-                                )
-                            }
-                            NavTab.BUDGETS -> {
-                                BudgetsGoalsScreen(
-                                    viewModel = budgetsViewModel
-                                )
-                            }
-                            NavTab.ACCOUNT -> Unit
-                        }
-                    }
+                        },
+                        onOpenAccount = { showAccount = true },
+                        photoUri = profilePhotoUri,
+                        userName = userName
+                    )
 
-                    if (showAccount) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(FinflowBackground)
-                        ) {
-                            AccountScreen(
-                                viewModel = accountViewModel
-                            )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier.fillMaxSize()
+                        ) { page ->
+                            when (pagerTabs[page]) {
+                                NavTab.HOME -> {
+                                    HomeScreen(
+                                        viewModel = homeViewModel,
+                                        onNavigateToTransactions = { ym ->
+                                            transactionsViewModel.setYearMonth(ym)
+                                            coroutineScope.launch {
+                                                pagerState.animateScrollToPage(NavTab.TRANSACTIONS.visualOrder)
+                                            }
+                                        },
+                                        onNavigateToInvestments = {
+                                            budgetsViewModel.selectTab(WealthTab.INVESTMENTS)
+                                            coroutineScope.launch {
+                                                pagerState.animateScrollToPage(NavTab.BUDGETS.visualOrder)
+                                            }
+                                        },
+                                        onEdit = startEdit,
+                                        onEditPending = startPendingEdit
+                                    )
+                                }
+                                NavTab.TRANSACTIONS -> {
+                                    TransactionsScreen(
+                                        viewModel = transactionsViewModel,
+                                        onEdit = startEdit
+                                    )
+                                }
+                                NavTab.ANALYTICS -> {
+                                    AnalyticsScreen(
+                                        viewModel = analyticsViewModel,
+                                        onGlobalMonthChanged = propagateMonth
+                                    )
+                                }
+                                NavTab.BUDGETS -> {
+                                    BudgetsGoalsScreen(
+                                        viewModel = budgetsViewModel
+                                    )
+                                }
+                                NavTab.ACCOUNT -> Unit
+                            }
+                        }
+
+                        if (showAccount) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(FinflowBackground)
+                            ) {
+                                AccountScreen(
+                                    viewModel = accountViewModel
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (showAddSheet) {
-            AddTransactionBottomSheet(
-                viewModel = addTransactionViewModel,
-                onDismissRequest = {
-                    showAddSheet = false
-                    editingTransaction = null
-                    pendingIdToClearOnSave = null
-                },
-                onSaveSuccess = {
-                    showAddSheet = false
-                    editingTransaction = null
-                    pendingIdToClearOnSave?.let { id ->
-                        homeViewModel.discardPending(id)
+            if (showAddSheet) {
+                AddTransactionBottomSheet(
+                    viewModel = addTransactionViewModel,
+                    onDismissRequest = {
+                        showAddSheet = false
+                        editingTransaction = null
                         pendingIdToClearOnSave = null
+                    },
+                    onSaveSuccess = {
+                        showAddSheet = false
+                        editingTransaction = null
+                        pendingIdToClearOnSave?.let { id ->
+                            homeViewModel.discardPending(id)
+                            pendingIdToClearOnSave = null
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
@@ -482,14 +487,14 @@ private fun FinflowFixedHeader(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ChevronLeft,
-                                    contentDescription = "Ano Anterior",
+                                    contentDescription = tr("Ano Anterior", "Previous Year"),
                                     tint = FinflowTextSecondary,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
 
                             Text(
-                                text = "Ano ${analyticsUiState.annualAnalysis.selectedYear}",
+                                text = tr("Ano ${analyticsUiState.annualAnalysis.selectedYear}", "Year ${analyticsUiState.annualAnalysis.selectedYear}"),
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = FinflowTextPrimary,
@@ -502,7 +507,7 @@ private fun FinflowFixedHeader(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ChevronRight,
-                                    contentDescription = "Ano Seguinte",
+                                    contentDescription = tr("Ano Seguinte", "Next Year"),
                                     tint = FinflowTextSecondary,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -748,14 +753,14 @@ private fun FinflowCenterActionItem(
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "Nova Transação",
+                contentDescription = tr("Nova Transação", "New Transaction"),
                 tint = Color.White,
                 modifier = Modifier.size(26.dp)
             )
         }
         Spacer(modifier = Modifier.height(2.dp))
         Text(
-            text = "Nova",
+            text = tr("Nova", "New"),
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             color = FinflowPrimary

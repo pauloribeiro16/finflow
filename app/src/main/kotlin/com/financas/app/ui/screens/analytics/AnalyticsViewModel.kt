@@ -1,5 +1,7 @@
 package com.financas.app.ui.screens.analytics
 
+import com.financas.app.core.i18n.tr
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -14,7 +16,6 @@ import com.financas.app.data.entity.GoalEntity
 import com.financas.app.data.entity.TransactionEntity
 import com.financas.app.data.prefs.UserProfileStore
 import com.financas.app.data.seed.DefaultSeed
-import com.financas.app.domain.model.DetectedSubscription
 import com.financas.app.domain.model.MoneyCents
 import com.financas.app.domain.model.SubscriptionReport
 import com.financas.app.domain.usecase.BudgetProgressCalculator
@@ -679,8 +680,10 @@ class AnalyticsViewModel(
 
     private fun formatDayLabel(epochDay: Long): String {
         val date = LocalDate.ofEpochDay(epochDay)
-        val formatted = date.format(DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("pt", "PT")))
-        return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale("pt", "PT")) else it.toString() }
+        val english = com.financas.app.core.i18n.AppLocale.isEnglish
+        val locale = if (english) Locale.ENGLISH else Locale("pt", "PT")
+        val formatted = date.format(DateTimeFormatter.ofPattern(if (english) "MMMM d" else "d 'de' MMMM", locale))
+        return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
     }
 
     private fun recalculateAll() {
@@ -908,10 +911,14 @@ class AnalyticsViewModel(
 
         val methodLabelMap = buildMap {
             putAll(DefaultSeed.PAYMENT_METHODS.associate { it.code to it.label })
-            put("DEBITO", "Cartão")
-            put("DINHEIRO", "Dinheiro")
-            put("TRANSFERENCIA", "Transferência")
-            put("DEBITO_DIRETO", "Débito Direto")
+            put("CARD", tr("Cartão", "Card"))
+            put("DIRECT_DEBIT", tr("Débito Direto", "Direct Debit"))
+            put("TRANSFER", tr("Transferência", "Transfer"))
+            put("CASH", tr("Dinheiro", "Cash"))
+            put("DEBITO", tr("Cartão", "Card"))
+            put("DINHEIRO", tr("Dinheiro", "Cash"))
+            put("TRANSFERENCIA", tr("Transferência", "Transfer"))
+            put("DEBITO_DIRETO", tr("Débito Direto", "Direct Debit"))
         }
         val paymentMethods = expenseTxs.groupBy {
             when (it.paymentMethod.uppercase()) {
@@ -1497,7 +1504,7 @@ class AnalyticsViewModel(
                     val pct = if (totalIncomeCents > 0L) {
                         (amountCents.toDouble() / totalIncomeCents.toDouble()) * 100.0
                     } else 0.0
-                    "${MoneyCents.formatPercent(pct)} do recebido"
+                    tr("${MoneyCents.formatPercent(pct)} do recebido", "${MoneyCents.formatPercent(pct)} of income")
                 }
             }
         }

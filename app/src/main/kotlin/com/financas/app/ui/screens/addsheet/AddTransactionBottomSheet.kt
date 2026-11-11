@@ -1,5 +1,7 @@
 package com.financas.app.ui.screens.addsheet
 
+import com.financas.app.core.i18n.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -273,7 +275,7 @@ fun AddTransactionBottomSheet(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "QUANTIA A REGISTAR",
+                                    text = tr("QUANTIA A REGISTAR", "AMOUNT TO RECORD"),
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = FinflowTextMuted,
@@ -308,7 +310,7 @@ fun AddTransactionBottomSheet(
                                     color = FinflowTextMuted
                                 )
                                 Text(
-                                    text = MoneyCents.formatCents(uiState.amountCents).replace("€", "").trim(),
+                                    text = MoneyCents.formatForInput(uiState.amountCents),
                                     fontSize = 38.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = FinflowTextPrimary
@@ -375,7 +377,7 @@ fun AddTransactionBottomSheet(
                 }
                 2 -> {
                     AddSheetSummary(
-                        amountText = MoneyCents.formatCents(uiState.amountCents),
+                        amountText = MoneyCents.formatCents(uiState.amountCents, masked = false),
                         typeLabel = when (uiState.type) {
                             "INCOME" -> strings.income
                             "TRANSFER" -> if (isEnglish) "Transfer" else "Transferência"
@@ -405,7 +407,7 @@ fun AddTransactionBottomSheet(
                         ) {
                             Column(modifier = Modifier.weight(1f, fill = false)) {
                                 Text(
-                                    text = "Categoria",
+                                    text = tr("Categoria", "Category"),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = FinflowTextPrimary
@@ -434,14 +436,14 @@ fun AddTransactionBottomSheet(
                                 ) {
                                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = FinflowPrimary)
                                     Spacer(modifier = Modifier.width(2.dp))
-                                    Text("Nova", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FinflowPrimary)
+                                    Text(tr("Nova", "New"), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FinflowPrimary)
                                 }
 
                                 TextButton(
                                     onClick = { showAllCategoriesSheet = true },
                                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
-                                    Text("Ver Todas ▾", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = FinflowTextSecondary)
+                                    Text(tr("Ver Todas ▾", "View All ▾"), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = FinflowTextSecondary)
                                 }
                             }
                         }
@@ -508,7 +510,7 @@ fun AddTransactionBottomSheet(
                         // Horizontal Subcategory Chips under the selected parent
                         if (uiState.subcategories.isNotEmpty()) {
                             Text(
-                                text = "Escolhe a subcategoria:",
+                                text = tr("Escolhe a subcategoria:", "Choose the subcategory:"),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = FinflowTextMuted,
@@ -560,7 +562,7 @@ fun AddTransactionBottomSheet(
                                     ) {
                                         Icon(Icons.Default.Add, contentDescription = null, tint = FinflowPrimary, modifier = Modifier.size(13.dp))
                                         Text(
-                                            text = "Nova Subcategoria",
+                                            text = tr("Nova Subcategoria", "New Subcategory"),
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = FinflowPrimary
@@ -579,7 +581,7 @@ fun AddTransactionBottomSheet(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "Investimento — escolhe para onde vai (ou 'Decidir depois' para alocar na Carteira)",
+                                text = tr("Investimento — escolhe para onde vai (ou 'Decidir depois' para alocar na Carteira)", "Investment — choose where it goes (or 'Decide later' to allocate in the Portfolio)"),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = FinflowTextSecondary
@@ -637,7 +639,7 @@ fun AddTransactionBottomSheet(
                 }
                 else -> {
                     AddSheetSummary(
-                        amountText = MoneyCents.formatCents(uiState.amountCents),
+                        amountText = MoneyCents.formatCents(uiState.amountCents, masked = false),
                         typeLabel = when (uiState.type) {
                             "INCOME" -> strings.income
                             "TRANSFER" -> if (isEnglish) "Transfer" else "Transferência"
@@ -657,7 +659,7 @@ fun AddTransactionBottomSheet(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "Descrição ou Estabelecimento",
+                            text = tr("Descrição ou Estabelecimento", "Description or Merchant"),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             color = FinflowTextSecondary
@@ -665,7 +667,7 @@ fun AddTransactionBottomSheet(
                         OutlinedTextField(
                             value = uiState.merchant,
                             onValueChange = { viewModel.onMerchantChanged(it) },
-                            placeholder = { Text("Ex: Continente Colombo") },
+                            placeholder = { Text(tr("Ex: Continente Colombo", "E.g. Continente Colombo")) },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.Store,
@@ -687,7 +689,10 @@ fun AddTransactionBottomSheet(
 
                     // Row: Data do Movimento
                     val dateFormatted = remember(uiState.epochDay) {
-                        LocalDate.ofEpochDay(uiState.epochDay).format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("pt", "PT"))).replaceFirstChar { it.uppercase() }
+                        LocalDate.ofEpochDay(uiState.epochDay).format(
+                            if (com.financas.app.core.i18n.AppLocale.isEnglish) DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.ENGLISH)
+                            else DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("pt", "PT"))
+                        ).replaceFirstChar { it.uppercase() }
                     }
 
                     Row(
@@ -713,7 +718,7 @@ fun AddTransactionBottomSheet(
                             )
                             Column {
                                 Text(
-                                    text = "Data do Movimento",
+                                    text = tr("Data do Movimento", "Transaction Date"),
                                     fontSize = 11.sp,
                                     color = FinflowTextMuted
                                 )
@@ -736,10 +741,10 @@ fun AddTransactionBottomSheet(
                     // Row: Conta / Método
                     val (methodLabel, methodIcon, methodTint) = when (uiState.selectedPaymentMethod.uppercase()) {
                         "CASH", "DINHEIRO" -> Triple("Dinheiro", Icons.Default.AccountBalanceWallet, FinflowSecondary)
-                        "CARD", "DEBITO" -> Triple("Cartão Débito", Icons.Default.CreditCard, FinflowPrimary)
+                        "CARD", "DEBITO" -> Triple(tr("Cartão Débito", "Debit Card"), Icons.Default.CreditCard, FinflowPrimary)
                         "MBWAY" -> Triple("MB WAY", Icons.Default.CreditCard, FinflowCoral)
-                        "TRANSFER", "TRANSFERENCIA" -> Triple("Transferência", Icons.Default.Repeat, FinflowPurple)
-                        "DIRECT_DEBIT", "DEBITO_DIRETO" -> Triple("Débito Direto", Icons.Default.AccountBalanceWallet, FinflowAmber)
+                        "TRANSFER", "TRANSFERENCIA" -> Triple(tr("Transferência", "Transfer"), Icons.Default.Repeat, FinflowPurple)
+                        "DIRECT_DEBIT", "DEBITO_DIRETO" -> Triple(tr("Débito Direto", "Direct Debit"), Icons.Default.AccountBalanceWallet, FinflowAmber)
                         else -> Triple(uiState.selectedPaymentMethod, Icons.Default.CreditCard, FinflowPrimary)
                     }
 
@@ -774,7 +779,7 @@ fun AddTransactionBottomSheet(
                             }
                             Column {
                                 Text(
-                                    text = "Conta / Método",
+                                    text = tr("Conta / Método", "Account / Method"),
                                     fontSize = 11.sp,
                                     color = FinflowTextMuted
                                 )
@@ -817,13 +822,13 @@ fun AddTransactionBottomSheet(
                             )
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Movimento fixo",
+                                    text = tr("Movimento fixo", "Recurring transaction"),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = FinflowTextPrimary
                                 )
                                 Text(
-                                    text = "Repete-se todos os meses (renda, ordenado, ginásio…)",
+                                    text = tr("Repete-se todos os meses (renda, ordenado, ginásio…)", "Repeats every month (rent, salary, gym…)"),
                                     fontSize = 11.sp,
                                     color = FinflowTextMuted
                                 )
@@ -857,7 +862,7 @@ fun AddTransactionBottomSheet(
                                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 12.dp)
                             ) {
                                 Text(
-                                    text = "Eliminar",
+                                    text = tr("Eliminar", "Delete"),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = FinflowCoral
@@ -952,7 +957,7 @@ fun AddTransactionBottomSheet(
             containerColor = FinflowSurface,
             title = {
                 Text(
-                    text = "Eliminar movimento?",
+                    text = tr("Eliminar movimento?", "Delete transaction?"),
                     fontWeight = FontWeight.Bold,
                     color = FinflowTextPrimary
                 )
@@ -960,13 +965,13 @@ fun AddTransactionBottomSheet(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Esta ação não pode ser anulada.",
+                        text = tr("Esta ação não pode ser anulada.", "This action cannot be undone."),
                         fontSize = 14.sp,
                         color = FinflowTextSecondary
                     )
                     if (uiState.hasLinkedRefunds) {
                         Text(
-                            text = "As devoluções ligadas passam a receitas normais.",
+                            text = tr("As devoluções ligadas passam a receitas normais.", "Linked refunds become regular income."),
                             fontSize = 14.sp,
                             color = FinflowTextSecondary
                         )
@@ -981,7 +986,7 @@ fun AddTransactionBottomSheet(
                     }
                 ) {
                     Text(
-                        text = "Eliminar",
+                        text = tr("Eliminar", "Delete"),
                         fontWeight = FontWeight.Bold,
                         color = FinflowCoral
                     )
@@ -989,7 +994,7 @@ fun AddTransactionBottomSheet(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmation = false }) {
-                    Text("Cancelar", color = FinflowTextSecondary)
+                    Text(tr("Cancelar", "Cancel"), color = FinflowTextSecondary)
                 }
             }
         )
@@ -1011,11 +1016,11 @@ private fun PaymentMethodDialog(
     onMethodSelected: (String) -> Unit
 ) {
     val methods = listOf(
-        PaymentOption("CASH", "Dinheiro", "Pagamento em numerário", Icons.Default.AccountBalanceWallet, FinflowSecondary),
-        PaymentOption("CARD", "Cartão Débito", "Cartão bancário de débito", Icons.Default.CreditCard, FinflowPrimary),
-        PaymentOption("MBWAY", "MB WAY", "Pagamento via app móvel", Icons.Default.CreditCard, FinflowCoral),
-        PaymentOption("TRANSFER", "Transferência", "Transferência bancária", Icons.Default.Repeat, FinflowPurple),
-        PaymentOption("DIRECT_DEBIT", "Débito Direto", "Débito direto em conta", Icons.Default.AccountBalanceWallet, FinflowAmber)
+        PaymentOption("CASH", "Dinheiro", tr("Pagamento em numerário", "Cash payment"), Icons.Default.AccountBalanceWallet, FinflowSecondary),
+        PaymentOption("CARD", tr("Cartão Débito", "Debit Card"), tr("Cartão bancário de débito", "Bank debit card"), Icons.Default.CreditCard, FinflowPrimary),
+        PaymentOption("MBWAY", "MB WAY", tr("Pagamento via app móvel", "Payment via mobile app"), Icons.Default.CreditCard, FinflowCoral),
+        PaymentOption("TRANSFER", tr("Transferência", "Transfer"), tr("Transferência bancária", "Bank transfer"), Icons.Default.Repeat, FinflowPurple),
+        PaymentOption("DIRECT_DEBIT", tr("Débito Direto", "Direct Debit"), tr("Débito direto em conta", "Direct debit from account"), Icons.Default.AccountBalanceWallet, FinflowAmber)
     )
 
     AlertDialog(
@@ -1023,7 +1028,7 @@ private fun PaymentMethodDialog(
         containerColor = FinflowSurface,
         title = {
             Text(
-                text = "Método de Pagamento",
+                text = tr("Método de Pagamento", "Payment Method"),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = FinflowTextPrimary
@@ -1091,7 +1096,7 @@ private fun PaymentMethodDialog(
                         if (isSelected) {
                             Icon(
                                 imageVector = Icons.Default.Check,
-                                contentDescription = "Selecionado",
+                                contentDescription = tr("Selecionado", "Selected"),
                                 tint = opt.tint,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -1102,7 +1107,7 @@ private fun PaymentMethodDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Fechar", color = FinflowPrimary)
+                Text(tr("Fechar", "Close"), color = FinflowPrimary)
             }
         }
     )
@@ -1123,7 +1128,7 @@ private fun CreateCategoryDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (selectedParentId != null) "Nova Subcategoria" else "Nova Categoria",
+                text = if (selectedParentId != null) tr("Nova Subcategoria", "New Subcategory") else tr("Nova Categoria", "New Category"),
                 fontWeight = FontWeight.Bold,
                 color = FinflowTextPrimary
             )
@@ -1136,15 +1141,15 @@ private fun CreateCategoryDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nome da Categoria") },
-                    placeholder = { Text("Ex: Animais, Farmácia, Cinema") },
+                    label = { Text(tr("Nome da Categoria", "Category Name")) },
+                    placeholder = { Text(tr("Ex: Animais, Farmácia, Cinema", "E.g. Pets, Pharmacy, Cinema")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 if (parentCategories.isNotEmpty()) {
                     Text(
-                        text = "Pertence a:",
+                        text = tr("Pertence a:", "Belongs to:"),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = FinflowTextSecondary
@@ -1165,7 +1170,7 @@ private fun CreateCategoryDialog(
                                 .padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
                             Text(
-                                text = "Principal",
+                                text = tr("Principal", "Main"),
                                 fontSize = 12.sp,
                                 fontWeight = if (isRoot) FontWeight.Bold else FontWeight.Normal,
                                 color = if (isRoot) Color.White else FinflowTextPrimary
@@ -1203,12 +1208,12 @@ private fun CreateCategoryDialog(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = FinflowPrimary)
             ) {
-                Text("Criar e Selecionar", color = Color.White)
+                Text(tr("Criar e Selecionar", "Create and Select"), color = Color.White)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = FinflowTextSecondary)
+                Text(tr("Cancelar", "Cancel"), color = FinflowTextSecondary)
             }
         }
     )
@@ -1247,7 +1252,7 @@ private fun AllCategoriesDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Selecionar Categoria",
+                    text = tr("Selecionar Categoria", "Select Category"),
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
                     color = FinflowTextPrimary
@@ -1258,7 +1263,7 @@ private fun AllCategoriesDialog(
                 }) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp), tint = FinflowPrimary)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Nova", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FinflowPrimary)
+                    Text(tr("Nova", "New"), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = FinflowPrimary)
                 }
             }
         },
@@ -1272,7 +1277,7 @@ private fun AllCategoriesDialog(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Pesquisar categoria...") },
+                    placeholder = { Text(tr("Pesquisar categoria...", "Search category...")) },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null, tint = FinflowTextMuted, modifier = Modifier.size(18.dp))
                     },
@@ -1366,7 +1371,7 @@ private fun AllCategoriesDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Fechar", color = FinflowPrimary)
+                Text(tr("Fechar", "Close"), color = FinflowPrimary)
             }
         }
     )
@@ -1501,7 +1506,7 @@ private fun AddSheetSummary(
                 Text(text = typeLabel, fontSize = 11.sp, color = FinflowTextMuted)
                 Text(text = amountText, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FinflowTextPrimary)
             }
-            Text(text = "Alterar", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = FinflowPrimary)
+            Text(text = tr("Alterar", "Change"), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = FinflowPrimary)
         }
         if (showCategory) {
             Box(
@@ -1538,7 +1543,7 @@ private fun AddSheetSummary(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                Text(text = "Alterar", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = FinflowPrimary)
+                Text(text = tr("Alterar", "Change"), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = FinflowPrimary)
             }
         }
     }

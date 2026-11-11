@@ -1,5 +1,7 @@
 package com.financas.app.ui.screens.home
 
+import com.financas.app.core.i18n.tr
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -452,10 +454,10 @@ class HomeViewModel(
 
     companion object {
         fun formatProjectionText(projectedMonthsToComplete: Long?): String = when {
-            projectedMonthsToComplete == null -> "Sem dados para projetar"
-            projectedMonthsToComplete <= 0L -> "Previsão: meta atingida"
-            projectedMonthsToComplete == 1L -> "Previsão: ~1 mês"
-            else -> "Previsão: ~$projectedMonthsToComplete meses"
+            projectedMonthsToComplete == null -> tr("Sem dados para projetar", "Not enough data to forecast")
+            projectedMonthsToComplete <= 0L -> tr("Previsão: meta atingida", "Forecast: goal reached")
+            projectedMonthsToComplete == 1L -> tr("Previsão: ~1 mês", "Forecast: ~1 month")
+            else -> tr("Previsão: ~$projectedMonthsToComplete meses", "Forecast: ~$projectedMonthsToComplete months")
         }
 
         fun formatTrackBadgeText(onTrack: Boolean?): String? = when (onTrack) {

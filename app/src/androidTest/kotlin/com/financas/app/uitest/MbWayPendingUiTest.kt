@@ -40,7 +40,7 @@ class MbWayPendingUiTest {
 
         // 2. Simular a notificação MB WAY a partir de Conta > Configurações
         composeRule.openAccountScreen()
-        composeRule.onNodeWithText("Configurações").performClick()
+        composeRule.onNodeWithText("Preferências").performClick()
         composeRule.waitUntil {
             composeRule.onAllNodesWithText("Captura Automática (MB WAY & Bancos)")
                 .fetchSemanticsNodes().isNotEmpty()

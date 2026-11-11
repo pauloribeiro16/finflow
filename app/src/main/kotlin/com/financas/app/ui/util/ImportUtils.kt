@@ -1,5 +1,7 @@
 package com.financas.app.ui.util
 
+import com.financas.app.core.i18n.tr
+
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -18,7 +20,7 @@ fun readTextLimited(context: Context, uri: Uri, maxBytes: Long = MAX_IMPORT_BYTE
 
 private fun readBytesLimited(context: Context, uri: Uri, maxBytes: Long): ByteArray {
     val input = context.contentResolver.openInputStream(uri)
-        ?: throw IOException("Não foi possível abrir o ficheiro")
+        ?: throw IOException(tr("Não foi possível abrir o ficheiro", "Could not open the file"))
     return input.use { stream ->
         val out = java.io.ByteArrayOutputStream()
         val buffer = ByteArray(8 * 1024)
@@ -27,7 +29,7 @@ private fun readBytesLimited(context: Context, uri: Uri, maxBytes: Long): ByteAr
             val read = stream.read(buffer)
             if (read == -1) break
             total += read
-            if (total > maxBytes) throw IOException("Ficheiro demasiado grande (máx. ${maxBytes / (1024 * 1024)} MB)")
+            if (total > maxBytes) throw IOException(tr("Ficheiro demasiado grande (máx. ${maxBytes / (1024 * 1024)} MB)", "File too large (max. ${maxBytes / (1024 * 1024)} MB)"))
             out.write(buffer, 0, read)
         }
         out.toByteArray()

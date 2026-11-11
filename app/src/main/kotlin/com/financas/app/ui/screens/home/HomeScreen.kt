@@ -1,5 +1,7 @@
 package com.financas.app.ui.screens.home
 
+import com.financas.app.core.i18n.tr
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.animateColorAsState
@@ -229,20 +231,20 @@ fun HomeScreen(
                         }
                         Column {
                             Text(
-                                text = "Ativar Deteção MB WAY & Bancos",
+                                text = tr("Ativar Deteção MB WAY & Bancos", "Enable MB WAY & Bank Detection"),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = FinflowTextPrimary
                             )
                             Text(
-                                text = "Toca para autorizar a captura automática",
+                                text = tr("Toca para autorizar a captura automática", "Tap to authorise automatic capture"),
                                 fontSize = 11.sp,
                                 color = FinflowTextSecondary
                             )
                         }
                     }
                     Text(
-                        text = "Ativar ›",
+                        text = tr("Ativar ›", "Enable ›"),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = FinflowPrimary
@@ -279,13 +281,13 @@ fun HomeScreen(
                         )
                         Column {
                             Text(
-                                text = "Movimentos Pendentes (${uiState.pendingCount})",
+                                text = tr("Movimentos Pendentes (${uiState.pendingCount})", "Pending Transactions (${uiState.pendingCount})"),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = FinflowTextPrimary
                             )
                             Text(
-                                text = "Despesas detetadas para rever",
+                                text = tr("Despesas detetadas para rever", "Expenses detected for review"),
                                 fontSize = 12.sp,
                                 color = FinflowTextSecondary
                             )
@@ -298,7 +300,7 @@ fun HomeScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "Rever",
+                            text = tr("Rever", "Review"),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -342,7 +344,7 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "DESPESAS DESTE MÊS",
+                        text = tr("DESPESAS DESTE MÊS", "SPENDING THIS MONTH"),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = FinflowTextMuted,
@@ -356,7 +358,7 @@ fun HomeScreen(
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = if (isWithinBudget) "• Dentro da meta" else "• Teto excedido",
+                            text = if (isWithinBudget) tr("• Dentro da meta", "• Within target") else "• Teto excedido",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (isWithinBudget) FinflowSecondary else FinflowCoral
@@ -391,14 +393,14 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "${MoneyCents(remainingCents).formatPt(isPrivacyMode)} restantes",
+                        text = tr("${MoneyCents(remainingCents).formatPt(isPrivacyMode)} restantes", "${MoneyCents(remainingCents).formatPt(isPrivacyMode)} left"),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = FinflowTextPrimary
                     )
 
                     Text(
-                        text = "Meta: ${MoneyCents(budgetTargetCents).formatPt(isPrivacyMode)}",
+                        text = tr("Meta: ${MoneyCents(budgetTargetCents).formatPt(isPrivacyMode)}", "Goal: ${MoneyCents(budgetTargetCents).formatPt(isPrivacyMode)}"),
                         fontSize = 12.sp,
                         color = FinflowTextSecondary
                     )
@@ -425,7 +427,7 @@ fun HomeScreen(
                     }
 
                     Text(
-                        text = "${MoneyCents.formatPercent(budgetPercent)} do teto",
+                        text = tr("${MoneyCents.formatPercent(budgetPercent)} do teto", "${MoneyCents.formatPercent(budgetPercent)} of the cap"),
                         fontSize = 11.sp,
                         color = FinflowTextMuted
                     )
@@ -469,7 +471,7 @@ fun HomeScreen(
                         }
                         Column {
                             Text(
-                                text = "PATRIMÓNIO APLICADO",
+                                text = tr("PATRIMÓNIO APLICADO", "INVESTED WEALTH"),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = FinflowTextMuted,
@@ -477,8 +479,8 @@ fun HomeScreen(
                             )
                             Text(
                                 text = if (portfolio.totalAssetsCount > 0)
-                                    "${portfolio.totalAssetsCount} aplicações ativas (PPR, ETFs...)"
-                                else "PPRs, Depósitos a Prazo, ETFs",
+                                    tr("${portfolio.totalAssetsCount} aplicações ativas (PPR, ETFs...)", "${portfolio.totalAssetsCount} active holdings (PPR, ETFs...)")
+                                else tr("PPRs, Depósitos a Prazo, ETFs", "PPRs, Term Deposits, ETFs"),
                                 fontSize = 11.sp,
                                 color = FinflowTextSecondary
                             )
@@ -490,7 +492,7 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "Ver Carteira",
+                            text = tr("Ver Carteira", "View Portfolio"),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinflowPrimary
@@ -517,7 +519,7 @@ fun HomeScreen(
                             color = FinflowTextPrimary
                         )
                         Text(
-                            text = "investido: ${MoneyCents(portfolio.totalInvestedCents).formatPt(isPrivacyMode)}",
+                            text = tr("investido: ${MoneyCents(portfolio.totalInvestedCents).formatPt(isPrivacyMode)}", "invested: ${MoneyCents(portfolio.totalInvestedCents).formatPt(isPrivacyMode)}"),
                             fontSize = 11.sp,
                             color = FinflowTextMuted
                         )
@@ -576,7 +578,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Média Diária",
+                            text = tr("Média Diária", "Daily Average"),
                             fontSize = 12.sp,
                             color = FinflowTextSecondary
                         )
@@ -604,7 +606,7 @@ fun HomeScreen(
                     )
 
                     Text(
-                        text = "✓ Ritmo sustentável",
+                        text = tr("✓ Ritmo sustentável", "✓ Sustainable pace"),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = FinflowSecondary
@@ -631,7 +633,7 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Maior Categoria",
+                            text = tr("Maior Categoria", "Top Category"),
                             fontSize = 12.sp,
                             color = FinflowTextSecondary
                         )
@@ -709,13 +711,13 @@ fun HomeScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Ritmo Semanal",
+                            text = tr("Ritmo Semanal", "Weekly Pace"),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinflowTextPrimary
                         )
                         Text(
-                            text = "Distribuição de gastos por semana",
+                            text = tr("Distribuição de gastos por semana", "Spending by week"),
                             fontSize = 12.sp,
                             color = FinflowTextSecondary
                         )
@@ -728,7 +730,7 @@ fun HomeScreen(
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = if (isPrivacyMode) "Média: ${MoneyCents.MASKED_STRING}/sem" else "Média: ${MoneyCents.formatCents(avgWeekExpense, false)}/sem",
+                            text = if (isPrivacyMode) tr("Média: ${MoneyCents.MASKED_STRING}/sem", "Average: ${MoneyCents.MASKED_STRING}/wk") else tr("Média: ${MoneyCents.formatCents(avgWeekExpense, false)}/sem", "Average: ${MoneyCents.formatCents(avgWeekExpense, false)}/wk"),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinflowPrimary
@@ -780,7 +782,7 @@ fun HomeScreen(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Sem ${index + 1}",
+                                text = tr("Sem ${index + 1}", "Wk ${index + 1}"),
                                 fontSize = 11.sp,
                                 fontWeight = if (isCurrentWeek) FontWeight.Bold else FontWeight.Normal,
                                 color = if (isCurrentWeek) FinflowTextPrimary else FinflowTextSecondary
@@ -815,7 +817,7 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Movimentos (${uiState.monthTitle})",
+                        text = tr("Movimentos (${uiState.monthTitle})", "Transactions (${uiState.monthTitle})"),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = FinflowTextPrimary
@@ -829,7 +831,7 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            text = "Ver todas",
+                            text = tr("Ver todas", "View all"),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = FinflowPrimary
@@ -880,7 +882,12 @@ fun HomeScreen(
                                 .padding(horizontal = 14.dp, vertical = 6.dp)
                         ) {
                             Text(
-                                text = filter,
+                                text = when (filter) {
+                                    "Todas" -> tr("Todas", "All")
+                                    "Hoje" -> tr("Hoje", "Today")
+                                    "Ontem" -> tr("Ontem", "Yesterday")
+                                    else -> tr("Filtro", "Filter")
+                                },
                                 fontSize = 12.sp,
                                 fontWeight = if (isSel) FontWeight.Bold else FontWeight.Medium,
                                 color = pillTextColor
@@ -919,7 +926,7 @@ fun HomeScreen(
                         if (displayedTxs.isEmpty()) {
                             Text(
                                 text = if (filterState == "Todas") "Sem transações registadas em ${uiState.monthTitle}."
-                                       else "Sem transações para o filtro selecionado ($filterState).",
+                                       else tr("Sem transações para o filtro selecionado ($filterState).", "No transactions for the selected filter ($filterState)."),
                                 fontSize = 13.sp,
                                 color = FinflowTextSecondary,
                                 modifier = Modifier.padding(vertical = 12.dp)
@@ -941,7 +948,7 @@ fun HomeScreen(
                                     modifier = Modifier.align(Alignment.CenterHorizontally)
                                 ) {
                                     Text(
-                                        text = if (showAllTransactions) "Mostrar menos" else "Mostrar mais (${filteredByPill.size - 5})",
+                                        text = if (showAllTransactions) tr("Mostrar menos", "Show less") else tr("Mostrar mais (${filteredByPill.size - 5})", "Show more (${filteredByPill.size - 5})"),
                                         fontSize = 12.sp,
                                         color = FinflowPrimary,
                                         fontWeight = FontWeight.SemiBold
@@ -969,7 +976,7 @@ fun HomeScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Ver Todo o Histórico de ${uiState.monthTitle} (${allTxs.size})",
+                        text = tr("Ver Todo o Histórico de ${uiState.monthTitle} (${allTxs.size})", "View Full History for ${uiState.monthTitle} (${allTxs.size})"),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = FinflowPrimary
@@ -1016,8 +1023,8 @@ fun HomeScreen(
     pendingDelete?.let { tx ->
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
-            title = { Text(text = "Eliminar Movimento", fontWeight = FontWeight.Bold) },
-            text = { Text("Tens a certeza que queres eliminar '${tx.merchant}' (${MoneyCents(tx.amountCents).formatPt(isPrivacyMode)})?") },
+            title = { Text(text = tr("Eliminar Movimento", "Delete Transaction"), fontWeight = FontWeight.Bold) },
+            text = { Text(tr("Tens a certeza que queres eliminar '${tx.merchant}' (${MoneyCents(tx.amountCents).formatPt(isPrivacyMode)})?", "Are you sure you want to delete '${tx.merchant}' (${MoneyCents(tx.amountCents).formatPt(isPrivacyMode)})?")) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -1026,12 +1033,12 @@ fun HomeScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = FinflowCoral)
                 ) {
-                    Text("Eliminar", color = Color.White)
+                    Text(tr("Eliminar", "Delete"), color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { pendingDelete = null }) {
-                    Text("Cancelar")
+                    Text(tr("Cancelar", "Cancel"))
                 }
             }
         )

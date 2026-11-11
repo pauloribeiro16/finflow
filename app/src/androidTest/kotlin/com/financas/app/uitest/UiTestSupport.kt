@@ -2,6 +2,7 @@ package com.financas.app.uitest
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsNode
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.SemanticsMatcher
@@ -18,6 +19,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.platform.app.InstrumentationRegistry
 import com.financas.app.FinancasApplication
@@ -39,6 +42,7 @@ fun uniqueToken(prefix: String = "UI"): String = "$prefix${System.currentTimeMil
  * já desmontado (o splash cobre a UI durante ~1,3 s e intercepta os toques).
  */
 fun ComposeTestRule.waitForAppReady(timeoutMillis: Long = 30_000) {
+    forcePortuguese()
     waitUntil(timeoutMillis = timeoutMillis) {
         onAllNodesWithContentDescription("Início").fetchSemanticsNodes().isNotEmpty()
     }
@@ -46,6 +50,16 @@ fun ComposeTestRule.waitForAppReady(timeoutMillis: Long = 30_000) {
         onAllNodesWithText("FINFLOW").fetchSemanticsNodes().isEmpty()
     }
     waitForIdle()
+}
+
+/** Os testes usam os textos em português; a app arranca em inglês por omissão. */
+fun ComposeTestRule.forcePortuguese() {
+    val store = (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as FinancasApplication)
+        .container.userProfileStore
+    if (store.getAppLanguage() != "PT") {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { store.setAppLanguage("PT") }
+        waitForIdle()
+    }
 }
 
 /** Iniciais apresentadas no avatar para o utilizador atualmente autenticado. */
@@ -73,19 +87,19 @@ fun currentUserInitials(): String {
 fun ComposeTestRule.openAccountScreen(timeoutMillis: Long = 20_000) {
     val byPhoto = onAllNodesWithContentDescription("Foto de perfil")
     if (byPhoto.fetchSemanticsNodes().isNotEmpty()) {
-        byPhoto.onFirst().performClick()
+        byPhoto.onFirst().performSemanticsAction(SemanticsActions.OnClick)
     } else {
-        onAllNodesWithText(currentUserInitials()).onFirst().performClick()
+        onAllNodesWithText(currentUserInitials()).onFirst().performSemanticsAction(SemanticsActions.OnClick)
     }
     waitUntil(timeoutMillis = timeoutMillis) {
-        onAllNodesWithText("Versão & Sistema").fetchSemanticsNodes().isNotEmpty()
+        onAllNodesWithText("Sistema & Versão").fetchSemanticsNodes().isNotEmpty()
     }
 }
 
 /** Todos os textos semânticos de um nó. */
 fun nodeTexts(node: SemanticsNode): List<String> {
     @Suppress("UNCHECKED_CAST")
-    val texts = node.config.getOrNull(SemanticsProperties.Text) as? List<AnnotatedString>
+    val texts = node.config.getOrElseNullable(SemanticsProperties.Text) { null } as? List<AnnotatedString>
     return texts?.map { it.text } ?: emptyList()
 }
 
@@ -94,7 +108,7 @@ fun nodeText(node: SemanticsNode): String = nodeTexts(node).firstOrNull() ?: ""
 
 /** Texto currently editável de um nó (string vazia se não for um campo de texto). */
 fun nodeEditableText(node: SemanticsNode): String {
-    val editable = node.config.getOrNull(SemanticsProperties.EditableText) as? AnnotatedString
+    val editable = node.config.getOrElseNullable(SemanticsProperties.EditableText) { null } as? AnnotatedString
     return editable?.text ?: ""
 }
 

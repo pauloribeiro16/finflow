@@ -53,7 +53,7 @@ class AccountUiTest {
     fun createsSubcategory() {
         composeRule.waitForAppReady()
         composeRule.openAccountScreen()
-        composeRule.onNodeWithText("Configurações").performClick()
+        composeRule.onNodeWithText("Preferências").performClick()
         composeRule.waitUntil {
             composeRule.onAllNodesWithText("Categorias & Contextos").fetchSemanticsNodes().isNotEmpty()
         }
@@ -91,7 +91,7 @@ class AccountUiTest {
     fun createsCustomContext() {
         composeRule.waitForAppReady()
         composeRule.openAccountScreen()
-        composeRule.onNodeWithText("Configurações").performClick()
+        composeRule.onNodeWithText("Preferências").performClick()
         composeRule.waitUntil {
             composeRule.onAllNodesWithText("Categorias & Contextos").fetchSemanticsNodes().isNotEmpty()
         }
@@ -125,7 +125,7 @@ class AccountUiTest {
         composeRule.waitForAppReady()
         composeRule.openAccountScreen()
 
-        composeRule.onNodeWithText("Versão & Sistema").performClick()
+        composeRule.onNodeWithText("Sistema & Versão").performClick()
         composeRule.waitUntil {
             composeRule.onAllNodesWithText("Histórico de Versões & Patches").fetchSemanticsNodes().isNotEmpty()
         }

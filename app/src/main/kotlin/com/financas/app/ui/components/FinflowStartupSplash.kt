@@ -1,5 +1,7 @@
 package com.financas.app.ui.components
 
+import com.financas.app.core.i18n.tr
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -220,7 +222,7 @@ fun FinflowStartupSplash(
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Finanças Pessoais",
+                text = tr("Finanças Pessoais", "Personal Finance"),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Normal,
                 letterSpacing = 1.sp,

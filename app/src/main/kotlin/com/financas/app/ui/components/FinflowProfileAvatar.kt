@@ -1,5 +1,7 @@
 package com.financas.app.ui.components
 
+import com.financas.app.core.i18n.tr
+
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.compose.foundation.Image
@@ -111,7 +113,7 @@ fun FinflowProfileAvatar(
         if (bmp != null) {
             Image(
                 bitmap = bmp,
-                contentDescription = "Foto de perfil",
+                contentDescription = tr("Foto de perfil", "Profile photo"),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )

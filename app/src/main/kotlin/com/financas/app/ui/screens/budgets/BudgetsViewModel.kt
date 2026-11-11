@@ -1,5 +1,7 @@
 package com.financas.app.ui.screens.budgets
 
+import com.financas.app.core.i18n.tr
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -365,7 +367,7 @@ class BudgetsViewModel(
 
     private fun marketSyncMessage(summary: com.financas.app.domain.usecase.PortfolioSyncSummary): String {
         val parts = mutableListOf<String>()
-        parts += if (summary.updatedCount > 0) "${summary.updatedCount} cotações atualizadas" else "Nenhuma cotação atualizada"
+        parts += if (summary.updatedCount > 0) tr("${summary.updatedCount} cotações atualizadas", "${summary.updatedCount} quotes updated") else tr("Nenhuma cotação atualizada", "No quotes updated")
         if (summary.failedTickers.isNotEmpty()) {
             parts += "sem cotação ou câmbio: ${summary.failedTickers.joinToString(", ")}"
         }

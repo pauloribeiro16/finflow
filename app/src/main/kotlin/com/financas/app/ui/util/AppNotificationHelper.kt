@@ -1,5 +1,7 @@
 package com.financas.app.ui.util
 
+import com.financas.app.core.i18n.tr
+
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -29,7 +31,7 @@ class AppNotificationHelper(private val context: Context) {
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = "Finflow Updates"
-            val descriptionText = "Notificações de novas versões e atualizações da aplicação"
+            val descriptionText = tr("Notificações de novas versões e atualizações da aplicação", "Notifications about new versions and app updates")
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText
@@ -65,11 +67,11 @@ class AppNotificationHelper(private val context: Context) {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Finflow ${updateInfo.tagName} disponível!")
-            .setContentText("Nova versão pronta para atualizar. Toca para instalar.")
+            .setContentTitle(tr("Finflow ${updateInfo.tagName} disponível!", "Finflow ${updateInfo.tagName} available!"))
+            .setContentText(tr("Nova versão pronta para atualizar. Toca para instalar.", "New version ready to update. Tap to install."))
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("Nova versão ${updateInfo.tagName} disponível!\n\n$cleanNotes")
+                    .bigText(tr("Nova versão ${updateInfo.tagName} disponível!\n\n$cleanNotes", "New version ${updateInfo.tagName} available!\n\n$cleanNotes"))
             )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(pendingIntent)

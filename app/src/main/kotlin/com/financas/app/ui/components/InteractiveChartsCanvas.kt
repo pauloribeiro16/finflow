@@ -1,5 +1,7 @@
 package com.financas.app.ui.components
 
+import com.financas.app.core.i18n.tr
+
 import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -367,7 +369,7 @@ fun InteractiveMonthlyBarChart(
                     .background(AccentEmerald)
             )
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Receita", fontSize = 11.sp, color = TextSecondary)
+            Text(tr("Receita", "Income"), fontSize = 11.sp, color = TextSecondary)
 
             Spacer(modifier = Modifier.width(12.dp))
             Box(
@@ -377,7 +379,7 @@ fun InteractiveMonthlyBarChart(
                     .background(AccentCoral)
             )
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Despesa", fontSize = 11.sp, color = TextSecondary)
+            Text(tr("Despesa", "Expense"), fontSize = 11.sp, color = TextSecondary)
 
             if (monthlyAverageExpenseCents > 0L) {
                 val avgLegendLineColor = TextSecondary
@@ -392,7 +394,7 @@ fun InteractiveMonthlyBarChart(
                     )
                 }
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Média Despesa", fontSize = 11.sp, color = TextSecondary)
+                Text(tr("Média Despesa", "Avg. Expense"), fontSize = 11.sp, color = TextSecondary)
             }
         }
 
@@ -915,7 +917,8 @@ fun InteractiveYearComparisonChart(
     }
 }
 
-private val CALENDAR_WEEKDAY_LABELS = listOf("Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom")
+private val CALENDAR_WEEKDAY_LABELS_PT = listOf("Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom")
+private val CALENDAR_WEEKDAY_LABELS_EN = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 @Composable
 fun MonthlyCalendarGrid(
@@ -944,7 +947,7 @@ fun MonthlyCalendarGrid(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            CALENDAR_WEEKDAY_LABELS.forEach { label ->
+            (if (com.financas.app.core.i18n.AppLocale.isEnglish) CALENDAR_WEEKDAY_LABELS_EN else CALENDAR_WEEKDAY_LABELS_PT).forEach { label ->
                 Text(
                     text = label,
                     fontSize = 10.sp,

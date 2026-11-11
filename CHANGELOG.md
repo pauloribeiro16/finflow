@@ -24,6 +24,15 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 - Proteção contra sobreposições de ecrã (tapjacking).
 - CI: Dependabot e análise CodeQL.
 
+### Corrigido
+- Com o modo privacidade ativo, os formulários de edição (investimentos, alocações, valor do movimento) eram preenchidos com `••••` em vez do número; guardar podia gravar 0.
+
+### Melhorado
+- Tradução completa para inglês (cerca de 580 textos, datas e dias da semana).
+- Testes de migração da base de dados em todas as versões (1 → 8) e esquema exportado.
+- Ecrãs de Conta, Análise e Património divididos em ficheiros mais pequenos.
+- CI com lint, cobertura mínima do domínio e compilação dos testes de interface.
+
 ---
 
 ## [2.7.0] — 2026-11-10 (Minor Release)

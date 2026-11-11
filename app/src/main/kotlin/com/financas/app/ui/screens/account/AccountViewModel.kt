@@ -1,5 +1,7 @@
 package com.financas.app.ui.screens.account
 
+import com.financas.app.core.i18n.tr
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -213,14 +215,14 @@ class AccountViewModel(
             )
 
             categoryDao.insert(newCategory)
-            _uiState.update { it.copy(message = "Subcategoria \"$trimmed\" criada com sucesso.") }
+            _uiState.update { it.copy(message = tr("Subcategoria \"$trimmed\" criada com sucesso.", "Subcategory \"$trimmed\" created successfully.")) }
         }
     }
 
     fun deleteSubcategory(category: CategoryEntity) {
         viewModelScope.launch {
             categoryDao.delete(category)
-            _uiState.update { it.copy(message = "Subcategoria \"${category.name}\" eliminada.") }
+            _uiState.update { it.copy(message = tr("Subcategoria \"${category.name}\" eliminada.", "Subcategory \"${category.name}\" deleted.")) }
         }
     }
 
@@ -229,7 +231,7 @@ class AccountViewModel(
         if (clean.isBlank()) return
         customContextTags.update { it + clean }
         contextTagsStore.addTag(clean)
-        _uiState.update { it.copy(message = "Contexto \"$clean\" adicionado.") }
+        _uiState.update { it.copy(message = tr("Contexto \"$clean\" adicionado.", "Context \"$clean\" added.")) }
     }
 
     fun addBudget(categoryId: String, limitCents: Long) {
@@ -246,7 +248,7 @@ class AccountViewModel(
                 )
             )
             _uiState.update {
-                it.copy(message = "Orçamento para \"$categoryName\" definido: ${MoneyCents.formatCents(limitCents)}.")
+                it.copy(message = tr("Orçamento para \"$categoryName\" definido: ${MoneyCents.formatCents(limitCents)}.", "Budget for \"$categoryName\" set: ${MoneyCents.formatCents(limitCents)}."))
             }
         }
     }
@@ -258,7 +260,7 @@ class AccountViewModel(
             val categoryName = resolveCategoryName(budget.categoryId) ?: budget.categoryId
             budgetDao.insert(budget.copy(limitCents = newLimitCents))
             _uiState.update {
-                it.copy(message = "Orçamento para \"$categoryName\" definido: ${MoneyCents.formatCents(newLimitCents)}.")
+                it.copy(message = tr("Orçamento para \"$categoryName\" definido: ${MoneyCents.formatCents(newLimitCents)}.", "Budget for \"$categoryName\" set: ${MoneyCents.formatCents(newLimitCents)}."))
             }
         }
     }
@@ -266,7 +268,7 @@ class AccountViewModel(
     fun deleteBudget(budget: BudgetEntity) {
         viewModelScope.launch {
             budgetDao.deleteById(budget.id)
-            _uiState.update { it.copy(message = "Orçamento eliminado.") }
+            _uiState.update { it.copy(message = tr("Orçamento eliminado.", "Budget deleted.")) }
         }
     }
 
@@ -286,21 +288,21 @@ class AccountViewModel(
                 deadlineYearMonth = deadlineYearMonth
             )
             goalDao.insert(goal)
-            _uiState.update { it.copy(message = "Meta \"$trimmed\" criada.") }
+            _uiState.update { it.copy(message = tr("Meta \"$trimmed\" criada.", "Goal \"$trimmed\" created.")) }
         }
     }
 
     fun archiveGoal(goal: GoalEntity) {
         viewModelScope.launch {
             goalDao.insert(goal.copy(archived = true))
-            _uiState.update { it.copy(message = "Meta \"${goal.name}\" arquivada.") }
+            _uiState.update { it.copy(message = tr("Meta \"${goal.name}\" arquivada.", "Goal \"${goal.name}\" archived.")) }
         }
     }
 
     fun deleteGoal(goal: GoalEntity) {
         viewModelScope.launch {
             goalDao.deleteById(goal.id)
-            _uiState.update { it.copy(message = "Meta eliminada.") }
+            _uiState.update { it.copy(message = tr("Meta eliminada.", "Goal deleted.")) }
         }
     }
 
@@ -352,7 +354,7 @@ class AccountViewModel(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    message = "Backup restaurado: ${result.transactionsImported} novos movimentos, ${result.categoriesImported} categorias sincronizadas, ${result.budgetsImported} orçamentos e ${result.goalsImported} metas sincronizados."
+                    message = tr("Backup restaurado: ${result.transactionsImported} novos movimentos, ${result.categoriesImported} categorias sincronizadas, ${result.budgetsImported} orçamentos e ${result.goalsImported} metas sincronizados.", "Backup restored: ${result.transactionsImported} new transactions, ${result.categoriesImported} categories synced, ${result.budgetsImported} budgets and ${result.goalsImported} goals synced.")
                 )
             }
             Result.success(result)
@@ -360,7 +362,7 @@ class AccountViewModel(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    message = "Erro ao restaurar backup: ${e.message}"
+                    message = tr("Erro ao restaurar backup: ${e.message}", "Error restoring backup: ${e.message}")
                 )
             }
             Result.failure(e)
@@ -396,7 +398,7 @@ class AccountViewModel(
             )
             pendingDao.insert(mock)
             _uiState.update {
-                it.copy(message = "Notificação de teste criada ($merchant, ${MoneyCents.formatCents(amountCents)})! Vê na fila no Início.")
+                it.copy(message = tr("Notificação de teste criada ($merchant, ${MoneyCents.formatCents(amountCents)})! Vê na fila no Início.", "Test notification created ($merchant, ${MoneyCents.formatCents(amountCents)})! See the queue on Home."))
             }
         }
     }
@@ -405,7 +407,7 @@ class AccountViewModel(
         val trimmed = name.trim()
         if (trimmed.isNotBlank()) {
             userProfileStore?.setUserName(trimmed)
-            _uiState.update { it.copy(userName = trimmed, message = "Perfil atualizado para \"$trimmed\".") }
+            _uiState.update { it.copy(userName = trimmed, message = tr("Perfil atualizado para \"$trimmed\".", "Profile updated to \"$trimmed\".")) }
         }
     }
 
@@ -414,20 +416,20 @@ class AccountViewModel(
         _uiState.update {
             it.copy(
                 profilePhotoUri = uri,
-                message = if (uri != null) "Foto de perfil atualizada!" else "Foto de perfil removida."
+                message = if (uri != null) tr("Foto de perfil atualizada!", "Profile photo updated!") else tr("Foto de perfil removida.", "Profile photo removed.")
             )
         }
     }
 
     fun updateDefaultCurrency(currency: String) {
         userProfileStore?.setDefaultCurrency(currency)
-        _uiState.update { it.copy(defaultCurrency = currency, message = "Moeda predefinida alterada para $currency.") }
+        _uiState.update { it.copy(defaultCurrency = currency, message = tr("Moeda predefinida alterada para $currency.", "Default currency changed to $currency.")) }
     }
 
     fun updateMonthlyCycleDay(day: Int) {
         if (day in 1..28) {
             userProfileStore?.setMonthlyCycleDay(day)
-            _uiState.update { it.copy(monthlyCycleDay = day, message = "Início do ciclo mensal alterado para o dia $day.") }
+            _uiState.update { it.copy(monthlyCycleDay = day, message = tr("Início do ciclo mensal alterado para o dia $day.", "Monthly cycle start changed to day $day.")) }
         }
     }
 
@@ -436,7 +438,7 @@ class AccountViewModel(
         val msg = when (mode) {
             "DARK" -> "Modo Noturno ativado."
             "LIGHT" -> "Modo Diurno ativado."
-            else -> "Modo automático do sistema ativado."
+            else -> tr("Modo automático do sistema ativado.", "Automatic system mode enabled.")
         }
         _uiState.update { it.copy(themeMode = mode, message = msg) }
     }
@@ -486,7 +488,7 @@ class AccountViewModel(
                 pendingTransactionDao = pendingTransactionDao,
                 clearExisting = true
             )
-            _uiState.update { it.copy(isLoading = false, message = "Dados de demonstração repostos com sucesso.") }
+            _uiState.update { it.copy(isLoading = false, message = tr("Dados de demonstração repostos com sucesso.", "Demo data restored successfully.")) }
         }
     }
 

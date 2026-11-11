@@ -92,4 +92,19 @@ class MoneyCentsTest {
         assertEquals("2.450,00 €", MoneyCents.formatCents(245000L))
         assertEquals("2.450,00 €", MoneyCents(245000L).formatPt())
     }
+
+    @org.junit.Test
+    fun formatForInput_isNeverMaskedAndRoundTripsThroughParser() {
+        val previous = MoneyCents.isPrivacyModeEnabled
+        try {
+            MoneyCents.isPrivacyModeEnabled = true
+            org.junit.Assert.assertEquals("1.234,56", MoneyCents.formatForInput(123456L))
+            org.junit.Assert.assertEquals(
+                123456L,
+                com.financas.app.ui.screens.budgets.parseEuroToCents(MoneyCents.formatForInput(123456L))
+            )
+        } finally {
+            MoneyCents.isPrivacyModeEnabled = previous
+        }
+    }
 }

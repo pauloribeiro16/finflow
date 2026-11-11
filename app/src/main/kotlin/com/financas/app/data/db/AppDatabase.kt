@@ -24,7 +24,7 @@ import com.financas.app.data.entity.TransactionEntity
         InvestmentAssetEntity::class
     ],
     version = 8,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
 

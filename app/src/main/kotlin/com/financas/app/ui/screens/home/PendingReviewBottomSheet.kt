@@ -1,5 +1,7 @@
 package com.financas.app.ui.screens.home
 
+import com.financas.app.core.i18n.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -146,13 +148,13 @@ fun PendingReviewBottomSheet(
                     }
                     Column {
                         Text(
-                            text = "Fila de Pendentes",
+                            text = tr("Fila de Pendentes", "Pending Queue"),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         Text(
-                            text = "${pendingList.size} movimento(s) por validar",
+                            text = tr("${pendingList.size} movimento(s) por validar", "${pendingList.size} transaction(s) to review"),
                             fontSize = 12.sp,
                             color = TextSecondary
                         )
@@ -171,7 +173,7 @@ fun PendingReviewBottomSheet(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Confirmar Todos", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(tr("Confirmar Todos", "Confirm All"), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -186,7 +188,7 @@ fun PendingReviewBottomSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Não tens movimentos pendentes para rever.",
+                        text = tr("Não tens movimentos pendentes para rever.", "You have no pending transactions to review."),
                         fontSize = 14.sp,
                         color = TextMuted
                     )
@@ -298,7 +300,7 @@ fun PendingReviewBottomSheet(
                                             )
                                             Column {
                                                 Text(
-                                                    text = "Categoria",
+                                                    text = tr("Categoria", "Category"),
                                                     fontSize = 10.sp,
                                                     color = TextMuted
                                                 )
@@ -335,7 +337,7 @@ fun PendingReviewBottomSheet(
                                             )
                                             Column {
                                                 Text(
-                                                    text = "Contexto",
+                                                    text = tr("Contexto", "Context"),
                                                     fontSize = 10.sp,
                                                     color = TextMuted
                                                 )
@@ -368,9 +370,9 @@ fun PendingReviewBottomSheet(
                                 if (isInvestment) {
                                     Text(
                                         text = if (monthlyAssetId != null && selectedAssets[item.id] == null) {
-                                            "Investimento — sugerido pelo reforço mensal definido (podes mudar)"
+                                            tr("Investimento — sugerido pelo reforço mensal definido (podes mudar)", "Investment — suggested from the monthly top-up you set (you can change it)")
                                         } else {
-                                            "Investimento — escolhe para onde foi (ou 'Decidir depois' para alocar na Carteira)"
+                                            tr("Investimento — escolhe para onde foi (ou 'Decidir depois' para alocar na Carteira)", "Investment — choose where it went (or 'Decide later' to allocate in the Portfolio)")
                                         },
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.SemiBold,
@@ -462,7 +464,7 @@ fun PendingReviewBottomSheet(
                                             modifier = Modifier.size(14.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text("Editar", fontSize = 12.sp, color = TextPrimary)
+                                        Text(tr("Editar", "Edit"), fontSize = 12.sp, color = TextPrimary)
                                     }
 
                                     // Discard button
@@ -475,7 +477,7 @@ fun PendingReviewBottomSheet(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Close,
-                                            contentDescription = "Descartar",
+                                            contentDescription = tr("Descartar", "Discard"),
                                             tint = AccentCoral,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -514,7 +516,7 @@ fun PendingReviewBottomSheet(
         AlertDialog(
             onDismissRequest = { itemPickingContext = null },
             title = {
-                Text("Escolher Contexto", color = TextPrimary, fontWeight = FontWeight.Bold)
+                Text(tr("Escolher Contexto", "Choose Context"), color = TextPrimary, fontWeight = FontWeight.Bold)
             },
             text = {
                 Column(
@@ -563,7 +565,7 @@ fun PendingReviewBottomSheet(
             },
             confirmButton = {
                 TextButton(onClick = { itemPickingContext = null }) {
-                    Text("Cancelar", color = AccentBlue)
+                    Text(tr("Cancelar", "Cancel"), color = AccentBlue)
                 }
             },
             containerColor = DarkSurface,
@@ -620,7 +622,7 @@ private fun CategoryPickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Escolher Categoria", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text(tr("Escolher Categoria", "Choose Category"), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         },
         text = {
             Column(
@@ -633,7 +635,7 @@ private fun CategoryPickerDialog(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Pesquisar categoria...", color = TextMuted, fontSize = 13.sp) },
+                    placeholder = { Text(tr("Pesquisar categoria...", "Search category..."), color = TextMuted, fontSize = 13.sp) },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp))
                     },
@@ -643,7 +645,7 @@ private fun CategoryPickerDialog(
                                 onClick = { searchQuery = "" },
                                 modifier = Modifier.size(24.dp)
                             ) {
-                                Icon(Icons.Default.Close, contentDescription = "Limpar", tint = TextMuted, modifier = Modifier.size(16.dp))
+                                Icon(Icons.Default.Close, contentDescription = tr("Limpar", "Clear"), tint = TextMuted, modifier = Modifier.size(16.dp))
                             }
                         }
                     },
@@ -679,7 +681,7 @@ private fun CategoryPickerDialog(
                             .padding(horizontal = 10.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = "Todas",
+                            text = tr("Todas", "All"),
                             fontSize = 12.sp,
                             fontWeight = if (isAllSelected) FontWeight.Bold else FontWeight.Medium,
                             color = if (isAllSelected) Color.White else TextSecondary
@@ -736,7 +738,7 @@ private fun CategoryPickerDialog(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "Nenhuma categoria encontrada",
+                                    text = tr("Nenhuma categoria encontrada", "No category found"),
                                     color = TextMuted,
                                     fontSize = 13.sp
                                 )
@@ -801,7 +803,7 @@ private fun CategoryPickerDialog(
                                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
                                             Text(
-                                                text = "Geral",
+                                                text = tr("Geral", "General"),
                                                 fontSize = 11.sp,
                                                 color = AccentBlue,
                                                 fontWeight = FontWeight.SemiBold
@@ -815,7 +817,7 @@ private fun CategoryPickerDialog(
                                         }
                                     } else {
                                         Text(
-                                            text = "Usar geral",
+                                            text = tr("Usar geral", "Use general"),
                                             fontSize = 11.sp,
                                             color = TextMuted
                                         )
@@ -877,7 +879,7 @@ private fun CategoryPickerDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar", color = AccentBlue)
+                Text(tr("Cancelar", "Cancel"), color = AccentBlue)
             }
         },
         containerColor = DarkSurface,

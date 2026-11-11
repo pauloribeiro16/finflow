@@ -1,5 +1,7 @@
 package com.financas.app.ui.components
 
+import com.financas.app.core.i18n.tr
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -88,7 +90,7 @@ fun DateDropdownDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Escolher Data",
+                    text = tr("Escolher Data", "Choose Date"),
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -105,12 +107,12 @@ fun DateDropdownDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = "Ver calendário",
+                            contentDescription = tr("Ver calendário", "View calendar"),
                             tint = AccentBlue,
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "Calendário",
+                            text = tr("Calendário", "Calendar"),
                             fontSize = 12.sp,
                             color = AccentBlue,
                             fontWeight = FontWeight.Medium
@@ -125,8 +127,8 @@ fun DateDropdownDialog(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val chips = listOf(
-                    Triple("Hoje", todayEpoch, today),
-                    Triple("Ontem", yesterdayEpoch, today.minusDays(1)),
+                    Triple(tr("Hoje", "Today"), todayEpoch, today),
+                    Triple(tr("Ontem", "Yesterday"), yesterdayEpoch, today.minusDays(1)),
                     Triple("Anteontem", anteontemEpoch, today.minusDays(2))
                 )
 
@@ -184,7 +186,7 @@ fun DateDropdownDialog(
                             .clickable { dayExpanded = true }
                             .padding(horizontal = 10.dp, vertical = 8.dp)
                     ) {
-                        Text(text = "Dia", fontSize = 10.sp, color = TextMuted)
+                        Text(text = tr("Dia", "Day"), fontSize = 10.sp, color = TextMuted)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -242,7 +244,7 @@ fun DateDropdownDialog(
                             .clickable { monthExpanded = true }
                             .padding(horizontal = 10.dp, vertical = 8.dp)
                     ) {
-                        Text(text = "Mês", fontSize = 10.sp, color = TextMuted)
+                        Text(text = tr("Mês", "Month"), fontSize = 10.sp, color = TextMuted)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -303,7 +305,7 @@ fun DateDropdownDialog(
                             .clickable { yearExpanded = true }
                             .padding(horizontal = 10.dp, vertical = 8.dp)
                     ) {
-                        Text(text = "Ano", fontSize = 10.sp, color = TextMuted)
+                        Text(text = tr("Ano", "Year"), fontSize = 10.sp, color = TextMuted)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -359,7 +361,7 @@ fun DateDropdownDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onDismiss) {
-                    Text("Cancelar", color = TextSecondary)
+                    Text(tr("Cancelar", "Cancel"), color = TextSecondary)
                 }
 
                 Button(
@@ -370,7 +372,7 @@ fun DateDropdownDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
                     shape = RoundedCornerShape(10.dp)
                 ) {
-                    Text("Confirmar", color = Color.White, fontWeight = FontWeight.SemiBold)
+                    Text(tr("Confirmar", "Confirm"), color = Color.White, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

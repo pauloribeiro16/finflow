@@ -55,6 +55,7 @@ class SharedPrefsUserProfileStore(
 
     init {
         com.financas.app.domain.model.MoneyCents.isPrivacyModeEnabled = isPrivacyModeEnabled()
+        com.financas.app.core.i18n.AppLocale.isEnglish = getAppLanguage() == "EN"
     }
 
     override fun getUserName(): String =
@@ -123,6 +124,7 @@ class SharedPrefsUserProfileStore(
     override fun setAppLanguage(lang: String) {
         val uppercaseLang = lang.uppercase()
         prefs.edit().putString("app_language", uppercaseLang).apply()
+        com.financas.app.core.i18n.AppLocale.isEnglish = uppercaseLang == "EN"
         _appLanguageFlow.value = uppercaseLang
     }
 

@@ -1,5 +1,7 @@
 package com.financas.app.ui.screens.account
 
+import com.financas.app.core.i18n.tr
+
 import android.content.Context
 import android.content.ContextWrapper
 import android.widget.Toast
@@ -22,7 +24,7 @@ fun requestPrivacyModeChange(
     val activity = context.findActivityForPrompt() ?: return
     gate.authenticate(
         activity = activity,
-        subtitle = "Confirme para mostrar os valores",
+        subtitle = tr("Confirme para mostrar os valores", "Confirm to show amounts"),
         onSuccess = { apply(false) },
         onError = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
     )
