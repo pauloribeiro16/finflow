@@ -198,3 +198,23 @@ Por ordem de retorno face ao esforço:
 - **CI:** lint, gate de cobertura do domínio (≥ 95%), build do `androidTest` e relatórios como artefacto.
 - **Testes de UI:** voltaram a compilar e foram atualizados para a UI atual (português forçado, fluxo em 3 passos), mas **não foram validados até ao fim** — a execução no telemóvel do utilizador foi interrompida a pedido (não alterar dados). Validar num emulador/CI dedicado.
 - **Processo:** gate de segurança & privacidade obrigatório em `AGENTS.md` §6.1 e `contracts/CONTRACT-TEMPLATE.md`.
+
+## Terceira ronda (2026-11-11) — auditoria completa independente
+
+Revisão de toda a app (não só do diff): chaves e SQLCipher, backups, rede, atualizador, bloqueio, manifest, CI e histórico git.
+
+| # | Gravidade | Achado | Estado |
+|---|-----------|--------|--------|
+| T1 | **Média** | A cópia "antes de atualizar" ficava em JSON **em claro** em `files/backups/` (até 3 cópias de todos os dados ao lado da BD cifrada) | ✅ Cifrada com `LocalFileCipher` (AES-256-GCM, chave de dados embrulhada por chave do Keystore); as cópias antigas são cifradas no arranque |
+| T2 | Média | O restauro aceitava qualquer valor do ficheiro: montantes até `Long.MAX_VALUE` (overflow nas somas), meses/datas impossíveis, textos sem limite, dia de ciclo/tema/idioma arbitrários | ✅ `BackupSanitizer` no restauro pelo utilizador (limites, descarta registos inválidos e avisa) |
+| T3 | Baixa | Restaurar um backup com `biometricsEnabled=false` desligava o bloqueio sem autenticação | ✅ O restauro só pode ligar o bloqueio, nunca desligar |
+| T4 | Baixa | PBKDF2 a 310k iterações (OWASP recomenda 600k para HMAC-SHA256) | ✅ 600k; ficheiros antigos continuam a abrir |
+| T5 | Baixa | Sem política de rede explícita; `FileProvider` expunha 2 caminhos não usados | ✅ `usesCleartextTraffic=false` + `network_security_config` (só CAs do sistema); só `cache/updates/` |
+| T6 | Baixa | `finflow-release.keystore` e `keystore.properties` legíveis por todos os utilizadores do Mac (644) | ✅ `chmod 600` (nunca estiveram no git) |
+
+**Por decidir (não alterado):**
+- Bloqueio da app é uma flag, não está ligado à chave (S10, aceite): com root/exploit o bloqueio não protege; a chave da BD não usa `setUnlockedDeviceRequired` nem StrongBox porque a captura em segundo plano precisa da BD com o telemóvel bloqueado.
+- Janela de 30 s sem bloqueio ao voltar do segundo plano; exportar (JSON/CSV em claro) não pede autenticação.
+- Restauro não é atómico e os movimentos do backup entram com o `id` original (`REPLACE`): um backup de outro telemóvel pode substituir movimentos locais com o mesmo id.
+- `FinancialAppFilter` aceita qualquer pacote com um segmento tipo `xtb`/`paypal…`: uma app maliciosa instalada pode criar pendentes falsos (precisam sempre de aprovação).
+- Palavra-passe do backup: mínimo 8 caracteres, sem medidor de força.

@@ -10,6 +10,7 @@ import android.os.Build
 import android.provider.Settings
 import androidx.annotation.RequiresApi
 import androidx.core.content.FileProvider
+import com.financas.app.core.security.LocalFileCipher
 import com.financas.app.domain.model.AppUpdateInfo
 import com.financas.app.domain.usecase.AppUpdateChecker
 import com.financas.app.domain.usecase.UpdateSignatureCheck
@@ -273,6 +274,7 @@ class AppUpdateManager(
     companion object {
         const val UPDATES_DIR = "updates"
         const val BACKUPS_DIR = "backups"
+        const val ENCRYPTED_BACKUP_SUFFIX = ".json.enc"
         const val MAX_PRIVATE_BACKUPS = 3
         const val MAX_REDIRECTS = 5
         const val MAX_APK_BYTES = 200L * 1024 * 1024
@@ -288,16 +290,41 @@ class AppUpdateManager(
                 ?.forEach { it.delete() }
         }
 
-        fun savePrivateBackup(context: Context, json: String, tagName: String): File {
+        fun savePrivateBackup(
+            context: Context,
+            json: String,
+            tagName: String,
+            cipher: LocalFileCipher = LocalFileCipher()
+        ): File {
             val dir = File(context.filesDir, BACKUPS_DIR).apply { mkdirs() }
             val safeTag = tagName.replace(Regex("[^A-Za-z0-9._-]"), "_")
-            val file = File(dir, "antes_de_atualizar_${safeTag}_${System.currentTimeMillis()}.json")
-            file.writeText(json)
+            val file = File(dir, "antes_de_atualizar_${safeTag}_${System.currentTimeMillis()}$ENCRYPTED_BACKUP_SUFFIX")
+            file.writeBytes(cipher.encrypt(json.toByteArray(Charsets.UTF_8)))
             dir.listFiles()
                 ?.sortedByDescending { it.lastModified() }
                 ?.drop(MAX_PRIVATE_BACKUPS)
                 ?.forEach { it.delete() }
             return file
+        }
+
+        fun readPrivateBackup(file: File, cipher: LocalFileCipher = LocalFileCipher()): String =
+            String(cipher.decrypt(file.readBytes()), Charsets.UTF_8)
+
+        fun encryptLegacyPrivateBackups(context: Context, cipher: LocalFileCipher = LocalFileCipher()): Int {
+            val legacy = File(context.filesDir, BACKUPS_DIR).listFiles()
+                ?.filter { it.isFile && !it.name.endsWith(ENCRYPTED_BACKUP_SUFFIX) }
+                .orEmpty()
+            var converted = 0
+            for (file in legacy) {
+                val target = File(file.parentFile, file.name + ".enc")
+                val encrypted = runCatching {
+                    target.writeBytes(cipher.encrypt(file.readBytes()))
+                    target.setLastModified(file.lastModified())
+                }.isSuccess
+                if (encrypted) converted++ else target.delete()
+                file.delete()
+            }
+            return converted
         }
     }
 }

@@ -24,7 +24,7 @@ A sua privacidade é a nossa prioridade absoluta. O **Finflow** guarda os seus d
 
 ## 4. Cópias de Segurança (Backups)
 - As funcionalidades de exportação (JSON/CSV) só criam ficheiros no local que o utilizador escolher no seletor do Android (armazenamento do dispositivo ou um fornecedor de nuvem pessoal, ex.: Google Drive). Estes ficheiros **não são encriptados**: guarde-os num local seguro.
-- Antes de cada atualização, é guardada uma cópia de segurança no armazenamento **privado** da aplicação (inacessível a outras apps), mantendo apenas as 3 mais recentes.
+- Antes de cada atualização, é guardada uma cópia de segurança no armazenamento **privado** da aplicação (inacessível a outras apps), cifrada com uma chave do Android Keystore, mantendo apenas as 3 mais recentes.
 - Os dados da aplicação são excluídos das cópias de segurança automáticas do Android e da transferência entre dispositivos; para mudar de telemóvel, exporte e restaure um backup.
 
 ## 5. Eliminação de Dados

@@ -22,6 +22,7 @@ class FinancasApplication : Application() {
 
         applicationScope.launch {
             runCatching { com.financas.app.data.updater.AppUpdateManager.cleanupStaleDownloads(this@FinancasApplication) }
+            runCatching { com.financas.app.data.updater.AppUpdateManager.encryptLegacyPrivateBackups(this@FinancasApplication) }
             DefaultSeed.seedIfNeeded(container.categoryDao)
             if (BuildConfig.IS_DEMO) {
                 if (container.transactionDao.count() == 0) {

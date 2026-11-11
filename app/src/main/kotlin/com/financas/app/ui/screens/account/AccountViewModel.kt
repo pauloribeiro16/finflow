@@ -335,7 +335,8 @@ class AccountViewModel(
     suspend fun importJson(jsonString: String): Result<RestoreResult> {
         _uiState.update { it.copy(isLoading = true) }
         return try {
-            val backupData = backupSerializer.importFromJson(jsonString)
+            val sanitized = com.financas.app.data.repository.BackupSanitizer.sanitize(backupSerializer.importFromJson(jsonString))
+            val backupData = sanitized.data
             val result = backupSerializer.restoreBackup(backupData, categoryDao, transactionDao, budgetDao, goalDao, investmentAssetDao)
             backupData.settings?.let { settings ->
                 settingsBackupManager?.apply(settings)
@@ -354,7 +355,8 @@ class AccountViewModel(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    message = tr("Backup restaurado: ${result.transactionsImported} novos movimentos, ${result.categoriesImported} categorias sincronizadas, ${result.budgetsImported} orçamentos e ${result.goalsImported} metas sincronizados.", "Backup restored: ${result.transactionsImported} new transactions, ${result.categoriesImported} categories synced, ${result.budgetsImported} budgets and ${result.goalsImported} goals synced.")
+                    message = tr("Backup restaurado: ${result.transactionsImported} novos movimentos, ${result.categoriesImported} categorias sincronizadas, ${result.budgetsImported} orçamentos e ${result.goalsImported} metas sincronizados.", "Backup restored: ${result.transactionsImported} new transactions, ${result.categoriesImported} categories synced, ${result.budgetsImported} budgets and ${result.goalsImported} goals synced.") +
+                        if (sanitized.droppedRecords > 0) tr(" ${sanitized.droppedRecords} registos inválidos ignorados.", " ${sanitized.droppedRecords} invalid records skipped.") else ""
                 )
             }
             Result.success(result)

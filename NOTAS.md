@@ -51,3 +51,8 @@ Fonte: `SECURITY_AUDIT_2026-11-11.md` (secção "Estado das correções").
 ## 2026-11-11 — manutenção: migrações, privacidade em formulários, tradução, ecrãs
 `RoomMigrationSchemaTest` (JVM + `sqlite-jdbc`) aplica 1→8 e compara com `app/schemas/.../8.json`; o esquema v1–v7 é reconstruído a partir do v8 (o repo começa em v6 e as entidades só mudaram via migrações). Bug: `formatPt()` mascarado era usado para pré-preencher campos → `formatForInput()`. Tradução via `tr(pt, en)` + `AppLocale` global atualizado antes do flow e `key(appLanguage)` no MainScaffold. Ecrãs gigantes divididos por ficheiro (privates → internal).
 Gotchas: os testes de UI estavam escritos para uma UI antiga e esperam português (a app arranca em EN); o OnePlus bloqueia toques injetados perto da barra de estado. Não correr testes no telemóvel do utilizador (altera dados).
+
+## 2026-11-11 — terceira auditoria: cópias internas em claro e restauro sem validação
+A cópia "antes de atualizar" em `files/backups/` era JSON em claro e anulava o SQLCipher em repouso; agora é cifrada com `LocalFileCipher` (chave no Keystore, alias `finflow_local_files_master`) e as antigas são convertidas no arranque. O restauro passa por `BackupSanitizer` (só no restauro do utilizador — a migração de encriptação continua a usar `importFromJson` direto para não perder registos) e nunca desliga o bloqueio. PBKDF2 subiu para 600k.
+Gotcha: ninguém lê ainda essas cópias internas (`AppUpdateManager.readPrivateBackup` existe mas não há UI).
+Fonte: `SECURITY_AUDIT_2026-11-11.md` (secção "Terceira ronda", T1–T6 + pendentes).

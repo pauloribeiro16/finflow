@@ -17,7 +17,7 @@ object BackupCrypto {
     const val FORMAT = "finflow-encrypted-backup"
     const val VERSION = 1
     const val MIN_PASSWORD_LENGTH = 8
-    const val DEFAULT_ITERATIONS = 310_000
+    const val DEFAULT_ITERATIONS = 600_000
     private const val MIN_ITERATIONS = 100_000
     private const val MAX_ITERATIONS = 5_000_000
     private const val KDF = "PBKDF2WithHmacSHA256"

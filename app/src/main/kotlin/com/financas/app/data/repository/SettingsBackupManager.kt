@@ -44,7 +44,8 @@ class SettingsBackupManager(
         settings.customContextTags.forEach { contextTagsStore.addTag(it) }
 
         val canUseBiometrics = (context.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager)?.isDeviceSecure == true
-        biometricPreferenceStore.setBiometricsEnabled(settings.biometricsEnabled && canUseBiometrics)
+        val lockAlreadyEnabled = biometricPreferenceStore.isBiometricsEnabled()
+        biometricPreferenceStore.setBiometricsEnabled(lockAlreadyEnabled || (settings.biometricsEnabled && canUseBiometrics))
 
         settings.profilePhotoBase64?.let { decodePhoto(it) }
     }
