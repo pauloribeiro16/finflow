@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.sp
 import com.financas.app.domain.model.MoneyCents
 import com.financas.app.domain.usecase.CalendarDayData
 import com.financas.app.domain.usecase.ChartScale
+import com.financas.app.ui.i18n.LocalPrivacyMode
 import com.financas.app.ui.theme.AccentAmber
 import com.financas.app.ui.theme.AccentBlue
 import com.financas.app.ui.theme.AccentCoral
@@ -396,6 +397,7 @@ fun InteractiveMonthlyBarChart(
         }
 
         // Chart Canvas
+        val isPrivacy = LocalPrivacyMode.current
         val highlightPillColor = DarkSurfaceHighlight
         val avgDashedLineColor = TextSecondary.copy(alpha = 0.6f)
         val incomeBarColor = AccentEmerald
@@ -463,7 +465,7 @@ fun InteractiveMonthlyBarChart(
                     chartHeight = chartHeight,
                     labelRightX = gutterPx - 6.dp.toPx(),
                     labelColor = axisLabelColor,
-                    format = { ChartScale.formatCompactCents(it.roundToLong()) }
+                    format = { ChartScale.formatCompactCents(it.roundToLong(), isPrivacy) }
                 )
 
                 // Highlight background pill for selected month
@@ -801,6 +803,7 @@ fun InteractiveYearComparisonChart(
 ) {
     if (years.isEmpty()) return
 
+    val isPrivacy = LocalPrivacyMode.current
     val monthLabels = listOf("Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez")
 
     Column(
@@ -821,8 +824,9 @@ fun InteractiveYearComparisonChart(
                         .background(yearData.color)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
+                val isPrivacy = LocalPrivacyMode.current
                 Text(
-                    text = "${yearData.year} · ${MoneyCents.formatCents(yearData.totalExpenseCents)}",
+                    text = "${yearData.year} · ${if (isPrivacy) MoneyCents.MASKED_STRING else MoneyCents.formatCents(yearData.totalExpenseCents, false)}",
                     fontSize = 11.sp,
                     color = TextSecondary
                 )
@@ -871,7 +875,7 @@ fun InteractiveYearComparisonChart(
                     chartHeight = chartHeight,
                     labelRightX = gutterPx - 6.dp.toPx(),
                     labelColor = axisLabelColor,
-                    format = { ChartScale.formatCompactCents(it.roundToLong()) }
+                    format = { ChartScale.formatCompactCents(it.roundToLong(), isPrivacy) }
                 )
 
                 years.forEachIndexed { seriesIndex, yearData ->

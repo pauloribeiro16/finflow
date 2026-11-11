@@ -126,8 +126,8 @@ class SharedPrefsUserProfileStore(
 
     override fun setPrivacyModeEnabled(enabled: Boolean) {
         prefs.edit().putBoolean("privacy_mode_enabled", enabled).apply()
-        _privacyModeFlow.value = enabled
         com.financas.app.domain.model.MoneyCents.isPrivacyModeEnabled = enabled
+        _privacyModeFlow.value = enabled
     }
 
     override fun isAutoUpdateCheckEnabled(): Boolean = prefs.getBoolean("auto_update_check", true)

@@ -65,6 +65,7 @@ import com.financas.app.domain.usecase.InvestmentTransferRules
 import com.financas.app.data.entity.PendingTransactionEntity
 import com.financas.app.data.seed.DefaultSeed
 import com.financas.app.domain.model.MoneyCents
+import com.financas.app.ui.i18n.LocalPrivacyMode
 import com.financas.app.ui.theme.AccentBlue
 import com.financas.app.ui.theme.AccentCoral
 import com.financas.app.ui.theme.AccentEmerald
@@ -244,8 +245,9 @@ fun PendingReviewBottomSheet(
                                     }
 
                                     val isIncomePending = item.suggestedType.equals("INCOME", ignoreCase = true)
+                                    val isPrivacy = LocalPrivacyMode.current
                                     Text(
-                                        text = "${if (isIncomePending) "+" else "-"} ${MoneyCents.formatCents(item.amountCents)}",
+                                        text = if (isPrivacy) MoneyCents.MASKED_STRING else "${if (isIncomePending) "+" else "-"} ${MoneyCents.formatCents(item.amountCents, false)}",
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (isIncomePending) AccentEmerald else AccentCoral

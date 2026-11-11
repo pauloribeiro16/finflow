@@ -177,7 +177,7 @@ fun HomeScreen(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = "+${MoneyCents(summary.netSavingsCents).formatPt()} poupados",
+                            text = if (isPrivacyMode) "${MoneyCents.MASKED_STRING} poupados" else "+${MoneyCents(summary.netSavingsCents).formatPt(false)} poupados",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinflowSecondary
@@ -366,7 +366,7 @@ fun HomeScreen(
 
                 // Big Expense Display
                 Text(
-                    text = MoneyCents(summary.totalExpenseCents).formatPt(),
+                    text = MoneyCents(summary.totalExpenseCents).formatPt(isPrivacyMode),
                     fontSize = 36.sp,
                     fontWeight = FontWeight.Bold,
                     color = FinflowTextPrimary
@@ -391,14 +391,14 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "${MoneyCents(remainingCents).formatPt()} restantes",
+                        text = "${MoneyCents(remainingCents).formatPt(isPrivacyMode)} restantes",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = FinflowTextPrimary
                     )
 
                     Text(
-                        text = "Meta: ${MoneyCents(budgetTargetCents).formatPt()}",
+                        text = "Meta: ${MoneyCents(budgetTargetCents).formatPt(isPrivacyMode)}",
                         fontSize = 12.sp,
                         color = FinflowTextSecondary
                     )
@@ -511,13 +511,13 @@ fun HomeScreen(
                 ) {
                     Column {
                         Text(
-                            text = MoneyCents(portfolio.totalCurrentValueCents).formatPt(),
+                            text = MoneyCents(portfolio.totalCurrentValueCents).formatPt(isPrivacyMode),
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinflowTextPrimary
                         )
                         Text(
-                            text = "investido: ${MoneyCents(portfolio.totalInvestedCents).formatPt()}",
+                            text = "investido: ${MoneyCents(portfolio.totalInvestedCents).formatPt(isPrivacyMode)}",
                             fontSize = 11.sp,
                             color = FinflowTextMuted
                         )
@@ -536,7 +536,7 @@ fun HomeScreen(
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "$sign${MoneyCents(portfolio.totalProfitLossCents).formatPt()} ($sign${MoneyCents.formatPercent(portfolio.totalProfitLossPercentage)})",
+                                text = if (isPrivacyMode) MoneyCents.MASKED_STRING else "$sign${MoneyCents(portfolio.totalProfitLossCents).formatPt(false)} ($sign${MoneyCents.formatPercent(portfolio.totalProfitLossPercentage)})",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = profitColor
@@ -597,7 +597,7 @@ fun HomeScreen(
                     }
 
                     Text(
-                        text = MoneyCents(dailyAverageCents).formatPt(),
+                        text = MoneyCents(dailyAverageCents).formatPt(isPrivacyMode),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = FinflowTextPrimary
@@ -652,7 +652,7 @@ fun HomeScreen(
                     }
 
                     Text(
-                        text = MoneyCents(topCategory?.amountCents ?: 0L).formatPt(),
+                        text = MoneyCents(topCategory?.amountCents ?: 0L).formatPt(isPrivacyMode),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = FinflowTextPrimary
@@ -728,7 +728,7 @@ fun HomeScreen(
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "Média: ${MoneyCents.formatCents(avgWeekExpense)}/sem",
+                            text = if (isPrivacyMode) "Média: ${MoneyCents.MASKED_STRING}/sem" else "Média: ${MoneyCents.formatCents(avgWeekExpense, false)}/sem",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinflowPrimary
@@ -765,7 +765,7 @@ fun HomeScreen(
                             verticalArrangement = Arrangement.Bottom
                         ) {
                             Text(
-                                text = "${amountCents / 100} €",
+                                text = if (isPrivacyMode) MoneyCents.MASKED_STRING else "${amountCents / 100} €",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (isHighest || isCurrentWeek) FinflowTextPrimary else FinflowTextMuted
@@ -1017,7 +1017,7 @@ fun HomeScreen(
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
             title = { Text(text = "Eliminar Movimento", fontWeight = FontWeight.Bold) },
-            text = { Text("Tens a certeza que queres eliminar '${tx.merchant}' (${MoneyCents(tx.amountCents).formatPt()})?") },
+            text = { Text("Tens a certeza que queres eliminar '${tx.merchant}' (${MoneyCents(tx.amountCents).formatPt(isPrivacyMode)})?") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -1153,9 +1153,10 @@ fun FinflowTransactionRow(
             }
         }
 
+        val isPrivacyMode = LocalPrivacyMode.current
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = (if (isExpense) "-" else "+") + MoneyCents(transaction.amountCents).formatPt(),
+                text = if (isPrivacyMode) MoneyCents.MASKED_STRING else (if (isExpense) "-" else "+") + MoneyCents(transaction.amountCents).formatPt(false),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (isExpense) FinflowTextPrimary else FinflowSecondary

@@ -10,6 +10,7 @@ import com.financas.app.ui.fakes.FakeBudgetDao
 import com.financas.app.ui.fakes.FakeCategoryDao
 import com.financas.app.ui.fakes.FakeGoalDao
 import com.financas.app.ui.fakes.FakeTransactionDao
+import com.financas.app.ui.fakes.FakeUserProfileStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -1760,5 +1761,45 @@ class AnalyticsViewModelTest {
         // Average of 1000€, 1200€, 1400€ = 1200€ (120000L)
         assertEquals(120000L, quarterly.averageExpenseCents)
         assertEquals("1.200,00 €", quarterly.formattedAverageExpense)
+    }
+
+    @Test
+    fun privacyModeTogglesMasksFormattedValuesInAnalytics() = runTest {
+        val userProfileStore = FakeUserProfileStore(privacyMode = false)
+        transactionDao.insert(
+            TransactionEntity(
+                id = 1,
+                type = "EXPENSE",
+                amountCents = 150000L,
+                yearMonth = 202610,
+                epochDay = LocalDate.of(2026, 10, 5).toEpochDay(),
+                categoryId = "exp_food",
+                contextTag = "CASA",
+                merchant = "Supermercado",
+                paymentMethod = "CARD"
+            )
+        )
+        val viewModel = AnalyticsViewModel(
+            transactionDao = transactionDao,
+            categoryDao = categoryDao,
+            monthlyAnalyticsCalculator = analyticsCalculator,
+            userProfileStore = userProfileStore,
+            initialYearMonth = 202610
+        )
+
+        assertEquals("1.500,00 €", viewModel.uiState.value.formattedTotalExpense)
+        assertEquals("1.500,00 €", viewModel.uiState.value.annualAnalysis.formattedTotalExpense)
+
+        userProfileStore.setPrivacyModeEnabled(true)
+        advanceUntilIdle()
+
+        assertEquals("•••• €", viewModel.uiState.value.formattedTotalExpense)
+        assertEquals("•••• €", viewModel.uiState.value.annualAnalysis.formattedTotalExpense)
+
+        userProfileStore.setPrivacyModeEnabled(false)
+        advanceUntilIdle()
+
+        assertEquals("1.500,00 €", viewModel.uiState.value.formattedTotalExpense)
+        assertEquals("1.500,00 €", viewModel.uiState.value.annualAnalysis.formattedTotalExpense)
     }
 }

@@ -1,5 +1,6 @@
 package com.financas.app.domain.usecase
 
+import com.financas.app.domain.model.MoneyCents
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -25,7 +26,8 @@ object ChartScale {
         return (1..tickCount).map { index -> roundTick(index * step, magnitude) }
     }
 
-    fun formatCompactCents(cents: Long): String {
+    fun formatCompactCents(cents: Long, masked: Boolean = MoneyCents.isPrivacyModeEnabled): String {
+        if (masked) return MoneyCents.MASKED_STRING
         if (cents == 0L) return "0 €"
         val sign = if (cents < 0L) "-" else ""
         val absCents = abs(cents)

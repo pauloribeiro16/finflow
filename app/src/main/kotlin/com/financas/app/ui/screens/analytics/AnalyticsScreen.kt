@@ -450,8 +450,9 @@ private fun DiscriminatedTransactionRow(
             }
         }
 
+        val isPrivacyMode = LocalPrivacyMode.current
         Text(
-            text = (if (isExpense) "-" else "+") + MoneyCents(transaction.amountCents).formatPt(),
+            text = if (isPrivacyMode) MoneyCents.MASKED_STRING else (if (isExpense) "-" else "+") + MoneyCents(transaction.amountCents).formatPt(false),
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             color = if (isExpense) FinflowTextPrimary else FinflowSecondary
@@ -1066,8 +1067,9 @@ private fun NoQueView(
                     color = FinflowTextPrimary
                 )
 
+                val isPrivacy = LocalPrivacyMode.current
                 Text(
-                    text = "${comparison?.expenseDelta ?: "0,00 €"} face ao mês anterior",
+                    text = "${comparison?.expenseDelta ?: (if (isPrivacy) MoneyCents.MASKED_STRING else "0,00 €")} face ao mês anterior",
                     fontSize = 12.sp,
                     color = FinflowTextSecondary
                 )
@@ -2065,8 +2067,9 @@ fun SubscriptionsCard(
                             color = TextSecondary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                        val isPrivacy = LocalPrivacyMode.current
                         Text(
-                            text = MoneyCents.formatCents(subscriptionReport.totalMonthlyCents),
+                            text = if (isPrivacy) MoneyCents.MASKED_STRING else MoneyCents.formatCents(subscriptionReport.totalMonthlyCents, false),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
@@ -2087,8 +2090,9 @@ fun SubscriptionsCard(
                             color = TextSecondary
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                        val isPrivacy = LocalPrivacyMode.current
                         Text(
-                            text = MoneyCents.formatCents(subscriptionReport.totalAnnualCents),
+                            text = if (isPrivacy) MoneyCents.MASKED_STRING else MoneyCents.formatCents(subscriptionReport.totalAnnualCents, false),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = AccentAmber
@@ -2116,10 +2120,15 @@ fun SubscriptionsCard(
                             fontSize = 16.sp
                         )
                         Column {
-                            val hikeText = if (subscriptionReport.hikesCount == 1) {
-                                "1 subscrição aumentou de preço este mês (+${MoneyCents.formatCents(subscriptionReport.totalHikeIncreaseCents)}/mês)"
-                            } else {
-                                "${subscriptionReport.hikesCount} subscrições aumentaram de preço este mês (+${MoneyCents.formatCents(subscriptionReport.totalHikeIncreaseCents)}/mês)"
+                            val isPrivacy = LocalPrivacyMode.current
+                            val hikeText = when {
+                                isPrivacy -> if (subscriptionReport.hikesCount == 1) {
+                                    "1 subscrição aumentou de preço este mês (${MoneyCents.MASKED_STRING})"
+                                } else {
+                                    "${subscriptionReport.hikesCount} subscrições aumentaram de preço este mês (${MoneyCents.MASKED_STRING})"
+                                }
+                                subscriptionReport.hikesCount == 1 -> "1 subscrição aumentou de preço este mês (+${MoneyCents.formatCents(subscriptionReport.totalHikeIncreaseCents, false)}/mês)"
+                                else -> "${subscriptionReport.hikesCount} subscrições aumentaram de preço este mês (+${MoneyCents.formatCents(subscriptionReport.totalHikeIncreaseCents, false)}/mês)"
                             }
                             Text(
                                 text = "Atenção: Subida de Mensalidade",
@@ -2216,8 +2225,9 @@ private fun SubscriptionItemRow(
                     }
                 }
 
+                val isPrivacy = LocalPrivacyMode.current
                 Text(
-                    text = "${MoneyCents.formatCents(subscription.monthlyAmountCents)} / mês",
+                    text = if (isPrivacy) "${MoneyCents.MASKED_STRING} / mês" else "${MoneyCents.formatCents(subscription.monthlyAmountCents, false)} / mês",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -2235,8 +2245,9 @@ private fun SubscriptionItemRow(
                     color = TextSecondary
                 )
 
+                val isPrivacy = LocalPrivacyMode.current
                 Text(
-                    text = "${MoneyCents.formatCents(subscription.annualizedCostCents)} / ano",
+                    text = if (isPrivacy) "${MoneyCents.MASKED_STRING} / ano" else "${MoneyCents.formatCents(subscription.annualizedCostCents, false)} / ano",
                     fontSize = 11.sp,
                     color = TextMuted
                 )
@@ -2248,8 +2259,9 @@ private fun SubscriptionItemRow(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val isPrivacy = LocalPrivacyMode.current
                     val prevText = subscription.previousAmountCents?.let {
-                        "Anterior: ${MoneyCents.formatCents(it)}"
+                        if (isPrivacy) "Anterior: ${MoneyCents.MASKED_STRING}" else "Anterior: ${MoneyCents.formatCents(it, false)}"
                     } ?: ""
                     Text(
                         text = prevText,
@@ -2264,7 +2276,7 @@ private fun SubscriptionItemRow(
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "+${MoneyCents.formatCents(subscription.priceDifferenceCents)}",
+                            text = if (isPrivacy) MoneyCents.MASKED_STRING else "+${MoneyCents.formatCents(subscription.priceDifferenceCents, false)}",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = AccentCoral

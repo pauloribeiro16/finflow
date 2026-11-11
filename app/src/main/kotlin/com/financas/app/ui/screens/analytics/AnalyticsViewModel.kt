@@ -12,6 +12,7 @@ import com.financas.app.data.entity.BudgetEntity
 import com.financas.app.data.entity.CategoryEntity
 import com.financas.app.data.entity.GoalEntity
 import com.financas.app.data.entity.TransactionEntity
+import com.financas.app.data.prefs.UserProfileStore
 import com.financas.app.data.seed.DefaultSeed
 import com.financas.app.domain.model.DetectedSubscription
 import com.financas.app.domain.model.MoneyCents
@@ -369,6 +370,7 @@ class AnalyticsViewModel(
     private val goalProgressCalculator: GoalProgressCalculator = GoalProgressCalculator(),
     private val subscriptionDetector: SubscriptionDetector = SubscriptionDetector(),
     private val todayEpochDayProvider: () -> Long = { LocalDate.now().toEpochDay() },
+    private val userProfileStore: UserProfileStore? = null,
     initialYearMonth: Int = run {
         val now = LocalDate.now()
         now.year * 100 + now.monthValue
@@ -397,6 +399,16 @@ class AnalyticsViewModel(
 
     init {
         loadData()
+        observePrivacyMode()
+    }
+
+    private fun observePrivacyMode() {
+        val store = userProfileStore ?: return
+        viewModelScope.launch {
+            store.privacyModeFlow.collect {
+                recalculateAll()
+            }
+        }
     }
 
     private fun loadData() {
@@ -871,7 +883,11 @@ class AnalyticsViewModel(
                     percentageOfIncome = MonthlyAnalyticsCalculator.calculateIncomeShare(amount, totalIncomeCents),
                     transactionCount = count,
                     averagePerVisitCents = avgTicket,
-                    formattedAverageTicket = "${MoneyCents.formatCents(avgTicket)} / ida"
+                    formattedAverageTicket = if (userProfileStore?.isPrivacyModeEnabled() == true || MoneyCents.isPrivacyModeEnabled) {
+                        "${MoneyCents.MASKED_STRING} / ida"
+                    } else {
+                        "${MoneyCents.formatCents(avgTicket, false)} / ida"
+                    }
                 )
             }
             .sortedByDescending { it.amountCents }
@@ -1448,10 +1464,14 @@ class AnalyticsViewModel(
         )
     }
 
-    private fun formatDeltaCents(cents: Long): String = when {
-        cents > 0L -> "+${MoneyCents.formatCents(cents)}"
-        cents == 0L -> MoneyCents.formatCents(0L)
-        else -> MoneyCents.formatCents(cents)
+    private fun formatDeltaCents(cents: Long): String {
+        val isPrivacy = userProfileStore?.isPrivacyModeEnabled() == true || MoneyCents.isPrivacyModeEnabled
+        if (isPrivacy) return MoneyCents.MASKED_STRING
+        return when {
+            cents > 0L -> "+${MoneyCents.formatCents(cents, false)}"
+            cents == 0L -> MoneyCents.formatCents(0L, false)
+            else -> MoneyCents.formatCents(cents, false)
+        }
     }
 
     private data class MonthlyBarCalculated(
@@ -1465,9 +1485,14 @@ class AnalyticsViewModel(
     )
 
     companion object {
-        fun formatValue(amountCents: Long, totalIncomeCents: Long, mode: DisplayMode): String {
+        fun formatValue(
+            amountCents: Long,
+            totalIncomeCents: Long,
+            mode: DisplayMode,
+            masked: Boolean = MoneyCents.isPrivacyModeEnabled
+        ): String {
             return when (mode) {
-                DisplayMode.EURO -> MoneyCents.formatCents(amountCents)
+                DisplayMode.EURO -> MoneyCents.formatCents(amountCents, masked)
                 DisplayMode.INCOME_PERCENTAGE -> {
                     val pct = if (totalIncomeCents > 0L) {
                         (amountCents.toDouble() / totalIncomeCents.toDouble()) * 100.0
@@ -1485,7 +1510,8 @@ class AnalyticsViewModel(
             budgetDao: BudgetDao? = null,
             goalDao: GoalDao? = null,
             monthlyAnalyticsCalculator: MonthlyAnalyticsCalculator = MonthlyAnalyticsCalculator(),
-            subscriptionDetector: SubscriptionDetector = SubscriptionDetector()
+            subscriptionDetector: SubscriptionDetector = SubscriptionDetector(),
+            userProfileStore: UserProfileStore? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -1495,7 +1521,8 @@ class AnalyticsViewModel(
                     budgetDao = budgetDao,
                     goalDao = goalDao,
                     monthlyAnalyticsCalculator = monthlyAnalyticsCalculator,
-                    subscriptionDetector = subscriptionDetector
+                    subscriptionDetector = subscriptionDetector,
+                    userProfileStore = userProfileStore
                 ) as T
             }
         }

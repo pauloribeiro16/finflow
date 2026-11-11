@@ -433,6 +433,7 @@ fun InvestmentsTabContent(
     onDeleteAsset: (InvestmentAssetEntity) -> Unit
 ) {
     val portfolio = uiState.portfolioSummary
+    val isPrivacyMode = LocalPrivacyMode.current
     val isProfitPositive = portfolio.totalProfitLossCents >= 0
     val profitColor = if (isProfitPositive) FinflowSecondary else FinflowCoral
     val profitBg = if (isProfitPositive) FinflowSecondaryLight else FinflowCoralLight
@@ -514,7 +515,7 @@ fun InvestmentsTabContent(
                 ) {
                     Column {
                         Text(
-                            text = MoneyCents(uiState.unallocatedBalanceCents).formatPt(),
+                            text = MoneyCents(uiState.unallocatedBalanceCents).formatPt(isPrivacyMode),
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinflowAmber
@@ -577,7 +578,7 @@ fun InvestmentsTabContent(
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "$sign${MoneyCents(portfolio.totalProfitLossCents).formatPt()} ($sign${MoneyCents.formatPercent(portfolio.totalProfitLossPercentage)})",
+                        text = if (isPrivacyMode) MoneyCents.MASKED_STRING else "$sign${MoneyCents(portfolio.totalProfitLossCents).formatPt(false)} ($sign${MoneyCents.formatPercent(portfolio.totalProfitLossPercentage)})",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = profitColor
@@ -593,13 +594,13 @@ fun InvestmentsTabContent(
             ) {
                 Column {
                     Text(
-                        text = MoneyCents(portfolio.totalCurrentValueCents).formatPt(),
+                        text = MoneyCents(portfolio.totalCurrentValueCents).formatPt(isPrivacyMode),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = FinflowTextPrimary
                     )
                     Text(
-                        text = "capital investido: ${MoneyCents(portfolio.totalInvestedCents).formatPt()}",
+                        text = "capital investido: ${MoneyCents(portfolio.totalInvestedCents).formatPt(isPrivacyMode)}",
                         fontSize = 12.sp,
                         color = FinflowTextSecondary
                     )
@@ -608,7 +609,7 @@ fun InvestmentsTabContent(
                 if (portfolio.totalMonthlyContributionCents > 0L) {
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
-                            text = "+${MoneyCents(portfolio.totalMonthlyContributionCents).formatPt()}",
+                            text = if (isPrivacyMode) MoneyCents.MASKED_STRING else "+${MoneyCents(portfolio.totalMonthlyContributionCents).formatPt(false)}",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinflowPrimary
@@ -660,7 +661,7 @@ fun InvestmentsTabContent(
                     )
                 }
                 Text(
-                    text = MoneyCents(uiState.safeSavingsTotalCents).formatPt(),
+                    text = MoneyCents(uiState.safeSavingsTotalCents).formatPt(isPrivacyMode),
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = FinflowSecondary
@@ -699,7 +700,7 @@ fun InvestmentsTabContent(
                     )
                 }
                 Text(
-                    text = MoneyCents(uiState.longTermCurrentValueCents).formatPt(),
+                    text = MoneyCents(uiState.longTermCurrentValueCents).formatPt(isPrivacyMode),
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = FinflowTextPrimary
@@ -707,7 +708,7 @@ fun InvestmentsTabContent(
                 val ltProfitPositive = uiState.longTermProfitLossCents >= 0
                 val ltSign = if (ltProfitPositive) "+" else ""
                 Text(
-                    text = "$ltSign${MoneyCents(uiState.longTermProfitLossCents).formatPt()} ($ltSign${MoneyCents.formatPercent(uiState.longTermProfitLossPct)})",
+                    text = if (isPrivacyMode) MoneyCents.MASKED_STRING else "$ltSign${MoneyCents(uiState.longTermProfitLossCents).formatPt(false)} ($ltSign${MoneyCents.formatPercent(uiState.longTermProfitLossPct)})",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = if (ltProfitPositive) FinflowSecondary else FinflowCoral
@@ -903,6 +904,7 @@ fun InvestmentAssetCard(
     onAddMoney: (() -> Unit)? = null
 ) {
     val type = InvestmentType.fromKey(asset.type)
+    val isPrivacyMode = LocalPrivacyMode.current
     val isProfitPositive = asset.profitLossCents >= 0
     val profitColor = if (isProfitPositive) FinflowSecondary else FinflowCoral
     val profitBg = if (isProfitPositive) FinflowSecondaryLight else FinflowCoralLight
@@ -995,13 +997,13 @@ fun InvestmentAssetCard(
             ) {
                 Column {
                     Text(
-                        text = MoneyCents(asset.currentValueCents).formatPt(),
+                        text = MoneyCents(asset.currentValueCents).formatPt(isPrivacyMode),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = FinflowTextPrimary
                     )
                     Text(
-                        text = "investido: ${MoneyCents(asset.investedCents).formatPt()}",
+                        text = "investido: ${MoneyCents(asset.investedCents).formatPt(isPrivacyMode)}",
                         fontSize = 11.sp,
                         color = FinflowTextMuted
                     )
@@ -1014,7 +1016,7 @@ fun InvestmentAssetCard(
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        text = "$sign${MoneyCents(asset.profitLossCents).formatPt()} ($sign${MoneyCents.formatPercent(asset.profitLossPercentage)})",
+                        text = if (isPrivacyMode) MoneyCents.MASKED_STRING else "$sign${MoneyCents(asset.profitLossCents).formatPt(false)} ($sign${MoneyCents.formatPercent(asset.profitLossPercentage)})",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = profitColor
@@ -1029,7 +1031,7 @@ fun InvestmentAssetCard(
             ) {
                 if (asset.monthlyContributionCents > 0L) {
                     Text(
-                        text = "Reforço: +${MoneyCents(asset.monthlyContributionCents).formatPt()}/mês",
+                        text = if (isPrivacyMode) "Reforço: ${MoneyCents.MASKED_STRING}/mês" else "Reforço: +${MoneyCents(asset.monthlyContributionCents).formatPt(false)}/mês",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = FinflowPrimary
@@ -1206,6 +1208,7 @@ fun AllocateAssetDialog(
     val amountCents = parseEuroToCents(amountText)
     val isValid = selectedTargetId != null && amountCents > 0L && amountCents <= maxCents
     val selectedTarget = targets.firstOrNull { it.id == selectedTargetId }
+    val isPrivacyMode = LocalPrivacyMode.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1214,7 +1217,7 @@ fun AllocateAssetDialog(
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text("Alocar Saldo", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = FinflowTextPrimary)
                 Text(
-                    text = "${source.name} · Saldo disponível: ${MoneyCents(maxCents).formatPt()}",
+                    text = "${source.name} · Saldo disponível: ${MoneyCents(maxCents).formatPt(isPrivacyMode)}",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = FinflowPrimary
@@ -1341,7 +1344,7 @@ fun AllocateAssetDialog(
                 // Feedback em tempo real sobre a alocação e o remanescente
                 if (amountCents > maxCents) {
                     Text(
-                        text = "O valor excede o saldo disponível de ${MoneyCents(maxCents).formatPt()}.",
+                        text = "O valor excede o saldo disponível de ${MoneyCents(maxCents).formatPt(isPrivacyMode)}.",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         color = FinflowCoral
@@ -1349,20 +1352,20 @@ fun AllocateAssetDialog(
                 } else if (amountCents in 1L until maxCents) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            text = "A alocar: ${MoneyCents(amountCents).formatPt()}${if (selectedTarget != null) " ➔ ${selectedTarget.name}" else ""}",
+                            text = "A alocar: ${MoneyCents(amountCents).formatPt(isPrivacyMode)}${if (selectedTarget != null) " ➔ ${selectedTarget.name}" else ""}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = FinflowTextPrimary
                         )
                         Text(
-                            text = "Ficarão ${MoneyCents(maxCents - amountCents).formatPt()} em espera para alocares depois.",
+                            text = "Ficarão ${MoneyCents(maxCents - amountCents).formatPt(isPrivacyMode)} em espera para alocares depois.",
                             fontSize = 11.sp,
                             color = FinflowAmber
                         )
                     }
                 } else if (amountCents == maxCents && maxCents > 0L) {
                     Text(
-                        text = "Todo o saldo disponível (${MoneyCents(maxCents).formatPt()}) será alocado.",
+                        text = "Todo o saldo disponível (${MoneyCents(maxCents).formatPt(isPrivacyMode)}) será alocado.",
                         fontSize = 11.sp,
                         color = FinflowSecondary
                     )
@@ -1489,6 +1492,7 @@ fun GoalsTabContent(
     uiState: BudgetsUiState,
     onAddNewGoal: () -> Unit
 ) {
+    val isPrivacyMode = LocalPrivacyMode.current
     // Header
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -1560,6 +1564,7 @@ fun BudgetsTabContent(
     onAddNewBudget: () -> Unit,
     onToggleRollover: () -> Unit
 ) {
+    val isPrivacyMode = LocalPrivacyMode.current
     // Hero Card: ORÇAMENTO MENSAL GLOBAL
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1630,13 +1635,13 @@ fun BudgetsTabContent(
             ) {
                 Column {
                     Text(
-                        text = MoneyCents(uiState.totalSpentCents).formatPt(),
+                        text = MoneyCents(uiState.totalSpentCents).formatPt(isPrivacyMode),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = FinflowTextPrimary
                     )
                     Text(
-                        text = "teto planeado de ${MoneyCents(uiState.totalLimitCents).formatPt()}",
+                        text = "teto planeado de ${MoneyCents(uiState.totalLimitCents).formatPt(isPrivacyMode)}",
                         fontSize = 12.sp,
                         color = FinflowTextSecondary
                     )
@@ -1644,7 +1649,7 @@ fun BudgetsTabContent(
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = MoneyCents(uiState.totalRemainingCents).formatPt(),
+                        text = MoneyCents(uiState.totalRemainingCents).formatPt(isPrivacyMode),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = if (uiState.totalRemainingCents < 0) FinflowCoral else FinflowSecondary
@@ -1696,7 +1701,7 @@ fun BudgetsTabContent(
                 }
 
                 Text(
-                    text = "Média: ${MoneyCents(uiState.dailyBudgetRemainingCents).formatPt()}/dia",
+                    text = if (isPrivacyMode) "Média: ${MoneyCents.MASKED_STRING}/dia" else "Média: ${MoneyCents(uiState.dailyBudgetRemainingCents).formatPt(false)}/dia",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = FinflowTextSecondary
@@ -1878,6 +1883,7 @@ fun BudgetsTabContent(
 
 @Composable
 fun CategoryBudgetCard(budgetItem: BudgetProgress) {
+    val isPrivacyMode = LocalPrivacyMode.current
     val statusColor = when (budgetItem.status) {
         BudgetStatus.EXCEEDED -> FinflowCoral
         BudgetStatus.WARNING -> FinflowAmber
@@ -1960,7 +1966,7 @@ fun CategoryBudgetCard(budgetItem: BudgetProgress) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${MoneyCents(budgetItem.spentCents).formatPt()} de ${MoneyCents(budgetItem.limitCents).formatPt()}",
+                    text = "${MoneyCents(budgetItem.spentCents).formatPt(isPrivacyMode)} de ${MoneyCents(budgetItem.limitCents).formatPt(isPrivacyMode)}",
                     fontSize = 12.sp,
                     color = FinflowTextSecondary
                 )
@@ -1994,6 +2000,7 @@ fun GoalMiniCard(
     val isComplete = goal.percentComplete >= 100.0
     val badgeBg = if (isComplete) FinflowSecondaryLight else FinflowPrimaryContainer.copy(alpha = 0.35f)
     val badgeColor = if (isComplete) FinflowSecondary else FinflowPrimary
+    val isPrivacyMode = LocalPrivacyMode.current
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -2091,13 +2098,13 @@ fun GoalMiniCard(
             ) {
                 Column {
                     Text(
-                        text = MoneyCents(goal.accumulatedSavingsCents).formatPt(),
+                        text = MoneyCents(goal.accumulatedSavingsCents).formatPt(isPrivacyMode),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = FinflowTextPrimary
                     )
                     Text(
-                        text = "de ${MoneyCents(goal.targetCents).formatPt()}",
+                        text = "de ${MoneyCents(goal.targetCents).formatPt(isPrivacyMode)}",
                         fontSize = 12.sp,
                         color = FinflowTextSecondary
                     )
@@ -2119,7 +2126,7 @@ fun GoalMiniCard(
                         )
                     } else {
                         Text(
-                            text = "Faltam ${MoneyCents(remainingCents).formatPt()}",
+                            text = "Faltam ${MoneyCents(remainingCents).formatPt(isPrivacyMode)}",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = FinflowTextPrimary
@@ -2166,7 +2173,7 @@ fun GoalMiniCard(
                                 modifier = Modifier.size(13.dp)
                             )
                             Text(
-                                text = "Ritmo médio: +${MoneyCents(goal.averageMonthlySavingsCents).formatPt()}/mês",
+                                text = if (isPrivacyMode) "Ritmo médio: ${MoneyCents.MASKED_STRING}/mês" else "Ritmo médio: +${MoneyCents(goal.averageMonthlySavingsCents).formatPt(false)}/mês",
                                 fontSize = 11.sp,
                                 color = FinflowTextMuted
                             )
@@ -2887,16 +2894,17 @@ fun XtbImportPreviewSheet(
                         .padding(14.dp),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
+                    val isPrivacy = LocalPrivacyMode.current
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Valor de Mercado", fontSize = 11.sp, color = FinflowTextSecondary)
-                        Text(MoneyCents.formatCents(report.openPositionValueCents), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = FinflowTextPrimary)
+                        Text(if (isPrivacy) MoneyCents.MASKED_STRING else MoneyCents.formatCents(report.openPositionValueCents, false), fontSize = 16.sp, fontWeight = FontWeight.Bold, color = FinflowTextPrimary)
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Lucro Total", fontSize = 11.sp, color = FinflowTextSecondary)
                         val isPos = report.openPositionProfitCents >= 0
                         val pColor = if (isPos) FinflowSecondary else FinflowCoral
                         val pSign = if (isPos) "+" else ""
-                        Text("$pSign${MoneyCents.formatCents(report.openPositionProfitCents)}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = pColor)
+                        Text(if (isPrivacy) MoneyCents.MASKED_STRING else "$pSign${MoneyCents.formatCents(report.openPositionProfitCents, false)}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = pColor)
                     }
                 }
             }
@@ -2905,6 +2913,7 @@ fun XtbImportPreviewSheet(
             Text("Posições a Sincronizar:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = FinflowTextPrimary)
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val isPrivacy = LocalPrivacyMode.current
                 report.openPositions.forEach { pos ->
                     Row(
                         modifier = Modifier
@@ -2919,11 +2928,11 @@ fun XtbImportPreviewSheet(
                             Text("${pos.ticker} • Vol: ${pos.volume}", fontSize = 11.sp, color = FinflowTextSecondary)
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Text(MoneyCents.formatCents(pos.currentValueCents), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinflowTextPrimary)
+                            Text(if (isPrivacy) MoneyCents.MASKED_STRING else MoneyCents.formatCents(pos.currentValueCents, false), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinflowTextPrimary)
                             val isPos = pos.profitLossCents >= 0
                             val pColor = if (isPos) FinflowSecondary else FinflowCoral
                             val pSign = if (isPos) "+" else ""
-                            Text("$pSign${MoneyCents.formatCents(pos.profitLossCents)} ($pSign${MoneyCents.formatPercent(pos.profitLossPercentage)})", fontSize = 11.sp, color = pColor)
+                            Text(if (isPrivacy) MoneyCents.MASKED_STRING else "$pSign${MoneyCents.formatCents(pos.profitLossCents, false)} ($pSign${MoneyCents.formatPercent(pos.profitLossPercentage)})", fontSize = 11.sp, color = pColor)
                         }
                     }
                 }

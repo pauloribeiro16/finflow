@@ -25,3 +25,9 @@ Fontes: `AddTransactionBottomSheet.kt`, `BankNotificationParser.kt`, `FinancialN
 Adicionado botão de olho (👁️/👁️‍🗨️) na barra superior do Finflow e interruptor em Conta → Segurança para mascarar instantaneamente todos os valores monetários com "•••• €" (mantendo categorias, datas, percentagens e gráficos operacionais).
 Implementado de forma cirúrgica em `MoneyCents.formatCents`/`formatPt` com toggle reativo via `UserProfileStore.privacyModeFlow` e `LocalPrivacyMode`, garantindo recomposição atómica em todos os ecrãs sem expor montantes reais em apresentações a terceiros.
 Fontes: `MoneyCents.kt`, `UserProfileStore.kt`, `MainScaffold.kt`, `AccountScreen.kt`, `MoneyCentsTest.kt`.
+
+## 2026-11-11 — cobertura integral do modo privacidade em todos os ecrãs e gráficos
+O modo privacidade passou a cobrir 100% dos valores monetários em todos os separadores: todas as lentes de Análise (No Quê, Onde, Como, Evolução, Comparar, Calendário, Subscrições), eixos Y e legendas dos gráficos Canvas, ecrãs de Orçamentos/Metas/Investimentos, cartões de património e badges de movimentos.
+O `AnalyticsViewModel` passa a observar ativamente `userProfileStore.privacyModeFlow` e o `UserProfileStore` atualiza `MoneyCents.isPrivacyModeEnabled` antes de emitir no fluxo, assegurando consistência reativa atómica sem valores residuais.
+Fontes: `AnalyticsViewModel.kt`, `InteractiveChartsCanvas.kt`, `UserProfileStore.kt`, `BudgetsGoalsScreen.kt`, `AnalyticsScreen.kt`.
+

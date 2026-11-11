@@ -171,7 +171,8 @@ fun MainScaffold(
             categoryDao = container.categoryDao,
             budgetDao = container.budgetDao,
             goalDao = container.goalDao,
-            monthlyAnalyticsCalculator = container.monthlyAnalyticsCalculator
+            monthlyAnalyticsCalculator = container.monthlyAnalyticsCalculator,
+            userProfileStore = container.userProfileStore
         )
     )
 

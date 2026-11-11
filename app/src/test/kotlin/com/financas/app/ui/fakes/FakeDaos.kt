@@ -424,8 +424,8 @@ class FakeUserProfileStore(
     override fun isPrivacyModeEnabled(): Boolean = privacyMode
     override fun setPrivacyModeEnabled(enabled: Boolean) {
         privacyMode = enabled
-        _privacyModeFlow.value = enabled
         com.financas.app.domain.model.MoneyCents.isPrivacyModeEnabled = enabled
+        _privacyModeFlow.value = enabled
     }
 }
 

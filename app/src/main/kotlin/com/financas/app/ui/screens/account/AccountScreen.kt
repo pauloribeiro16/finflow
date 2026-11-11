@@ -115,6 +115,7 @@ import com.financas.app.data.entity.CategoryEntity
 import com.financas.app.data.entity.GoalEntity
 import com.financas.app.data.service.FinancialNotificationListenerService
 import com.financas.app.domain.model.MoneyCents
+import com.financas.app.ui.i18n.LocalPrivacyMode
 import com.financas.app.ui.theme.AccentAmber
 import com.financas.app.ui.theme.AccentBlue
 import com.financas.app.ui.theme.AccentCoral
@@ -1883,8 +1884,9 @@ private fun BudgetRowItem(
                     fontWeight = FontWeight.Medium,
                     color = TextPrimary
                 )
+                val isPrivacy = LocalPrivacyMode.current
                 Text(
-                    text = "Limite: ${MoneyCents.formatCents(budget.limitCents)}",
+                    text = "Limite: ${if (isPrivacy) MoneyCents.MASKED_STRING else MoneyCents.formatCents(budget.limitCents, false)}",
                     fontSize = 11.sp,
                     color = TextSecondary
                 )
@@ -1970,8 +1972,9 @@ private fun GoalRowItem(
                 trackColor = DarkSurfaceHighlight
             )
 
+            val isPrivacy = LocalPrivacyMode.current
             Text(
-                text = "${MoneyCents.formatPercent(item.progress.percentComplete)} · Alvo: ${MoneyCents.formatCents(goal.targetCents)} · $deadlineText",
+                text = "${MoneyCents.formatPercent(item.progress.percentComplete)} · Alvo: ${if (isPrivacy) MoneyCents.MASKED_STRING else MoneyCents.formatCents(goal.targetCents, false)} · $deadlineText",
                 fontSize = 11.sp,
                 color = TextSecondary
             )

@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.financas.app.domain.model.MoneyCents
+import com.financas.app.ui.i18n.LocalPrivacyMode
 import com.financas.app.ui.theme.AccentAmber
 import com.financas.app.ui.theme.AccentBlue
 import com.financas.app.ui.theme.AccentCoral
@@ -167,8 +168,9 @@ private fun EffortLegendItem(
                     fontWeight = FontWeight.SemiBold
                 )
             }
+            val isPrivacy = LocalPrivacyMode.current
             Text(
-                text = MoneyCents.formatCents(cents),
+                text = if (isPrivacy) MoneyCents.MASKED_STRING else MoneyCents.formatCents(cents, false),
                 fontSize = 10.sp,
                 color = TextMuted
             )

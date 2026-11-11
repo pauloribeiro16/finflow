@@ -173,16 +173,18 @@ fun TransactionsScreen(
                         fontWeight = FontWeight.Medium
                     )
                     AnimatedContent(
-                        targetState = if (uiState.flowFilter == FlowFilter.ALL) {
+                        targetState = if (isPrivacyMode) {
+                            MoneyCents.MASKED_STRING
+                        } else if (uiState.flowFilter == FlowFilter.ALL) {
                             if (isEnglish) {
-                                "Spent: ${MoneyCents.formatCents(uiState.filteredExpenseCents)} · " +
-                                        "Income: ${MoneyCents.formatCents(uiState.filteredIncomeCents)}"
+                                "Spent: ${MoneyCents.formatCents(uiState.filteredExpenseCents, false)} · " +
+                                        "Income: ${MoneyCents.formatCents(uiState.filteredIncomeCents, false)}"
                             } else {
-                                "Gasto: ${MoneyCents.formatCents(uiState.filteredExpenseCents)} · " +
-                                        "Recebido: ${MoneyCents.formatCents(uiState.filteredIncomeCents)}"
+                                "Gasto: ${MoneyCents.formatCents(uiState.filteredExpenseCents, false)} · " +
+                                        "Recebido: ${MoneyCents.formatCents(uiState.filteredIncomeCents, false)}"
                             }
                         } else {
-                            MoneyCents.formatCents(uiState.filteredTotalCents)
+                            MoneyCents.formatCents(uiState.filteredTotalCents, false)
                         },
                         transitionSpec = {
                             fadeIn(tween(160)) togetherWith fadeOut(tween(120))
