@@ -143,7 +143,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation("org.json:json:20240303")
-    testImplementation("org.xerial:sqlite-jdbc:3.49.1.0")
+    testImplementation("org.xerial:sqlite-jdbc:3.54.1.0")
 
     // Instrumented UI tests (executados no emulador/dispositivo)
     androidTestImplementation(platform(libs.androidx.compose.bom))
