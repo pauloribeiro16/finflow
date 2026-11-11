@@ -23,7 +23,7 @@ import com.financas.app.data.entity.TransactionEntity
         PendingTransactionEntity::class,
         InvestmentAssetEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -134,8 +134,15 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_7_8: Migration = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE investment_assets ADD COLUMN ticker TEXT DEFAULT NULL")
+                db.execSQL("ALTER TABLE investment_assets ADD COLUMN units REAL DEFAULT NULL")
+            }
+        }
+
         val ALL_MIGRATIONS: Array<Migration> = arrayOf(
-            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8
         )
 
         fun getInstance(context: Context, openHelperFactory: SupportSQLiteOpenHelper.Factory): AppDatabase {

@@ -47,6 +47,8 @@ interface AppContainer {
     val sessionBackgroundClock: SessionBackgroundClock
     val appUpdateManager: com.financas.app.data.updater.AppUpdateManager
     val settingsBackupManager: com.financas.app.data.repository.SettingsBackupManager
+    val quoteService: com.financas.app.data.network.QuoteService
+    val portfolioMarketSyncUseCase: com.financas.app.domain.usecase.PortfolioMarketSyncUseCase
 }
 
 class DefaultAppContainer(private val context: Context) : AppContainer {
@@ -156,5 +158,13 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
                 )
             }
         )
+    }
+
+    override val quoteService: com.financas.app.data.network.QuoteService by lazy {
+        com.financas.app.data.network.YahooFinanceQuoteService()
+    }
+
+    override val portfolioMarketSyncUseCase: com.financas.app.domain.usecase.PortfolioMarketSyncUseCase by lazy {
+        com.financas.app.domain.usecase.PortfolioMarketSyncUseCase(investmentAssetDao, quoteService)
     }
 }

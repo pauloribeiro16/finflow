@@ -125,6 +125,8 @@ class BackupSerializer {
             sb.append("      \"targetCents\": ").append(asset.targetCents?.toString() ?: "null").append(",\n")
             sb.append("      \"notes\": ").append(escapeJsonString(asset.notes)).append(",\n")
             sb.append("      \"lastUpdatedEpochDay\": ").append(asset.lastUpdatedEpochDay).append(",\n")
+            sb.append("      \"ticker\": ").append(asset.ticker?.let { escapeJsonString(it) } ?: "null").append(",\n")
+            sb.append("      \"units\": ").append(asset.units?.toString() ?: "null").append(",\n")
             sb.append("      \"archived\": ").append(asset.archived).append("\n")
             sb.append("    }").append(if (index < investments.size - 1) "," else "").append("\n")
         }
@@ -260,6 +262,8 @@ class BackupSerializer {
             val notes = obj["notes"]?.asString() ?: ""
             val lastUpdatedEpochDay = obj["lastUpdatedEpochDay"]?.asLong(LocalDate.now().toEpochDay()) ?: LocalDate.now().toEpochDay()
             val archived = obj["archived"]?.asBoolean(false) ?: false
+            val ticker = obj["ticker"]?.asString()
+            val units = obj["units"]?.asDoubleOrNull()
 
             InvestmentAssetEntity(
                 id = id,
@@ -272,7 +276,9 @@ class BackupSerializer {
                 targetCents = targetCents,
                 notes = notes,
                 lastUpdatedEpochDay = lastUpdatedEpochDay,
-                archived = archived
+                archived = archived,
+                ticker = ticker,
+                units = units
             )
         }
 
@@ -527,6 +533,11 @@ sealed class JsonValue {
     fun asIntOrNull(): Int? = when (this) {
         is JsonNumber -> raw.toIntOrNull()
         is JsonString -> value.toIntOrNull()
+        else -> null
+    }
+    fun asDoubleOrNull(): Double? = when (this) {
+        is JsonNumber -> raw.toDoubleOrNull()
+        is JsonString -> value.toDoubleOrNull()
         else -> null
     }
     fun asBoolean(default: Boolean = false): Boolean = when (this) {

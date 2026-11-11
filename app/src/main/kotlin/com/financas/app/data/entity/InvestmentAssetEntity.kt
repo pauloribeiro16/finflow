@@ -24,7 +24,9 @@ data class InvestmentAssetEntity(
     val targetCents: Long? = null,
     val notes: String = "",
     val lastUpdatedEpochDay: Long,
-    val archived: Boolean = false
+    val archived: Boolean = false,
+    val ticker: String? = null,
+    val units: Double? = null
 ) {
     val profitLossCents: Long
         get() = currentValueCents - investedCents
@@ -34,5 +36,19 @@ data class InvestmentAssetEntity(
             0.0
         } else {
             ((currentValueCents - investedCents).toDouble() / investedCents.toDouble()) * 100.0
+        }
+
+    val averageBuyPriceEuros: Double?
+        get() = if (units != null && units > 0.0) {
+            (investedCents / 100.0) / units
+        } else {
+            null
+        }
+
+    val currentPriceEuros: Double?
+        get() = if (units != null && units > 0.0) {
+            (currentValueCents / 100.0) / units
+        } else {
+            null
         }
 }

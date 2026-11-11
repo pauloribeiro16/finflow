@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.NotificationsNone
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
@@ -55,6 +56,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -67,6 +69,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -270,6 +273,7 @@ fun BudgetsGoalsScreen(
                         onSelectFilter = { viewModel.selectAssetTypeFilter(it) },
                         onAddNewAsset = { showAddAssetDialog = true },
                         onImportXtb = { showXtbChooserSheet = true },
+                        onSyncMarket = { viewModel.syncMarketQuotes() },
                         onEditAsset = { editingAsset = it },
                         onQuickUpdate = { quickUpdateAsset = it },
                         onAllocate = { allocatingAsset = it },
@@ -305,7 +309,7 @@ fun BudgetsGoalsScreen(
                 showAddAssetDialog = false
                 editingAsset = null
             },
-            onSave = { name, type, inst, investedCents, valueCents, monthlyCents, notes ->
+            onSave = { name, type, inst, investedCents, valueCents, monthlyCents, notes, ticker, units ->
                 viewModel.saveInvestmentAsset(
                     id = targetAsset?.id,
                     name = name,
@@ -314,7 +318,9 @@ fun BudgetsGoalsScreen(
                     investedCents = investedCents,
                     currentValueCents = valueCents,
                     monthlyContributionCents = monthlyCents,
-                    notes = notes
+                    notes = notes,
+                    ticker = ticker,
+                    units = units
                 )
                 showAddAssetDialog = false
                 editingAsset = null
@@ -426,6 +432,7 @@ fun InvestmentsTabContent(
     onSelectFilter: (InvestmentType?) -> Unit,
     onAddNewAsset: () -> Unit,
     onImportXtb: () -> Unit = {},
+    onSyncMarket: () -> Unit = {},
     onEditAsset: (InvestmentAssetEntity) -> Unit,
     onQuickUpdate: (InvestmentAssetEntity) -> Unit,
     onAllocate: (InvestmentAssetEntity) -> Unit = {},
@@ -818,6 +825,55 @@ fun InvestmentsTabContent(
                 color = FinflowPrimary
             )
         }
+
+        OutlinedButton(
+            onClick = onSyncMarket,
+            enabled = !uiState.isSyncingMarket,
+            modifier = Modifier
+                .weight(0.9f)
+                .height(48.dp),
+            shape = RoundedCornerShape(24.dp),
+            border = BorderStroke(1.dp, FinflowSecondary.copy(alpha = 0.5f)),
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = FinflowSurfaceContainerLow)
+        ) {
+            if (uiState.isSyncingMarket) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = FinflowSecondary
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = "Cotações",
+                    tint = FinflowSecondary,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "Cotações",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = FinflowSecondary
+                )
+            }
+        }
+    }
+
+    if (!uiState.lastMarketSyncMessage.isNullOrBlank()) {
+        Surface(
+            color = FinflowSecondary.copy(alpha = 0.12f),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "📈 ${uiState.lastMarketSyncMessage}",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = FinflowSecondary,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            )
+        }
     }
 
     // Header of List
@@ -965,6 +1021,21 @@ fun InvestmentAssetCard(
                                 fontSize = 11.sp,
                                 color = FinflowTextSecondary
                             )
+                            if (com.financas.app.domain.usecase.XtbTickerMapper.isLeveragedInstrument(asset.name, asset.ticker ?: "")) {
+                                Text(text = "•", fontSize = 11.sp, color = FinflowTextMuted)
+                                Surface(
+                                    color = Color(0xFFFF9800).copy(alpha = 0.18f),
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {
+                                    Text(
+                                        text = "⚡ Alavancado",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFFFB74D),
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -1021,6 +1092,58 @@ fun InvestmentAssetCard(
                         fontWeight = FontWeight.Bold,
                         color = profitColor
                     )
+                }
+            }
+
+            if (asset.units != null && asset.units > 0.0) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = FinflowSurfaceContainerLow,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Posição Inicial",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = FinflowTextSecondary
+                            )
+                            val avgBuyCents = kotlin.math.round((asset.averageBuyPriceEuros ?: 0.0) * 100.0).toLong()
+                            Text(
+                                text = "${String.format(Locale.ROOT, "%.4f", asset.units)} un. @ ${MoneyCents(avgBuyCents).formatPt(isPrivacyMode)}",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = FinflowTextPrimary
+                            )
+                        }
+                        if (!asset.ticker.isNullOrBlank()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Yahoo Finance (${asset.ticker})",
+                                    fontSize = 10.sp,
+                                    color = FinflowPrimary
+                                )
+                                val currPriceCents = kotlin.math.round((asset.currentPriceEuros ?: 0.0) * 100.0).toLong()
+                                Text(
+                                    text = "Cotação: ${MoneyCents(currPriceCents).formatPt(isPrivacyMode)}",
+                                    fontSize = 10.sp,
+                                    color = FinflowTextSecondary
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -2214,7 +2337,9 @@ fun AddEditInvestmentSheet(
         investedCents: Long,
         currentValueCents: Long,
         monthlyContributionCents: Long,
-        notes: String
+        notes: String,
+        ticker: String?,
+        units: Double?
     ) -> Unit
 ) {
     var name by remember { mutableStateOf(initialAsset?.name ?: "") }
@@ -2223,6 +2348,8 @@ fun AddEditInvestmentSheet(
     var investedText by remember { mutableStateOf(initialAsset?.let { MoneyCents(it.investedCents).formatPt().replace("€", "").trim() } ?: "") }
     var currentValueText by remember { mutableStateOf(initialAsset?.let { MoneyCents(it.currentValueCents).formatPt().replace("€", "").trim() } ?: "") }
     var monthlyText by remember { mutableStateOf(initialAsset?.let { if (it.monthlyContributionCents > 0) MoneyCents(it.monthlyContributionCents).formatPt().replace("€", "").trim() else "" } ?: "") }
+    var ticker by remember { mutableStateOf(initialAsset?.ticker ?: "") }
+    var unitsText by remember { mutableStateOf(initialAsset?.units?.let { String.format(Locale.ROOT, "%.4f", it) } ?: "") }
     var notes by remember { mutableStateOf(initialAsset?.notes ?: "") }
     var nameError by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -2409,7 +2536,31 @@ fun AddEditInvestmentSheet(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // 6. Notas
+            // 6. Ticker Yahoo Finance & Quantidade de Unidades
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = ticker,
+                    onValueChange = { ticker = it.uppercase() },
+                    label = { Text("Ticker (Yahoo)") },
+                    placeholder = { Text("ex: LQQ.PA") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = unitsText,
+                    onValueChange = { unitsText = it.replace(',', '.') },
+                    label = { Text("Unidades / Cotas") },
+                    placeholder = { Text("ex: 26.2636") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // 7. Notas
             OutlinedTextField(
                 value = notes,
                 onValueChange = { notes = it },
@@ -2436,6 +2587,8 @@ fun AddEditInvestmentSheet(
                     val valueCents = if (rawValueCents > 0L) rawValueCents else investedCents
                     val finalInvestedCents = if (investedCents > 0L) investedCents else valueCents
                     val monthlyCents = parseEuroToCents(monthlyText)
+                    val finalTicker = ticker.trim().takeIf { it.isNotBlank() }
+                    val finalUnits = unitsText.trim().toDoubleOrNull()?.takeIf { it > 0.0 }
                     onSave(
                         name.trim(),
                         selectedType.key,
@@ -2443,7 +2596,9 @@ fun AddEditInvestmentSheet(
                         finalInvestedCents,
                         valueCents,
                         monthlyCents,
-                        notes.trim()
+                        notes.trim(),
+                        finalTicker,
+                        finalUnits
                     )
                 },
                 modifier = Modifier

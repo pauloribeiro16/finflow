@@ -107,6 +107,7 @@ class XtbReportParser {
         val valueCents = parseDecimalToCents(valueStr)
         val profitLossCents = parseDecimalToCents(netProfitStr)
         val investedCents = valueCents - profitLossCents
+        val openPrice = cols.getOrNull(8)?.toDoubleOrNull() ?: if (volume > 0.0) ((investedCents / 100.0) / volume) else 0.0
 
         return XtbOpenPosition(
             ticker = ticker,
@@ -116,7 +117,8 @@ class XtbReportParser {
             currentValueCents = valueCents,
             investedCents = investedCents.coerceAtLeast(0L),
             profitLossCents = profitLossCents,
-            profitLossPercentage = netProfitPercent
+            profitLossPercentage = netProfitPercent,
+            openPrice = openPrice
         )
     }
 

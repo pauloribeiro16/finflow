@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
@@ -84,7 +85,9 @@ data class BudgetsUiState(
     val longTermProfitLossPct: Double = 0.0,
     val portfolioSummary: PortfolioSummary = PortfolioSummary(),
     val selectedAssetTypeFilter: InvestmentType? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val isSyncingMarket: Boolean = false,
+    val lastMarketSyncMessage: String? = null
 )
 
 class BudgetsViewModel(
@@ -97,7 +100,8 @@ class BudgetsViewModel(
     private val goalProgressCalculator: GoalProgressCalculator = GoalProgressCalculator(),
     private val investmentPortfolioCalculator: InvestmentPortfolioCalculator = InvestmentPortfolioCalculator(),
     private val xtbReportParser: XtbReportParser = XtbReportParser(),
-    private val xtbSyncEngine: XtbSyncEngine? = investmentAssetDao?.let { XtbSyncEngine(it, transactionDao) }
+    private val xtbSyncEngine: XtbSyncEngine? = investmentAssetDao?.let { XtbSyncEngine(it, transactionDao) },
+    private val portfolioMarketSyncUseCase: com.financas.app.domain.usecase.PortfolioMarketSyncUseCase? = null
 ) : ViewModel() {
 
     private val _selectedYearMonth = MutableStateFlow(currentYearMonthInt())
@@ -129,6 +133,23 @@ class BudgetsViewModel(
                 buildUiState(ym, tab, filterType, budgets, goals, categories, allTransactions, assets)
             }.collect { state ->
                 _uiState.value = state
+            }
+        }
+
+        if (portfolioMarketSyncUseCase != null && investmentAssetDao != null) {
+            viewModelScope.launch {
+                try {
+                    val assets = investmentAssetDao.getAllSync()
+                    val todayEpoch = LocalDate.now().toEpochDay()
+                    val needsDailyUpdate = assets.any {
+                        !it.archived && !it.ticker.isNullOrBlank() && (it.units ?: 0.0) > 0.0 && it.lastUpdatedEpochDay < todayEpoch
+                    }
+                    if (needsDailyUpdate) {
+                        portfolioMarketSyncUseCase.syncAllActiveAssets(todayEpoch)
+                    }
+                } catch (_: Exception) {
+                    // Ignore background daily auto-sync exceptions
+                }
             }
         }
     }
@@ -299,7 +320,9 @@ class BudgetsViewModel(
         currentValueCents: Long,
         monthlyContributionCents: Long = 0L,
         targetCents: Long? = null,
-        notes: String = ""
+        notes: String = "",
+        ticker: String? = null,
+        units: Double? = null
     ) {
         viewModelScope.launch {
             val asset = InvestmentAssetEntity(
@@ -313,9 +336,30 @@ class BudgetsViewModel(
                 targetCents = targetCents,
                 notes = notes.trim(),
                 lastUpdatedEpochDay = LocalDate.now().toEpochDay(),
-                archived = false
+                archived = false,
+                ticker = ticker?.trim()?.uppercase()?.takeIf { it.isNotBlank() },
+                units = units?.takeIf { it > 0.0 }
             )
             investmentAssetDao?.insert(asset)
+        }
+    }
+
+    fun syncMarketQuotes(onComplete: ((com.financas.app.domain.usecase.PortfolioSyncSummary) -> Unit)? = null) {
+        val syncUseCase = portfolioMarketSyncUseCase ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSyncingMarket = true) }
+            try {
+                val summary = syncUseCase.syncAllActiveAssets()
+                val msg = if (summary.updatedCount > 0) {
+                    "${summary.updatedCount} cotações atualizadas"
+                } else {
+                    "Cotações já atualizadas hoje"
+                }
+                _uiState.update { it.copy(isSyncingMarket = false, lastMarketSyncMessage = msg) }
+                onComplete?.invoke(summary)
+            } catch (_: Exception) {
+                _uiState.update { it.copy(isSyncingMarket = false, lastMarketSyncMessage = "Falha ao consultar Yahoo Finance") }
+            }
         }
     }
 
@@ -377,7 +421,8 @@ class BudgetsViewModel(
             categoryDao: CategoryDao,
             transactionDao: TransactionDao,
             investmentAssetDao: InvestmentAssetDao? = null,
-            investmentPortfolioCalculator: InvestmentPortfolioCalculator = InvestmentPortfolioCalculator()
+            investmentPortfolioCalculator: InvestmentPortfolioCalculator = InvestmentPortfolioCalculator(),
+            portfolioMarketSyncUseCase: com.financas.app.domain.usecase.PortfolioMarketSyncUseCase? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -387,7 +432,8 @@ class BudgetsViewModel(
                     categoryDao = categoryDao,
                     transactionDao = transactionDao,
                     investmentAssetDao = investmentAssetDao,
-                    investmentPortfolioCalculator = investmentPortfolioCalculator
+                    investmentPortfolioCalculator = investmentPortfolioCalculator,
+                    portfolioMarketSyncUseCase = portfolioMarketSyncUseCase
                 ) as T
             }
         }

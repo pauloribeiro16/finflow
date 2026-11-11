@@ -31,3 +31,10 @@ O modo privacidade passou a cobrir 100% dos valores monetários em todos os sepa
 O `AnalyticsViewModel` passa a observar ativamente `userProfileStore.privacyModeFlow` e o `UserProfileStore` atualiza `MoneyCents.isPrivacyModeEnabled` antes de emitir no fluxo, assegurando consistência reativa atómica sem valores residuais.
 Fontes: `AnalyticsViewModel.kt`, `InteractiveChartsCanvas.kt`, `UserProfileStore.kt`, `BudgetsGoalsScreen.kt`, `AnalyticsScreen.kt`.
 
+## 2026-11-11 — estimativa diária Yahoo Finance, catalogação de posições e sanitização XTB
+Adicionado suporte a cotações em tempo real via Yahoo Finance (v8 chart API nativa, zero dependências externas) para ativos com ticker e unidades detidas.
+Implementada a catalogação completa das posições iniciais (volume, preço médio de compra, capital investido e selo '⚡ 2x Alavancado' para instrumentos como o Nasdaq LQQ), permitindo comparar a posição de entrada com a cotação estimada atual.
+Garantida sanitização rigorosa da extração da XTB: zero IDs de conta, zero IDs de ordens/posições e deduplicação de dividendos/juros via hash anónimo SHA-256. Migração Room 7 -> 8 adiciona colunas `ticker` e `units` sem perda de dados.
+Fontes: `YahooFinanceQuoteService.kt`, `PortfolioMarketSyncUseCase.kt`, `XtbTickerMapper.kt`, `XtbSyncEngine.kt`, `BudgetsGoalsScreen.kt`, `InvestmentAssetEntity.kt`.
+
+

@@ -183,7 +183,8 @@ fun MainScaffold(
             categoryDao = container.categoryDao,
             transactionDao = container.transactionDao,
             investmentAssetDao = container.investmentAssetDao,
-            investmentPortfolioCalculator = container.investmentPortfolioCalculator
+            investmentPortfolioCalculator = container.investmentPortfolioCalculator,
+            portfolioMarketSyncUseCase = container.portfolioMarketSyncUseCase
         )
     )
 

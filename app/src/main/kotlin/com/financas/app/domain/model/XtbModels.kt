@@ -8,7 +8,8 @@ data class XtbOpenPosition(
     val currentValueCents: Long,
     val investedCents: Long,
     val profitLossCents: Long,
-    val profitLossPercentage: Double
+    val profitLossPercentage: Double,
+    val openPrice: Double = 0.0
 )
 
 data class XtbCashOperation(

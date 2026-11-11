@@ -9,6 +9,7 @@ import com.financas.app.domain.model.XtbOpenPosition
 import com.financas.app.domain.model.XtbParsedReport
 import com.financas.app.domain.model.XtbSyncResult
 import java.time.LocalDate
+import java.util.Locale
 
 class XtbSyncEngine(
     private val investmentAssetDao: InvestmentAssetDao,
@@ -31,15 +32,20 @@ class XtbSyncEngine(
 
         // 1. Sync Open Positions (Investimentos)
         for (pos in report.openPositions) {
+            val mappedTicker = XtbTickerMapper.mapToYahooFinanceTicker(pos.ticker)
             val matchedAsset = findMatchingAsset(pos, existingAssets)
+            val catalogNotes = "Posição inicial: ${String.format(Locale.ROOT, "%.4f", pos.volume)} un. a ${String.format(Locale.ROOT, "%.2f", pos.openPrice)} € • XTB · Ticker: $mappedTicker"
+
             if (matchedAsset != null) {
                 // UPDATE existing asset
                 val updated = matchedAsset.copy(
                     currentValueCents = pos.currentValueCents,
                     investedCents = pos.investedCents,
                     lastUpdatedEpochDay = syncEpochDay,
-                    notes = if (!matchedAsset.notes.contains(pos.ticker, ignoreCase = true)) {
-                        "${matchedAsset.notes} • ${pos.ticker}".trim(' ', '•')
+                    ticker = mappedTicker,
+                    units = pos.volume,
+                    notes = if (matchedAsset.notes.isBlank() || matchedAsset.notes.startsWith("XTB • Ticker:")) {
+                        catalogNotes
                     } else {
                         matchedAsset.notes
                     }
@@ -55,7 +61,7 @@ class XtbSyncEngine(
                 }
                 val formattedName = formatAssetName(pos)
                 val newAsset = InvestmentAssetEntity(
-                    id = "inv_xtb_${pos.ticker.lowercase().replace('.', '_')}",
+                    id = "inv_xtb_${mappedTicker.lowercase().replace('.', '_')}",
                     name = formattedName,
                     type = typeKey,
                     institution = "XTB",
@@ -63,16 +69,18 @@ class XtbSyncEngine(
                     currentValueCents = pos.currentValueCents,
                     monthlyContributionCents = 0L,
                     targetCents = null,
-                    notes = "XTB • Ticker: ${pos.ticker}",
+                    notes = catalogNotes,
                     lastUpdatedEpochDay = syncEpochDay,
-                    archived = false
+                    archived = false,
+                    ticker = mappedTicker,
+                    units = pos.volume
                 )
                 investmentAssetDao.insert(newAsset)
                 newAssetsCount++
             }
         }
 
-        // 2. Sync Cash Operations (Zero duplicação garantida por ID determinístico [XTB:ID])
+        // 2. Sync Cash Operations (Zero duplicação garantida por chave anónima determinística)
         if (importCashOperations) {
             for (op in report.cashOperations) {
                 val isDividend = op.type.contains("Dividend", ignoreCase = true)
@@ -83,14 +91,16 @@ class XtbSyncEngine(
                     continue // Skip stock purchases and deposits (already reflected in portfolio capital)
                 }
 
-                val operationMarker = "[XTB:${op.id}]"
-                val alreadyExists = existingTransactions.any { it.merchant.contains(operationMarker) }
+                val legacyMarker = "[XTB:${op.id}]"
+                val operationMarker = XtbTickerMapper.generateAnonymousDeduplicationKey(op.epochDay, op.amountCents, op.type)
+                val alreadyExists = existingTransactions.any { it.merchant.contains(operationMarker) || it.merchant.contains(legacyMarker) }
 
                 if (alreadyExists) {
                     skippedTxCount++
                     continue
                 }
 
+                val cleanTicker = XtbTickerMapper.mapToYahooFinanceTicker(op.ticker)
                 val tx = if (isDividend) {
                     TransactionEntity(
                         type = "INCOME",
@@ -99,7 +109,7 @@ class XtbSyncEngine(
                         epochDay = op.epochDay,
                         categoryId = "inc_other",
                         contextTag = "PESSOAL",
-                        merchant = "XTB Dividendo ${op.instrument.ifBlank { op.ticker }} $operationMarker",
+                        merchant = "XTB Dividendo ${op.instrument.ifBlank { cleanTicker }} $operationMarker",
                         paymentMethod = "TRANSFERENCIA",
                         isFixed = false
                     )
