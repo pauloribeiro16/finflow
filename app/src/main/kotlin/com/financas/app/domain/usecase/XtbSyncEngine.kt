@@ -42,7 +42,7 @@ class XtbSyncEngine(
                     currentValueCents = pos.currentValueCents,
                     investedCents = pos.investedCents,
                     lastUpdatedEpochDay = syncEpochDay,
-                    ticker = mappedTicker,
+                    ticker = com.financas.app.data.network.TickerPolicy.normalize(mappedTicker),
                     units = pos.volume,
                     notes = if (matchedAsset.notes.isBlank() || matchedAsset.notes.startsWith("XTB • Ticker:")) {
                         catalogNotes
@@ -72,7 +72,7 @@ class XtbSyncEngine(
                     notes = catalogNotes,
                     lastUpdatedEpochDay = syncEpochDay,
                     archived = false,
-                    ticker = mappedTicker,
+                    ticker = com.financas.app.data.network.TickerPolicy.normalize(mappedTicker),
                     units = pos.volume
                 )
                 investmentAssetDao.insert(newAsset)
@@ -82,6 +82,15 @@ class XtbSyncEngine(
 
         // 2. Sync Cash Operations (Zero duplicação garantida por chave anónima determinística)
         if (importCashOperations) {
+            val legacyMarkerCounts = mutableMapOf<String, Int>()
+            val legacyMarkerRegex = Regex("\\[XTB:(?:DIV|INT|TAX)-[0-9a-f]{8}]")
+            existingTransactions.forEach { tx ->
+                legacyMarkerRegex.findAll(tx.merchant).forEach { match ->
+                    legacyMarkerCounts[match.value] = (legacyMarkerCounts[match.value] ?: 0) + 1
+                }
+            }
+            val occurrences = mutableMapOf<String, Int>()
+
             for (op in report.cashOperations) {
                 val isDividend = op.type.contains("Dividend", ignoreCase = true)
                 val isInterest = op.type.contains("Interest", ignoreCase = true) && !op.type.contains("Tax", ignoreCase = true)
@@ -91,9 +100,22 @@ class XtbSyncEngine(
                     continue // Skip stock purchases and deposits (already reflected in portfolio capital)
                 }
 
-                val legacyMarker = "[XTB:${op.id}]"
-                val operationMarker = XtbTickerMapper.generateAnonymousDeduplicationKey(op.epochDay, op.amountCents, op.type)
-                val alreadyExists = existingTransactions.any { it.merchant.contains(operationMarker) || it.merchant.contains(legacyMarker) }
+                val idMarker = "[XTB:${op.id}]"
+                val instrumentKey = op.ticker.ifBlank { op.instrument }
+                val identity = "${op.epochDay}:${op.amountCents}:${op.type}:$instrumentKey"
+                val occurrence = occurrences[identity] ?: 0
+                occurrences[identity] = occurrence + 1
+                val operationMarker = XtbTickerMapper.generateAnonymousDeduplicationKey(
+                    op.epochDay, op.amountCents, op.type, instrumentKey, occurrence
+                )
+                val legacyMarker = XtbTickerMapper.legacyDeduplicationKey(op.epochDay, op.amountCents, op.type)
+                val legacyRemaining = legacyMarkerCounts[legacyMarker] ?: 0
+                val matchesLegacy = legacyRemaining > 0
+                if (matchesLegacy) legacyMarkerCounts[legacyMarker] = legacyRemaining - 1
+
+                val alreadyExists = matchesLegacy || existingTransactions.any {
+                    it.merchant.contains(operationMarker) || (op.id.isNotBlank() && it.merchant.contains(idMarker))
+                }
 
                 if (alreadyExists) {
                     skippedTxCount++

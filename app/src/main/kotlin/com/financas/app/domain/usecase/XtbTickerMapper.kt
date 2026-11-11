@@ -28,16 +28,30 @@ object XtbTickerMapper {
             combined.contains("ultra")
     }
 
-    fun generateAnonymousDeduplicationKey(dateEpochDay: Long, amountCents: Long, operationType: String): String {
+    fun generateAnonymousDeduplicationKey(
+        dateEpochDay: Long,
+        amountCents: Long,
+        operationType: String,
+        instrument: String,
+        occurrence: Int = 0
+    ): String {
+        val raw = "v2:$dateEpochDay:$amountCents:${operationType.trim().lowercase()}:${instrument.trim().uppercase()}:$occurrence"
+        return "[XTB:${prefixFor(operationType)}-${shortHash(raw, 8)}]"
+    }
+
+    fun legacyDeduplicationKey(dateEpochDay: Long, amountCents: Long, operationType: String): String {
         val raw = "$dateEpochDay:$amountCents:$operationType"
-        val md = MessageDigest.getInstance("SHA-256")
-        val digest = md.digest(raw.toByteArray(Charsets.UTF_8))
-        val hex = digest.take(4).joinToString("") { "%02x".format(it) }
-        val prefix = when {
-            operationType.contains("Dividend", ignoreCase = true) -> "DIV"
-            operationType.contains("Interest", ignoreCase = true) -> "INT"
-            else -> "TAX"
-        }
-        return "[XTB:$prefix-$hex]"
+        return "[XTB:${prefixFor(operationType)}-${shortHash(raw, 4)}]"
+    }
+
+    private fun prefixFor(operationType: String): String = when {
+        operationType.contains("Dividend", ignoreCase = true) -> "DIV"
+        operationType.contains("Interest", ignoreCase = true) -> "INT"
+        else -> "TAX"
+    }
+
+    private fun shortHash(raw: String, bytes: Int): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(raw.toByteArray(Charsets.UTF_8))
+        return digest.take(bytes).joinToString("") { "%02x".format(it) }
     }
 }

@@ -1,13 +1,10 @@
 package com.financas.app.domain.usecase
 
+import com.financas.app.data.network.SafeHttp
 import com.financas.app.domain.model.AppUpdateInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
 
 class AppUpdateChecker(
     private val releaseApiUrl: String = DEFAULT_GITHUB_API_URL,
@@ -86,25 +83,12 @@ class AppUpdateChecker(
 
     suspend fun checkForUpdate(currentVersion: String): Result<AppUpdateInfo?> = withContext(Dispatchers.IO) {
         runCatching {
-            val url = URL(releaseApiUrl)
-            val connection = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 6000
-                readTimeout = 8000
-                requestMethod = "GET"
-                setRequestProperty("Accept", "application/vnd.github.v3+json")
-                setRequestProperty("User-Agent", "Finflow-App-Android")
+            val responseText = try {
+                SafeHttp.getText(releaseApiUrl, accept = "application/vnd.github.v3+json")
+            } catch (e: java.io.IOException) {
+                if (e.message?.startsWith("HTTP ") == true) return@runCatching null
+                throw e
             }
-
-            val responseCode = connection.responseCode
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                connection.disconnect()
-                return@runCatching null
-            }
-
-            val responseText = connection.inputStream.use { stream ->
-                BufferedReader(InputStreamReader(stream)).readText()
-            }
-            connection.disconnect()
 
             val latestRelease = parseReleaseJson(responseText, isDemo) ?: return@runCatching null
 

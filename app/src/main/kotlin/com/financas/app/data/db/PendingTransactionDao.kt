@@ -37,4 +37,7 @@ interface PendingTransactionDao {
 
     @Query("DELETE FROM pending_transactions")
     suspend fun clearAll()
+
+    @Query("DELETE FROM pending_transactions WHERE receivedTimestamp < :cutoffMillis")
+    suspend fun deleteReceivedBefore(cutoffMillis: Long): Int
 }

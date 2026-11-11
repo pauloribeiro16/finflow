@@ -516,4 +516,27 @@ class BackupSerializerIntegrityTest {
         assertEquals(3, result.categoriesImported)
         assertEquals(2, result.transactionsImported)
     }
+
+    @Test
+    fun importFromJson_rejectsInvalidTickerAndNonFiniteUnits() {
+        val restored = serializer.importFromJson(
+            """
+            {
+              "version": 3,
+              "investments": [
+                {"id": "a", "name": "A", "lastUpdatedEpochDay": 1, "ticker": "LQQ.PA?x=1", "units": "Infinity"},
+                {"id": "b", "name": "B", "lastUpdatedEpochDay": 1, "ticker": " lqq.pa ", "units": 2.5},
+                {"id": "c", "name": "C", "lastUpdatedEpochDay": 1, "ticker": "CSPX.L", "units": -1}
+              ]
+            }
+            """.trimIndent()
+        )
+
+        val byId = restored.investments.associateBy { it.id }
+        org.junit.Assert.assertNull(byId["a"]?.ticker)
+        org.junit.Assert.assertNull(byId["a"]?.units)
+        org.junit.Assert.assertEquals("LQQ.PA", byId["b"]?.ticker)
+        org.junit.Assert.assertEquals(2.5, byId["b"]?.units ?: 0.0, 0.0)
+        org.junit.Assert.assertNull(byId["c"]?.units)
+    }
 }

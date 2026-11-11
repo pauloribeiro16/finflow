@@ -184,7 +184,8 @@ fun MainScaffold(
             transactionDao = container.transactionDao,
             investmentAssetDao = container.investmentAssetDao,
             investmentPortfolioCalculator = container.investmentPortfolioCalculator,
-            portfolioMarketSyncUseCase = container.portfolioMarketSyncUseCase
+            portfolioMarketSyncUseCase = container.portfolioMarketSyncUseCase,
+            isAutoMarketSyncEnabled = { container.userProfileStore.isMarketQuotesAutoSyncEnabled() }
         )
     )
 
@@ -206,6 +207,14 @@ fun MainScaffold(
     )
 
     LaunchedEffect(Unit) {
+        runCatching {
+            container.pendingTransactionDao.deleteReceivedBefore(
+                com.financas.app.domain.usecase.PendingRetention.cutoffMillis(System.currentTimeMillis())
+            )
+        }
+    }
+
+    LaunchedEffect(Unit) {
         if (!container.userProfileStore.isAutoUpdateCheckEnabled()) return@LaunchedEffect
         container.appUpdateManager.checkForUpdates(
             currentVersion = com.financas.app.BuildConfig.VERSION_NAME,
@@ -218,6 +227,7 @@ fun MainScaffold(
     val userName by userProfileStore.userNameFlow.collectAsState()
     val appLanguageCode by userProfileStore.appLanguageFlow.collectAsState()
     val isPrivacyMode by userProfileStore.privacyModeFlow.collectAsState()
+    val scaffoldContext = androidx.compose.ui.platform.LocalContext.current
     val appLanguage = AppLanguage.fromCode(appLanguageCode)
     val appStrings = if (appLanguage == AppLanguage.PT) PtStrings else EnStrings
 
@@ -290,7 +300,9 @@ fun MainScaffold(
                     },
                     isPrivacyMode = isPrivacyMode,
                     onTogglePrivacy = {
-                        container.userProfileStore.setPrivacyModeEnabled(!isPrivacyMode)
+                        com.financas.app.ui.screens.account.requestPrivacyModeChange(scaffoldContext, !isPrivacyMode) {
+                            container.userProfileStore.setPrivacyModeEnabled(it)
+                        }
                     },
                     onOpenAccount = { showAccount = true },
                     photoUri = profilePhotoUri,

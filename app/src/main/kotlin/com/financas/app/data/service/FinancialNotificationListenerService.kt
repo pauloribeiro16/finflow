@@ -125,6 +125,7 @@ class FinancialNotificationListenerService : NotificationListenerService() {
         val currentYearMonth = now.year * 100 + now.monthValue
         val nowTimestamp = System.currentTimeMillis()
 
+        runCatching { pendingDao.deleteReceivedBefore(com.financas.app.domain.usecase.PendingRetention.cutoffMillis(nowTimestamp)) }
         val existingPending = pendingDao.getAllSync()
         val monthFixed = transactionDao.getFixedTransactionsForMonth(currentYearMonth)
         val todayConfirmed = transactionDao.getByMonthSync(currentYearMonth).filter { it.epochDay == todayEpochDay }

@@ -196,6 +196,9 @@ fun AccountScreen(
     var pendingDeleteSubcategory by remember { mutableStateOf<CategoryEntity?>(null) }
     var showAddContextDialog by remember { mutableStateOf(false) }
     var showRestoreDialog by remember { mutableStateOf(false) }
+    var showBackupPasswordDialog by remember { mutableStateOf(false) }
+    var pendingExportPassword by remember { mutableStateOf<String?>(null) }
+    var pendingEncryptedImport by remember { mutableStateOf<String?>(null) }
     var jsonRestoreInput by remember { mutableStateOf("") }
     var showAddBudgetDialog by remember { mutableStateOf(false) }
     var editingBudget by remember { mutableStateOf<BudgetEntity?>(null) }
@@ -289,15 +292,41 @@ fun AccountScreen(
         }
     }
 
+    val encryptedExportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri: Uri? ->
+        val password = pendingExportPassword
+        pendingExportPassword = null
+        if (uri != null && password != null) {
+            coroutineScope.launch {
+                val ok = try {
+                    val envelope = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                        com.financas.app.data.repository.BackupCrypto.encrypt(viewModel.exportJson(), password.toCharArray())
+                    }
+                    writeTextToUri(context, uri, envelope)
+                } catch (_: Exception) {
+                    false
+                }
+                Toast.makeText(context, if (ok) "Backup cifrado guardado." else "Não foi possível guardar o backup.", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    val routeImportContent: (String) -> Unit = { content ->
+        if (com.financas.app.data.repository.BackupCrypto.isEncrypted(content)) {
+            pendingEncryptedImport = content
+        } else {
+            coroutineScope.launch { viewModel.importJson(content) }
+        }
+    }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let { selectedUri ->
             try {
                 val content = readTextLimited(context, selectedUri)
-                coroutineScope.launch {
-                    viewModel.importJson(content)
-                }
+                routeImportContent(content)
             } catch (e: Exception) {
                 Toast.makeText(context, "Erro ao ler ficheiro: ${e.message}", Toast.LENGTH_LONG).show()
             }
@@ -557,7 +586,9 @@ fun AccountScreen(
                         }
                     },
                     onToggleBiometrics = { requestBiometricToggle(it) },
-                    onTogglePrivacyMode = { viewModel.setPrivacyMode(it) },
+                    onTogglePrivacyMode = { enabled ->
+                        requestPrivacyModeChange(context, enabled) { viewModel.setPrivacyMode(it) }
+                    },
                     onSelectThemeMode = { viewModel.updateThemeMode(it) },
                     onSelectLanguage = { viewModel.updateAppLanguage(it) }
                 )
@@ -834,10 +865,10 @@ fun AccountScreen(
                     ActionButtonItem(
                         icon = Icons.Default.FileUpload,
                         iconTint = AccentBlue,
-                        title = "Exportar Backup Completo (JSON)",
-                        subtitle = "Cópia completa e atómica de categorias, movimentos, orçamentos e metas",
+                        title = "Exportar Backup Completo",
+                        subtitle = "Cópia completa de categorias, movimentos, orçamentos e metas, cifrada com palavra-passe",
                         onClick = {
-                            jsonExportLauncher.launch("backup_financas_${System.currentTimeMillis()}.json")
+                            showBackupPasswordDialog = true
                         }
                     )
 
@@ -1391,6 +1422,42 @@ fun AccountScreen(
     }
 
     // Dialog: Restaurar Backup
+    if (showBackupPasswordDialog) {
+        BackupPasswordDialog(
+            confirmMode = true,
+            onDismiss = { showBackupPasswordDialog = false },
+            onConfirm = { password ->
+                showBackupPasswordDialog = false
+                pendingExportPassword = password
+                encryptedExportLauncher.launch("backup_financas_${System.currentTimeMillis()}.finflow")
+            },
+            onExportPlain = {
+                showBackupPasswordDialog = false
+                jsonExportLauncher.launch("backup_financas_${System.currentTimeMillis()}.json")
+            }
+        )
+    }
+
+    pendingEncryptedImport?.let { envelope ->
+        BackupPasswordDialog(
+            confirmMode = false,
+            onDismiss = { pendingEncryptedImport = null },
+            onConfirm = { password ->
+                pendingEncryptedImport = null
+                coroutineScope.launch {
+                    try {
+                        val json = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                            com.financas.app.data.repository.BackupCrypto.decrypt(envelope, password.toCharArray())
+                        }
+                        viewModel.importJson(json)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, e.message ?: "Não foi possível abrir o backup.", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        )
+    }
+
     if (showRestoreDialog) {
         AlertDialog(
             onDismissRequest = { showRestoreDialog = false },
@@ -1416,7 +1483,7 @@ fun AccountScreen(
                     ) {
                         Icon(imageVector = Icons.Default.FileDownload, contentDescription = null, tint = AccentBlue)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Escolher Ficheiro .json", color = AccentBlue)
+                        Text("Escolher ficheiro (.finflow ou .json)", color = AccentBlue)
                     }
 
                     Text("Ou colar o texto JSON:", fontSize = 12.sp, color = TextSecondary)
@@ -1442,11 +1509,10 @@ fun AccountScreen(
                 Button(
                     onClick = {
                         if (jsonRestoreInput.isNotBlank()) {
-                            coroutineScope.launch {
-                                viewModel.importJson(jsonRestoreInput)
-                                showRestoreDialog = false
-                                jsonRestoreInput = ""
-                            }
+                            val content = jsonRestoreInput
+                            showRestoreDialog = false
+                            jsonRestoreInput = ""
+                            routeImportContent(content)
                         }
                     },
                     enabled = jsonRestoreInput.isNotBlank(),
@@ -2625,7 +2691,7 @@ private fun ProfileTabContent(
                     )
                 }
                 Text(
-                    text = "Todos os seus dados financeiros, nome e fotografia estão salvaguardados exclusivamente na memória segura deste telemóvel. O Finflow não possui servidores, telemetria nem rastreadores externos. A única ligação é ao GitHub, para procurar atualizações (pode ser desativada em Versão).",
+                    text = "Todos os seus dados financeiros, nome e fotografia estão salvaguardados exclusivamente na memória segura deste telemóvel. O Finflow não possui servidores, telemetria nem rastreadores externos. Liga-se apenas ao GitHub, para procurar atualizações, e ao Yahoo Finance, para cotações dos tickers que guardar. As consultas automáticas a ambos podem ser desativadas em Versão.",
                     fontSize = 12.sp,
                     color = TextMuted,
                     lineHeight = 16.sp
@@ -2690,6 +2756,7 @@ private fun VersionTabContent(
         (versionContext.applicationContext as? com.financas.app.FinancasApplication)?.container?.userProfileStore
     }
     var autoUpdateCheck by remember { mutableStateOf(profileStore?.isAutoUpdateCheckEnabled() ?: true) }
+    var marketQuotesAutoSync by remember { mutableStateOf(profileStore?.isMarketQuotesAutoSyncEnabled() ?: false) }
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Card(
@@ -2723,6 +2790,48 @@ private fun VersionTabContent(
                     onCheckedChange = {
                         autoUpdateCheck = it
                         profileStore?.setAutoUpdateCheckEnabled(it)
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = AccentEmerald,
+                        uncheckedThumbColor = TextMuted,
+                        uncheckedTrackColor = DarkSurfaceVariant
+                    )
+                )
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkSurface),
+            border = androidx.compose.foundation.BorderStroke(1.dp, DarkBorder)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Cotações automáticas (Yahoo Finance)",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "Uma vez por dia, ao abrir Investimentos, envia ao Yahoo Finance os tickers que guardou para estimar o valor atual. Não envia quantidades nem valores. Desligado: só consulta quando tocar em \"Cotações\".",
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                    )
+                }
+                Switch(
+                    checked = marketQuotesAutoSync,
+                    onCheckedChange = {
+                        marketQuotesAutoSync = it
+                        profileStore?.setMarketQuotesAutoSyncEnabled(it)
                     },
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = Color.White,
@@ -3576,4 +3685,96 @@ private fun android.content.Context.findComponentActivity(): androidx.activity.C
         current = current.baseContext
     }
     return null
+}
+
+@Composable
+private fun BackupPasswordDialog(
+    confirmMode: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+    onExportPlain: (() -> Unit)? = null
+) {
+    var password by remember { mutableStateOf("") }
+    var repeat by remember { mutableStateOf("") }
+    val minLength = com.financas.app.data.repository.BackupCrypto.MIN_PASSWORD_LENGTH
+    val valid = if (confirmMode) password.length >= minLength && password == repeat else password.isNotEmpty()
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = AccentBlue,
+        unfocusedBorderColor = DarkBorder,
+        focusedTextColor = TextPrimary,
+        unfocusedTextColor = TextPrimary
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = DarkSurface,
+        title = {
+            Text(
+                if (confirmMode) "Proteger backup" else "Backup cifrado",
+                color = TextPrimary,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = if (confirmMode) {
+                        "O ficheiro fica cifrado (AES-256). Sem esta palavra-passe não é possível restaurá-lo — guarde-a num local seguro. Mínimo $minLength caracteres."
+                    } else {
+                        "Introduza a palavra-passe usada ao exportar este backup."
+                    },
+                    fontSize = 12.sp,
+                    color = TextSecondary
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Palavra-passe", color = TextSecondary) },
+                    singleLine = true,
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    colors = fieldColors,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (confirmMode) {
+                    OutlinedTextField(
+                        value = repeat,
+                        onValueChange = { repeat = it },
+                        label = { Text("Repetir palavra-passe", color = TextSecondary) },
+                        singleLine = true,
+                        isError = repeat.isNotEmpty() && repeat != password,
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        colors = fieldColors,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                if (onExportPlain != null) {
+                    TextButton(onClick = onExportPlain) {
+                        Text("Exportar sem cifra (JSON legível por qualquer pessoa)", color = TextMuted, fontSize = 12.sp)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val value = password
+                    password = ""
+                    repeat = ""
+                    onConfirm(value)
+                },
+                enabled = valid,
+                colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
+            ) {
+                Text(if (confirmMode) "Exportar" else "Abrir", color = Color.White)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = TextSecondary)
+            }
+        }
+    )
 }

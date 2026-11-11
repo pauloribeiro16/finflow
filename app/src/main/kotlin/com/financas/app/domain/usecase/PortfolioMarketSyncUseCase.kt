@@ -2,6 +2,8 @@ package com.financas.app.domain.usecase
 
 import com.financas.app.data.db.InvestmentAssetDao
 import com.financas.app.data.network.QuoteService
+import com.financas.app.data.network.TickerPolicy
+import com.financas.app.data.network.YahooQuote
 import java.time.LocalDate
 import kotlin.math.roundToLong
 
@@ -9,6 +11,7 @@ data class PortfolioSyncSummary(
     val updatedCount: Int,
     val totalCount: Int,
     val failedTickers: List<String> = emptyList(),
+    val suspiciousTickers: List<String> = emptyList(),
     val totalEstimatedValueCents: Long = 0L,
     val totalProfitCents: Long = 0L
 )
@@ -20,7 +23,11 @@ class PortfolioMarketSyncUseCase(
 
     suspend fun syncAllActiveAssets(todayEpochDay: Long = LocalDate.now().toEpochDay()): PortfolioSyncSummary {
         val allAssets = investmentAssetDao.getAllSync()
-        val syncableAssets = allAssets.filter { !it.archived && !it.ticker.isNullOrBlank() && (it.units ?: 0.0) > 0.0 }
+        val syncableAssets = allAssets.filter { asset ->
+            !asset.archived &&
+                TickerPolicy.normalize(asset.ticker) != null &&
+                asset.units.let { it != null && it.isFinite() && it > 0.0 && it <= MAX_UNITS }
+        }
 
         if (syncableAssets.isEmpty()) {
             return PortfolioSyncSummary(
@@ -29,53 +36,81 @@ class PortfolioMarketSyncUseCase(
             )
         }
 
-        val tickers = syncableAssets.mapNotNull { it.ticker }
+        val tickers = syncableAssets.mapNotNull { TickerPolicy.normalize(it.ticker) }
         val quotes = quoteService.fetchQuotes(tickers)
 
-        val hasUsd = quotes.values.any { it.currency == "USD" }
-        val eurUsdRate = if (hasUsd) quoteService.fetchEurUsdRate() else 1.0
+        val rateCache = mutableMapOf<String, Double?>()
+        suspend fun eurRate(currency: String): Double? =
+            rateCache.getOrPut(currency) { quoteService.fetchEurRate(currency) }
 
         var updatedCount = 0
         val failedTickers = mutableListOf<String>()
+        val suspiciousTickers = mutableListOf<String>()
 
         for (asset in syncableAssets) {
-            val ticker = asset.ticker ?: continue
-            val quote = quotes[ticker]
+            val ticker = TickerPolicy.normalize(asset.ticker) ?: continue
+            val units = asset.units ?: continue
+            val priceInEur = quotes[ticker]?.let { priceInEur(it) { currency -> eurRate(currency) } }
 
-            if (quote == null || quote.price <= 0.0) {
+            if (priceInEur == null) {
                 failedTickers.add(ticker)
                 continue
             }
 
-            val priceInEur = if (quote.currency == "USD") {
-                quote.price / eurUsdRate
-            } else {
-                quote.price
+            val estimatedValue = units * priceInEur * 100.0
+            if (!estimatedValue.isFinite() || estimatedValue > MAX_VALUE_CENTS) {
+                failedTickers.add(ticker)
+                continue
+            }
+            val estimatedCurrentValueCents = estimatedValue.roundToLong()
+
+            if (isImplausibleJump(asset.currentValueCents, estimatedCurrentValueCents)) {
+                suspiciousTickers.add(ticker)
+                continue
             }
 
-            val units = asset.units ?: continue
-            val estimatedCurrentValueCents = (units * priceInEur * 100.0).roundToLong()
-
-            // Preserves investedCents (the purchase price) and updates estimated market value
-            val updated = asset.copy(
-                currentValueCents = estimatedCurrentValueCents,
-                lastUpdatedEpochDay = todayEpochDay
+            investmentAssetDao.update(
+                asset.copy(
+                    currentValueCents = estimatedCurrentValueCents,
+                    lastUpdatedEpochDay = todayEpochDay
+                )
             )
-
-            investmentAssetDao.update(updated)
             updatedCount++
         }
 
         val refreshedAssets = investmentAssetDao.getAllSync().filter { !it.archived }
-        val totalVal = refreshedAssets.sumOf { it.currentValueCents }
-        val totalProfit = refreshedAssets.sumOf { it.profitLossCents }
-
         return PortfolioSyncSummary(
             updatedCount = updatedCount,
             totalCount = syncableAssets.size,
             failedTickers = failedTickers,
-            totalEstimatedValueCents = totalVal,
-            totalProfitCents = totalProfit
+            suspiciousTickers = suspiciousTickers,
+            totalEstimatedValueCents = refreshedAssets.sumOf { it.currentValueCents },
+            totalProfitCents = refreshedAssets.sumOf { it.profitLossCents }
         )
+    }
+
+    private suspend fun priceInEur(quote: YahooQuote, eurRate: suspend (String) -> Double?): Double? {
+        if (!quote.price.isFinite() || quote.price <= 0.0) return null
+        val (currency, price) = when (quote.currency) {
+            "GBp", "GBX" -> "GBP" to quote.price / 100.0
+            "ILA" -> "ILS" to quote.price / 100.0
+            "ZAc" -> "ZAR" to quote.price / 100.0
+            else -> quote.currency.uppercase() to quote.price
+        }
+        val rate = eurRate(currency) ?: return null
+        if (!rate.isFinite() || rate <= 0.0) return null
+        return price / rate
+    }
+
+    companion object {
+        const val MAX_UNITS = 1_000_000_000.0
+        const val MAX_VALUE_CENTS = 1e15
+        const val MAX_DAILY_FACTOR = 3.0
+
+        fun isImplausibleJump(previousCents: Long, newCents: Long): Boolean {
+            if (previousCents <= 0L || newCents <= 0L) return false
+            val ratio = newCents.toDouble() / previousCents.toDouble()
+            return ratio > MAX_DAILY_FACTOR || ratio < 1.0 / MAX_DAILY_FACTOR
+        }
     }
 }

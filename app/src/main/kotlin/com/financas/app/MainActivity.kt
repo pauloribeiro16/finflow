@@ -61,6 +61,11 @@ class MainActivity : ComponentActivity() {
                 WindowManager.LayoutParams.FLAG_SECURE
             )
         }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            window.setHideOverlayWindows(true)
+        } else {
+            window.decorView.filterTouchesWhenObscured = true
+        }
 
         val appContainer = (application as FinancasApplication).container
         val biometricGate = appContainer.biometricLockGate

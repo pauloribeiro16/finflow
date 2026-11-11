@@ -262,8 +262,10 @@ class BackupSerializer {
             val notes = obj["notes"]?.asString() ?: ""
             val lastUpdatedEpochDay = obj["lastUpdatedEpochDay"]?.asLong(LocalDate.now().toEpochDay()) ?: LocalDate.now().toEpochDay()
             val archived = obj["archived"]?.asBoolean(false) ?: false
-            val ticker = obj["ticker"]?.asString()
-            val units = obj["units"]?.asDoubleOrNull()
+            val ticker = com.financas.app.data.network.TickerPolicy.normalize(obj["ticker"]?.asString())
+            val units = obj["units"]?.asDoubleOrNull()?.takeIf {
+                it.isFinite() && it > 0.0 && it <= com.financas.app.domain.usecase.PortfolioMarketSyncUseCase.MAX_UNITS
+            }
 
             InvestmentAssetEntity(
                 id = id,

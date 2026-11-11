@@ -27,6 +27,10 @@ interface UserProfileStore {
     val privacyModeFlow: StateFlow<Boolean>
     fun isAutoUpdateCheckEnabled(): Boolean = true
     fun setAutoUpdateCheckEnabled(enabled: Boolean) {}
+    fun isMarketQuotesAutoSyncEnabled(): Boolean = false
+    fun setMarketQuotesAutoSyncEnabled(enabled: Boolean) {}
+    fun isMarketQuotesDisclosureAccepted(): Boolean = false
+    fun setMarketQuotesDisclosureAccepted(accepted: Boolean) {}
 }
 
 class SharedPrefsUserProfileStore(
@@ -134,5 +138,18 @@ class SharedPrefsUserProfileStore(
 
     override fun setAutoUpdateCheckEnabled(enabled: Boolean) {
         prefs.edit().putBoolean("auto_update_check", enabled).apply()
+    }
+
+    override fun isMarketQuotesAutoSyncEnabled(): Boolean = prefs.getBoolean("market_quotes_auto_sync", false)
+
+    override fun setMarketQuotesAutoSyncEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("market_quotes_auto_sync", enabled).apply()
+        if (enabled) setMarketQuotesDisclosureAccepted(true)
+    }
+
+    override fun isMarketQuotesDisclosureAccepted(): Boolean = prefs.getBoolean("market_quotes_disclosure", false)
+
+    override fun setMarketQuotesDisclosureAccepted(accepted: Boolean) {
+        prefs.edit().putBoolean("market_quotes_disclosure", accepted).apply()
     }
 }

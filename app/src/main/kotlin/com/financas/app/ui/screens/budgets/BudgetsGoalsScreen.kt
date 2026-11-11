@@ -162,6 +162,10 @@ fun BudgetsGoalsScreen(
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val profileStore = remember(context) {
+        (context.applicationContext as? com.financas.app.FinancasApplication)?.container?.userProfileStore
+    }
+    var showMarketDisclosure by remember { mutableStateOf(false) }
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -273,7 +277,13 @@ fun BudgetsGoalsScreen(
                         onSelectFilter = { viewModel.selectAssetTypeFilter(it) },
                         onAddNewAsset = { showAddAssetDialog = true },
                         onImportXtb = { showXtbChooserSheet = true },
-                        onSyncMarket = { viewModel.syncMarketQuotes() },
+                        onSyncMarket = {
+                            if (profileStore?.isMarketQuotesDisclosureAccepted() == true) {
+                                viewModel.syncMarketQuotes()
+                            } else {
+                                showMarketDisclosure = true
+                            }
+                        },
                         onEditAsset = { editingAsset = it },
                         onQuickUpdate = { quickUpdateAsset = it },
                         onAllocate = { allocatingAsset = it },
@@ -324,6 +334,18 @@ fun BudgetsGoalsScreen(
                 )
                 showAddAssetDialog = false
                 editingAsset = null
+            }
+        )
+    }
+
+    if (showMarketDisclosure) {
+        MarketQuotesDisclosureDialog(
+            onDismiss = { showMarketDisclosure = false },
+            onConfirm = { enableDaily ->
+                showMarketDisclosure = false
+                profileStore?.setMarketQuotesDisclosureAccepted(true)
+                profileStore?.setMarketQuotesAutoSyncEnabled(enableDaily)
+                viewModel.syncMarketQuotes()
             }
         )
     }
@@ -1240,6 +1262,50 @@ fun InvestmentAssetCard(
             }
         }
     }
+}
+
+@Composable
+fun MarketQuotesDisclosureDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (enableDaily: Boolean) -> Unit
+) {
+    var enableDaily by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = FinflowSurface,
+        title = { Text("Consultar cotações", fontWeight = FontWeight.Bold, color = FinflowTextPrimary) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "Para estimar o valor atual, o Finflow pede ao Yahoo Finance (query1.finance.yahoo.com) a cotação de cada ticker que guardou. O Yahoo fica a saber esses tickers e o endereço IP do telemóvel. Não são enviadas quantidades, valores nem dados pessoais.",
+                    fontSize = 12.sp,
+                    color = FinflowTextSecondary
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Atualizar automaticamente uma vez por dia",
+                        fontSize = 13.sp,
+                        color = FinflowTextPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(checked = enableDaily, onCheckedChange = { enableDaily = it })
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(enableDaily) },
+                colors = ButtonDefaults.buttonColors(containerColor = FinflowPrimary)
+            ) {
+                Text("Consultar", color = FinflowTextInverse, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar", color = FinflowTextSecondary)
+            }
+        }
+    )
 }
 
 @Composable

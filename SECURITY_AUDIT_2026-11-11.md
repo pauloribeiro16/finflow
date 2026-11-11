@@ -1,4 +1,4 @@
-# Auditoria de Segurança — alterações v2.6.0 → v2.7.0+ (2026-11-11)
+# Auditoria de Segurança — alterações v2.6.0 → main (2026-11-11)
 
 **Tipo:** revisão estática do diff `v2.6.0..4ec5691` (5 commits, 47 ficheiros).
 **Âmbito:**
@@ -27,6 +27,33 @@ Sem achados de gravidade alta. O ecrã em 3 passos não tem impacto de seguranç
 
 ---
 
+## Estado das correções (2026-11-11)
+
+| # | Estado | O que mudou |
+|---|--------|-------------|
+| N1 | ✅ Corrigido | Cotações automáticas desligadas por omissão: interruptor em Conta → Versão e aviso antes do primeiro pedido manual. Política de privacidade e cartão "Dados Locais" atualizados. |
+| N2 | ✅ Corrigido | Câmbio por moeda (`EUR{CUR}=X`). GBp/GBX, ILA e ZAc convertidos de cêntimos. Se o câmbio falhar, o ativo não é atualizado (sem 1.10 fixo). Variação >3× ou <⅓ não é aplicada e é reportada. |
+| N3 | ✅ Corrigido | Novo `SafeHttp`: lista de hosts, HTTPS obrigatório, sem redirects, limite de 512 KB, `disconnect()`. Usado pelo Yahoo e pela verificação de atualizações. `TickerPolicy` valida tickers e o URL usa `URLEncoder`. |
+| N4 | ✅ Corrigido | A chave inclui o instrumento e o número de ocorrência (formato v2, 16 hex). As chaves antigas continuam a deduplicar, mas cada uma só cobre uma operação. |
+| N5 | ✅ Corrigido | O restauro valida o ticker (`TickerPolicy`) e `units` (finito, 0 < u ≤ 1e9). |
+| N6 | ✅ Corrigido | User-Agent honesto `Finflow-App-Android`. A política refere que as cotações são estimativas. |
+| N7 | ✅ Melhorado | Com o bloqueio ativo, mostrar valores exige biometria/PIN. |
+| N8 | ✅ Corrigido | Os pendentes com mais de 30 dias são apagados ao abrir a app e ao receber notificações. As notas já eram apagadas com o pendente ao aprovar ou descartar. |
+
+### Recomendações gerais
+
+| # | Estado | Nota |
+|---|--------|------|
+| 2. Cliente HTTP único | ✅ | `SafeHttp` para as APIs. O download do APK mantém a sua política própria (`UpdateUrlPolicy`). |
+| 3. Backup cifrado | ✅ | Exportação `.finflow`: PBKDF2-HMAC-SHA256 (310k iterações) + AES-256-GCM, com parâmetros autenticados. O restauro deteta o formato e pede a palavra-passe. JSON em claro só por opção explícita. |
+| 4. Bloqueio ligado à chave (S10) | ⏸ Não feito | Com `setUserAuthenticationRequired`, a BD só abre depois de desbloquear. A captura de notificações em segundo plano deixaria de funcionar. Fica aceite, como no S10. |
+| 5. Cadeia de dependências | ◑ Parcial | Dependabot (Gradle + Actions) e CodeQL `security-extended` adicionados. Falta ativar *secret scanning* / *push protection* nas definições do GitHub, o que tem de ser feito pelo dono do repositório. O `verification-metadata.xml` não foi adicionado: cada atualização de dependência obrigaria a regenerá-lo, e o Dependabot não o faz. |
+| 6. Testes de migração | ⏸ Pendente | Exige `androidx.room:room-testing` (dependência nova, precisa de aprovação) e o `androidTest` reparado. |
+| 7. Tapjacking | ✅ | Android 12+: `setHideOverlayWindows(true)` (permissão normal `HIDE_OVERLAY_WINDOWS`). Android 8–11: `filterTouchesWhenObscured` em toda a janela. |
+| 8. Retenção mínima | ✅ | Ver N8. |
+
+---
+
 ## Detalhe
 
 ### N1 (Média) — Envio ao Yahoo sem consentimento e em contradição com a política
@@ -41,7 +68,7 @@ Sem achados de gravidade alta. O ecrã em 3 passos não tem impacto de seguranç
 - A política de privacidade (secção 0 e secção 3) diz: *"A única ligação à internet serve para verificar e descarregar atualizações"*.
 - O cartão "Privacidade: Dados Locais" em Conta diz o mesmo.
 
-As duas afirmações são falsas desde a v2.7.0. É o mesmo tipo de problema que o S7 da auditoria anterior.
+Com o código do `main` (ainda não lançado), as duas afirmações passariam a ser falsas. É o mesmo tipo de problema que o S7 da auditoria anterior.
 
 **Correção:**
 - Criar o interruptor "Cotações automáticas (Yahoo Finance)" em Conta → Segurança, **desligado por omissão**. Sem ele, só se atualiza com um toque explícito em "Atualizar cotações".
@@ -139,7 +166,7 @@ Está bem para "mostrar a app a alguém". A UI não deve sugerir mais do que iss
 
 Por ordem de retorno face ao esforço:
 
-1. **Corrigir N1 antes de publicar a v2.7.0.** Hoje a política de privacidade está errada, e numa app financeira isso pesa mais do que qualquer bug técnico.
+1. **Corrigir N1 antes da próxima versão.** O código do Yahoo (`4ec5691`) está no `main` mas não entrou na v2.7.0 publicada; lançado tal como estava, a política de privacidade ficaria errada.
 2. **Um único cliente HTTP** (`SafeHttp`) para o GitHub e o Yahoo, com:
    - lista de hosts permitidos;
    - HTTPS obrigatório;

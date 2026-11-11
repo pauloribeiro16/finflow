@@ -367,6 +367,12 @@ class FakePendingTransactionDao(
     override suspend fun clearAll() {
         pending.value = emptyList()
     }
+
+    override suspend fun deleteReceivedBefore(cutoffMillis: Long): Int {
+        val before = pending.value.size
+        pending.value = pending.value.filterNot { it.receivedTimestamp < cutoffMillis }
+        return before - pending.value.size
+    }
 }
 
 class FakeUserProfileStore(

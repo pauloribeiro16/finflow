@@ -9,6 +9,23 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
+## [Por lançar]
+### Adicionado
+- **Backup cifrado (`.finflow`)**: a exportação completa passa a ser protegida com palavra-passe (AES-256-GCM, chave derivada com PBKDF2). O restauro deteta o formato e pede a palavra-passe; o JSON em claro só sai por opção explícita.
+- **Cotações automáticas opcionais**: interruptor em Conta → Versão (desligado por omissão) e aviso antes da primeira consulta ao Yahoo Finance.
+
+### Segurança
+- Ligações às APIs (GitHub, Yahoo) através de um cliente único com lista de servidores, HTTPS obrigatório, sem redirecionamentos e com limite de tamanho; tickers validados.
+- Cotações: câmbio por moeda (incluindo cotações em pence), sem taxa fixa em caso de falha e com rejeição de variações implausíveis.
+- Importação XTB: a deduplicação passa a distinguir instrumentos, por isso dividendos iguais no mesmo dia já não se perdem.
+- Restauro de backup valida tickers e unidades.
+- Mostrar valores no modo privacidade exige desbloqueio quando o bloqueio está ativo.
+- Movimentos pendentes com mais de 30 dias são apagados automaticamente.
+- Proteção contra sobreposições de ecrã (tapjacking).
+- CI: Dependabot e análise CodeQL.
+
+---
+
 ## [2.7.0] — 2026-11-10 (Minor Release)
 ### Adicionado
 - **Modo Privacidade (Máscara de Valores)**: Botão de olho rápido (👁️/👁️‍🗨️) no cabeçalho e interruptor nas preferências de segurança em Conta para mascarar todos os montantes com `•••• €`. Permite mostrar e demonstrar a app com total segurança, preservando a navegação, percentagens, proporções e gráficos operacionais.

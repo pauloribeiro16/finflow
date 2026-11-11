@@ -42,3 +42,8 @@ Fontes: `YahooFinanceQuoteService.kt`, `PortfolioMarketSyncUseCase.kt`, `XtbTick
 Sem achados altos. Principal: a sincronização Yahoo Finance corre sozinha ao abrir Investimentos e envia os tickers da carteira sem opt-in, contradizendo a política de privacidade e o cartão "só GitHub" (N1). Segue-se a integridade dos valores: câmbio fixo 1.10 em caso de falha e GBp/GBP/CHF tratados como EUR (N2).
 Gotcha: a chave de deduplicação XTB não inclui o ticker, por isso dividendos iguais no mesmo dia colidem (N4).
 Fonte: `SECURITY_AUDIT_2026-11-11.md` (N1–N8 + recomendações gerais).
+
+## 2026-11-11 — correções da auditoria N1–N8
+Cotações Yahoo passaram a opt-in (aviso + interruptor em Conta → Versão, desligado por omissão); APIs via `SafeHttp` (allowlist, sem redirects, 512 KB); câmbio por moeda sem fallback fixo e GBp÷100; dedup XTB v2 com instrumento + ocorrência (chaves antigas aceites uma vez cada); backup `.finflow` cifrado (PBKDF2 310k + AES-GCM); pendentes >30 dias apagados; tapjacking (`setHideOverlayWindows`); Dependabot + CodeQL.
+Não feito: chave da BD ligada à autenticação (partiria a captura de notificações em segundo plano), testes de migração (exige `room-testing`), `verification-metadata.xml`; secret scanning tem de ser ativado nas definições do GitHub.
+Fonte: `SECURITY_AUDIT_2026-11-11.md` (secção "Estado das correções").

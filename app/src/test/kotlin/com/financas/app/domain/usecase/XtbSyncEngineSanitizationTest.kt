@@ -4,6 +4,8 @@ import com.financas.app.data.db.InvestmentAssetDao
 import com.financas.app.data.db.TransactionDao
 import com.financas.app.ui.fakes.FakeInvestmentAssetDao
 import com.financas.app.ui.fakes.FakeTransactionDao
+import com.financas.app.domain.model.XtbCashOperation
+import com.financas.app.domain.model.XtbParsedReport
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -98,4 +100,70 @@ My Trades,Nasdaq-100 Daily Lev (2x),LQQ.FR,ETF,,26.2636,238.68,,9.497,,,,-4.32,-
             assertTrue("Transaction merchant should use anonymous hash marker", tx.merchant.contains("[XTB:"))
         }
     }
+
+    @Test
+    fun sync_reimportIsIdempotent() = runTest {
+        val report = parser.parse(sampleXtbCsv)
+        syncEngine.sync(report, importCashOperations = true)
+        val second = syncEngine.sync(report, importCashOperations = true)
+
+        assertEquals(0, second.importedTransactionsCount)
+        assertEquals(3, transactionDao.getAllSync().size)
+    }
+
+    @Test
+    fun sync_keepsEqualDividendsFromDifferentInstrumentsOnSameDay() = runTest {
+        val report = XtbParsedReport(
+            openPositions = emptyList(),
+            cashOperations = listOf(
+                dividend("1", "Shell", "SHELL.NL"),
+                dividend("2", "MSCI World ex USA", "EXUS.DE"),
+                dividend("3", "MSCI World ex USA", "EXUS.DE")
+            )
+        )
+
+        val result = syncEngine.sync(report, importCashOperations = true)
+        assertEquals(3, result.importedTransactionsCount)
+
+        val again = syncEngine.sync(report, importCashOperations = true)
+        assertEquals(0, again.importedTransactionsCount)
+    }
+
+    @Test
+    fun sync_legacyMarkerOnlyCoversOneOperation() = runTest {
+        val legacy = XtbTickerMapper.legacyDeduplicationKey(20000L, 31L, "Dividend")
+        transactionDao.insert(
+            com.financas.app.data.entity.TransactionEntity(
+                type = "INCOME",
+                amountCents = 31L,
+                yearMonth = 202512,
+                epochDay = 20000L,
+                categoryId = "inc_other",
+                contextTag = "PESSOAL",
+                merchant = "XTB Dividendo Shell $legacy",
+                paymentMethod = "TRANSFERENCIA",
+                isFixed = false
+            )
+        )
+        val report = XtbParsedReport(
+            openPositions = emptyList(),
+            cashOperations = listOf(dividend("1", "Shell", "SHELL.NL"), dividend("2", "MSCI World ex USA", "EXUS.DE"))
+        )
+
+        val result = syncEngine.sync(report, importCashOperations = true)
+        assertEquals(1, result.importedTransactionsCount)
+        assertEquals(1, result.skippedTransactionsCount)
+    }
+
+    private fun dividend(id: String, instrument: String, ticker: String) = XtbCashOperation(
+        id = id,
+        type = "Dividend",
+        instrument = instrument,
+        ticker = ticker,
+        category = "STOCK",
+        amountCents = 31L,
+        epochDay = 20000L,
+        yearMonth = 202512,
+        comment = ""
+    )
 }
