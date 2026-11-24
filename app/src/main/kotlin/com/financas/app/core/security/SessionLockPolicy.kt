@@ -3,6 +3,7 @@ package com.financas.app.core.security
 object SessionLockPolicy {
     const val BACKGROUND_LOCK_TIMEOUT_MS = 30_000L
     const val EXTERNAL_FLOW_GRACE_MS = 120_000L
+    const val EXTERNAL_FLOW_ARM_WINDOW_MS = 10_000L
     val ALLOWED_TIMEOUTS_MS = listOf(0L, 30_000L, 60_000L, 300_000L)
 
     fun normalizeTimeout(timeoutMs: Long): Long =
@@ -25,5 +26,26 @@ class SessionBackgroundClock {
     var lastBackgroundAtMs: Long = 0L
 
     @Volatile
-    var externalFlowExpected: Boolean = false
+    private var externalFlowArmedAtMs: Long = 0L
+
+    @Volatile
+    var pausedForExternalFlow: Boolean = false
+
+    fun armExternalFlow(nowMs: Long) {
+        externalFlowArmedAtMs = nowMs
+    }
+
+    fun onActivityPaused(nowMs: Long) {
+        val armedAt = externalFlowArmedAtMs
+        externalFlowArmedAtMs = 0L
+        pausedForExternalFlow = armedAt > 0L && (nowMs - armedAt) in 0L..SessionLockPolicy.EXTERNAL_FLOW_ARM_WINDOW_MS
+        lastBackgroundAtMs = nowMs
+    }
+
+    fun consumePausedForExternalFlow(): Boolean {
+        val wasExternal = pausedForExternalFlow
+        pausedForExternalFlow = false
+        externalFlowArmedAtMs = 0L
+        return wasExternal
+    }
 }

@@ -56,6 +56,10 @@ class DefaultAppContainer(private val context: Context) : AppContainer {
     override val database: AppDatabase by lazy {
         System.loadLibrary("sqlcipher")
         val keyFile = File(context.filesDir, DatabaseKeyManager.KEY_FILE_NAME)
+        val dbFile = context.getDatabasePath(AppDatabase.DATABASE_NAME)
+        if (!keyFile.exists() && dbFile.exists() && !DatabaseEncryptionMigrator.isPlaintextDatabase(dbFile)) {
+            DatabaseRecovery.quarantine(context, AppDatabase.DATABASE_NAME, keyFile)
+        }
         val keyManager = DatabaseKeyManager(keyFile)
         val passphrase = try {
             keyManager.getOrCreatePassphrase()

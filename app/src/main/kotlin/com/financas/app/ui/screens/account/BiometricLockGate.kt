@@ -100,7 +100,12 @@ class BiometricLockGate(
         onError: (String) -> Unit
     ) {
         if (!isDeviceSecure(activity)) {
-            onSuccess()
+            onError(
+                tr(
+                    "Defina um PIN ou biometria nas definições do telemóvel para desbloquear",
+                    "Set a device PIN or biometrics in system settings to unlock"
+                )
+            )
             return
         }
         try {
@@ -188,7 +193,7 @@ class BiometricLockGate(
         @Suppress("DEPRECATION")
         val intent = keyguard?.createConfirmDeviceCredentialIntent(title, subtitle)
         if (intent == null) {
-            if (isDeviceSecure(activity)) onError(tr("Autenticação indisponível", "Authentication unavailable")) else onSuccess()
+            onError(tr("Autenticação indisponível", "Authentication unavailable"))
             return
         }
         var launcher: ActivityResultLauncher<Intent>? = null

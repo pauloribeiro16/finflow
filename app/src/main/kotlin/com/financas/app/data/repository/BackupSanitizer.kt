@@ -76,7 +76,9 @@ object BackupSanitizer {
             it.copy(
                 name = it.name.take(MAX_LABEL_CHARS),
                 institution = it.institution.take(MAX_LABEL_CHARS),
-                notes = it.notes.take(MAX_NOTES_CHARS)
+                notes = it.notes.take(MAX_NOTES_CHARS),
+                ticker = com.financas.app.data.network.TickerPolicy.normalize(it.ticker),
+                units = it.units?.takeIf { u -> u.isFinite() && u > 0.0 && u <= com.financas.app.domain.usecase.PortfolioMarketSyncUseCase.MAX_UNITS }
             )
         }
 

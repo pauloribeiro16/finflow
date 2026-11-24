@@ -47,7 +47,7 @@ fun requireAuthIfLockEnabled(context: Context, subtitle: String, action: () -> U
 
 fun expectExternalFlow(context: Context) {
     (context.applicationContext as? com.financas.app.FinancasApplication)
-        ?.container?.sessionBackgroundClock?.externalFlowExpected = true
+        ?.container?.sessionBackgroundClock?.armExternalFlow(android.os.SystemClock.elapsedRealtime())
 }
 
 private fun Context.findActivityForPrompt(): ComponentActivity? {

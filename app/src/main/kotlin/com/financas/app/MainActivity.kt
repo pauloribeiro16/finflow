@@ -141,7 +141,7 @@ class MainActivity : ComponentActivity() {
         super.onPause()
         if (sessionLocked.value == false) {
             val app = application as FinancasApplication
-            app.container.sessionBackgroundClock.lastBackgroundAtMs = SystemClock.elapsedRealtime()
+            app.container.sessionBackgroundClock.onActivityPaused(SystemClock.elapsedRealtime())
         }
     }
 
@@ -156,8 +156,7 @@ class MainActivity : ComponentActivity() {
             clock.lastBackgroundAtMs = 0L
             val elapsed = SystemClock.elapsedRealtime() - lastBackgroundAtMs
             val gate = app.container.biometricLockGate
-            val externalFlowExpected = clock.externalFlowExpected
-            clock.externalFlowExpected = false
+            val externalFlowExpected = clock.consumePausedForExternalFlow()
             if (SessionLockPolicy.shouldLock(elapsed, gate.isBiometricsEnabled(), gate.lockTimeoutMs(), externalFlowExpected)) {
                 sessionLocked.value = true
             }

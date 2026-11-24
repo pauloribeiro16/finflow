@@ -2,57 +2,56 @@ package com.financas.app.domain.usecase
 
 object FinancialAppFilter {
 
-    private val exactSegmentTokens = setOf(
-        "bcp",
-        "bpi",
-        "cgd",
-        "xtb",
-        "n26",
-        "wise",
-        "curve"
-    )
-
-    private val brandTokens = listOf(
-        "mbway",
-        "moey",
-        "paypal",
-        "revolut",
-        "caixadirecta",
-        "caixadireta",
-        "caixageral",
-        "millennium",
-        "santander",
-        "activobank",
-        "novobanco",
-        "montepio",
-        "bankinter",
-        "bancobpi",
-        "bancoctt",
-        "creditoagricola",
-        "bestbank",
-        "abanca",
-        "traderepublic",
-        "degiro",
-        "transferwise",
-        "number26",
-        "imaginecurve",
-        "openbank",
-        "coverflex",
-        "edenred",
-        "pluxee",
-        "sodexo",
-        "wizink",
-        "unibanco",
-        "cetelem",
-        "cofidis"
+    val ALLOWED_PACKAGES: Set<String> = setOf(
+        "pt.sibs.android.mbway",
+        "pt.sibs.mbway",
+        "com.sibs.android.mbway",
+        "com.moey",
+        "com.moey.android",
+        "pt.moey.app",
+        "com.paypal.android.p2pmobile",
+        "com.revolut.revolut",
+        "com.revolut.revolut.test",
+        "pt.cgd.caixadirecta",
+        "pt.cgd.caixadireta",
+        "pt.bcp.mobile",
+        "wit.android.bcpbankingapp.millennium",
+        "com.santander.app",
+        "pt.santandertotta.mobileparticulares",
+        "com.activobank.mobile",
+        "pt.activobank.mobile",
+        "pt.novobanco.mobile",
+        "pt.novobanco.app",
+        "pt.montepio.geral",
+        "pt.montepio.app",
+        "com.bankinter.app",
+        "pt.bankinter.mobile",
+        "pt.bpi.mobile",
+        "pt.bancobpi.bpiapp",
+        "pt.bancobpi.mobile.fiabilizacao",
+        "pt.bancoctt.app",
+        "pt.creditoagricola.app",
+        "pt.bancobest.app",
+        "pt.abanca.app",
+        "com.xtb.xstation2",
+        "com.xtb.xstation5",
+        "de.traderepublic.app",
+        "nl.degiro.trader",
+        "com.transferwise.android",
+        "de.number26.android",
+        "com.imaginecurve.curve.prd",
+        "com.openbank.es",
+        "com.coverflex.app",
+        "com.edenred.myedenred",
+        "com.pluxee.app",
+        "com.wizink.app",
+        "pt.unicre.unibanco",
+        "pt.cetelem.app",
+        "pt.cofidis.app"
     )
 
     fun isFinancialApp(packageName: String): Boolean {
-        val segments = packageName.lowercase().split('.').filter { it.isNotBlank() }
-        if (segments.isEmpty()) return false
-        return segments.any { segment ->
-            segment in exactSegmentTokens ||
-                brandTokens.any { token -> segment.startsWith(token) || segment.endsWith(token) }
-        }
+        val normalized = packageName.trim().lowercase()
+        return normalized.isNotEmpty() && normalized in ALLOWED_PACKAGES
     }
 }

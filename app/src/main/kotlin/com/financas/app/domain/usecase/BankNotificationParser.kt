@@ -64,10 +64,13 @@ class BankNotificationParser {
         subText: String? = null,
         extraLines: List<String> = emptyList()
     ): ParsedBankNotification? {
-        val safeTitle = title?.trim().orEmpty()
-        val safeText = text?.trim().orEmpty()
-        val safeSubText = subText?.trim().orEmpty()
-        val safeExtras = extraLines.map { it.trim() }.filter { it.isNotBlank() && !safeText.contains(it) }.distinct()
+        val safeTitle = title?.trim()?.take(MAX_FIELD_CHARS).orEmpty()
+        val safeText = text?.trim()?.take(MAX_FIELD_CHARS).orEmpty()
+        val safeSubText = subText?.trim()?.take(MAX_FIELD_CHARS).orEmpty()
+        val safeExtras = extraLines.take(MAX_EXTRA_LINES)
+            .map { it.trim().take(MAX_EXTRA_LINE_CHARS) }
+            .filter { it.isNotBlank() && !safeText.contains(it) }
+            .distinct()
         val fullContent = listOf(safeTitle, safeText, safeSubText).plus(safeExtras).filter { it.isNotBlank() }.joinToString(" ").trim()
 
         if (fullContent.isBlank()) return null
@@ -139,6 +142,7 @@ class BankNotificationParser {
         }
         val parts = normalized.split(".")
         val euros = parts[0].toLongOrNull() ?: return 0L
+        if (euros < 0L || euros > MAX_AMOUNT_EUROS) return 0L
         val cents = if (parts.size > 1) {
             val c = parts[1].padEnd(2, '0').take(2)
             c.toLongOrNull() ?: 0L
@@ -280,6 +284,10 @@ class BankNotificationParser {
     companion object {
         const val FALLBACK_EXPENSE_PREFIX = "Pagamento "
         const val FALLBACK_INCOME_PREFIX = "Recebimento "
+        const val MAX_FIELD_CHARS = 500
+        const val MAX_EXTRA_LINES = 10
+        const val MAX_EXTRA_LINE_CHARS = 300
+        const val MAX_AMOUNT_EUROS = 1_000_000_000L
         private val DIRECTION_WORDS = listOf("pagou", "pagaste", "enviou", "enviaste", "recebeu", "recebeste", "compra de", "you spent", "you paid")
     }
 }

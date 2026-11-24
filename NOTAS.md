@@ -61,3 +61,8 @@ Fonte: `SECURITY_AUDIT_2026-11-11.md` (secção "Terceira ronda", T1–T6 + pend
 Tempo de bloqueio configurável (`SessionLockPolicy.ALLOWED_TIMEOUTS_MS`, guardado em `financas_security_prefs`), autenticação ao exportar, restauro em transação, medidor de palavra-passe (`BackupPasswordPolicy`, mín. 10) e `PendingFloodGuard` na captura de notificações.
 Gotchas: com o bloqueio ativo o `MainScaffold` sai da composição, por isso voltar de um seletor de ficheiros com bloqueio imediato perdia o fluxo — `expectExternalFlow()` dá 2 min de tolerância e tem de ser chamado antes de cada `launcher.launch`. No restauro, id igual só conta como duplicado se data, valor ou comerciante coincidirem.
 Não testado em dispositivo. Fonte: `SECURITY_AUDIT_2026-11-11.md` (fim).
+
+## 2026-11-24 — specs vivos, verificação formal TLA+/TLC e correção de 5 invariantes de segurança
+Criados 7 specs vivos (`specs/`), 6 modelos formais TLA+ (`formal/tla/` + views `/statechart`), 2 suites de propriedades Kotlin (`SecurityFormalPropertiesTest`, `DomainAndSecurityInvariantsTest`) e a skill local `.agents/skills/verify-security/SKILL.md` (`./formal/verify.sh`).
+Os modelos detetaram e motivaram 5 correções reais: quarentena automática em `AppContainer` quando `database.key` falta com BD cifrada existente; janela TTL de 10s em `SessionBackgroundClock.armExternalFlow` + fail-closed em `BiometricLockGate` quando `!isDeviceSecure`; allowlist exata `ALLOWED_PACKAGES` em `FinancialAppFilter` contra package spoofing; truncagem + guarda contra overflow de `Long` em `BankNotificationParser`; e sanitização direta de `ticker`/`units` em `BackupSanitizer`.
+Fontes: `specs/README.md`, `formal/verify.sh`, `.agents/skills/verify-security/SKILL.md`.
