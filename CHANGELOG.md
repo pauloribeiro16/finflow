@@ -9,19 +9,24 @@ Formato de Versão: `MAJOR.MINOR.PATCH`
 
 ---
 
-## [Por lançar]
+## [2.8.0] — 2026-11-24 (Minor Release)
 ### Adicionado
-- **Backup cifrado (`.finflow`)**: a exportação completa passa a ser protegida com palavra-passe (AES-256-GCM, chave derivada com PBKDF2). O restauro deteta o formato e pede a palavra-passe; o JSON em claro só sai por opção explícita.
+- **Backup cifrado (`.finflow`)**: a exportação completa passa a ser protegida com palavra-passe (AES-256-GCM, chave derivada com PBKDF2 600k iterações) e medidor de força mínimo de 10 caracteres. O restauro deteta o formato e pede a palavra-passe; o JSON em claro só sai por opção explícita.
+- **Tempo de bloqueio configurável**: escolha entre imediato, 30s, 1 min ou 5 min, com janela controlada para fluxos externos.
 - **Cotações automáticas opcionais**: interruptor em Conta → Versão (desligado por omissão) e aviso antes da primeira consulta ao Yahoo Finance.
+- **Verificação formal de segurança (TLA+/TLC)**: 6 modelos formais (`formal/tla/`) e 2 suites de propriedades Kotlin que verificam encriptação, bloqueio de sessão, atualizações OTA, notificações, restauro atómico e sincronização de mercado.
 
 ### Segurança
-- Ligações às APIs (GitHub, Yahoo) através de um cliente único com lista de servidores, HTTPS obrigatório, sem redirecionamentos e com limite de tamanho; tickers validados.
-- Cotações: câmbio por moeda (incluindo cotações em pence), sem taxa fixa em caso de falha e com rejeição de variações implausíveis.
+- Quarentena automática se `database.key` desaparecer enquanto a base de dados cifrada existe em disco.
+- Bloqueio biométrico *fail-closed* quando o dispositivo não tem PIN/biometria e autenticação obrigatória ao exportar JSON/CSV ou alterar o tempo de bloqueio.
+- Captura de notificações bancárias restrita a allowlist exata de package IDs oficiais (`FinancialAppFilter`), `PendingFloodGuard`, truncagem de entrada e proteção contra overflow em `BankNotificationParser`.
+- Restauro de backup executado em transação atómica com sanitização de `ticker`, `units` e registos inválidos (`BackupSanitizer`).
+- Ligações às APIs (GitHub, Yahoo) através de `SafeHttp` com lista de servidores, HTTPS obrigatório, sem redirecionamentos e com limite de tamanho; tickers validados.
+- Cotações: câmbio por moeda (incluindo cotações em pence), sem taxa fixa em caso de falha e com rejeição de variações implausíveis (>3× ou <⅓).
 - Importação XTB: a deduplicação passa a distinguir instrumentos, por isso dividendos iguais no mesmo dia já não se perdem.
-- Restauro de backup valida tickers e unidades.
 - Mostrar valores no modo privacidade exige desbloqueio quando o bloqueio está ativo.
 - Movimentos pendentes com mais de 30 dias são apagados automaticamente.
-- Proteção contra sobreposições de ecrã (tapjacking).
+- Proteção contra sobreposições de ecrã (tapjacking) e cópias internas cifradas com `LocalFileCipher`.
 - CI: Dependabot e análise CodeQL.
 
 ### Corrigido

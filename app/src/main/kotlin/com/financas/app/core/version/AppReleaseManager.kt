@@ -17,11 +17,26 @@ data class AppRelease(
 )
 
 object AppReleaseManager {
-    const val CURRENT_VERSION = "2.7.0"
-    const val CURRENT_BUILD = 29
+    const val CURRENT_VERSION = "2.8.0"
+    const val CURRENT_BUILD = 30
     const val RELEASE_CHANNEL = "Feature Release"
 
     val RELEASES: List<AppRelease> = listOf(
+        AppRelease(
+            version = "2.8.0",
+            buildCode = 30,
+            date = "24 Nov 2026",
+            type = ReleaseType.MINOR,
+            title = "Backups Cifrados, Segurança Verificada e Inglês",
+            description = "Exportação cifrada (.finflow), tempo de bloqueio configurável, tradução completa para inglês e invariantes de segurança verificados formalmente com TLA+/TLC.",
+            changes = listOf(
+                "Backups cifrados (.finflow) com PBKDF2-HMAC-SHA256 (600k iterações) + AES-256-GCM, medidor de força de palavra-passe e restauro atómico em transação.",
+                "Tempo de bloqueio configurável (imediato, 30s, 1 min, 5 min), autenticação ao exportar dados e desbloqueio fail-closed.",
+                "Captura de notificações bancárias protegida por allowlist exata de apps financeiras oficiais, PendingFloodGuard e retenção automática de 30 dias.",
+                "Cotações automáticas do Yahoo Finance opcionais (opt-in) com conversão de câmbio validada e rejeição de variações anómalas.",
+                "Tradução completa para inglês e 6 modelos formais TLA+ com verificação automática de invariantes."
+            )
+        ),
         AppRelease(
             version = "2.7.0",
             buildCode = 29,
